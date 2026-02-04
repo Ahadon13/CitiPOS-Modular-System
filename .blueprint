@@ -1,0 +1,46 @@
+created:
+    - database/factories/BranchFactory.php
+    - database/factories/UserFactory.php
+    - database/factories/SupplierFactory.php
+    - database/factories/ProductFactory.php
+    - database/factories/ProductUnitFactory.php
+    - database/factories/InventoryBatchFactory.php
+    - database/factories/CustomerTypeFactory.php
+    - database/factories/CustomerFactory.php
+    - database/factories/SaleFactory.php
+    - database/factories/SaleItemFactory.php
+    - database/migrations/2026_01_23_063936_create_branches_table.php
+    - database/migrations/2026_01_23_063937_create_users_table.php
+    - database/migrations/2026_01_23_063938_create_suppliers_table.php
+    - database/migrations/2026_01_23_063939_create_products_table.php
+    - database/migrations/2026_01_23_063940_create_product_units_table.php
+    - database/migrations/2026_01_23_063941_create_inventory_batches_table.php
+    - database/migrations/2026_01_23_063942_create_customer_types_table.php
+    - database/migrations/2026_01_23_063943_create_customers_table.php
+    - database/migrations/2026_01_23_063944_create_sales_table.php
+    - database/migrations/2026_01_23_063945_create_sale_items_table.php
+    - app/Models/Branch.php
+    - app/Models/User.php
+    - app/Models/Supplier.php
+    - app/Models/Product.php
+    - app/Models/ProductUnit.php
+    - app/Models/InventoryBatch.php
+    - app/Models/CustomerType.php
+    - app/Models/Customer.php
+    - app/Models/Sale.php
+    - app/Models/SaleItem.php
+    - database/seeders/CustomerTypeSeeder.php
+    - database/seeders/BranchSeeder.php
+    - database/seeders/UserSeeder.php
+    - database/seeders/ProductSeeder.php
+models:
+    Branch: { name: string, address: 'text nullable', is_active: 'boolean default:true', relationships: { hasMany: 'User, InventoryBatch, Sale' } }
+    User: { branch_id: 'id foreign:branches nullable', name: string, username: 'string unique', password: string, role: string, relationships: { belongsTo: Branch, hasMany: Sale } }
+    Supplier: { name: string, contact_info: 'text nullable', relationships: { hasMany: Product } }
+    Product: { supplier_id: 'id foreign', name: string, brand_name: 'string nullable', category_type: string, generic_name: 'string nullable', requires_prescription: 'boolean default:false', attributes: 'json nullable', relationships: { belongsTo: Supplier, hasMany: 'ProductUnit, InventoryBatch, SaleItem' } }
+    ProductUnit: { product_id: 'id foreign', unit_name: string, conversion_factor: 'integer default:1', price: 'decimal:10,2', barcode: 'string unique nullable', is_base_unit: 'boolean default:false', relationships: { belongsTo: Product } }
+    InventoryBatch: { branch_id: 'id foreign', product_id: 'id foreign', batch_number: 'string nullable', expiration_date: 'date nullable', quantity_on_hand: 'integer default:0', relationships: { belongsTo: 'Branch, Product', hasMany: SaleItem } }
+    CustomerType: { name: string, discount_percentage: 'decimal:5,2 default:0', relationships: { hasMany: Customer } }
+    Customer: { customer_type_id: 'id foreign', name: string, id_card_number: 'string nullable', booklet_number: 'string nullable', contact_number: 'string nullable', address: 'text nullable', relationships: { belongsTo: CustomerType, hasMany: Sale } }
+    Sale: { branch_id: 'id foreign', user_id: 'id foreign', customer_id: 'id foreign nullable', reference_no: 'string unique', grand_total: 'decimal:10,2', status: "string default:'completed'", relationships: { belongsTo: 'Branch, User, Customer', hasMany: SaleItem } }
+    SaleItem: { sale_id: 'id foreign', product_id: 'id foreign', inventory_batch_id: 'id foreign nullable', unit_name: string, quantity: integer, price_at_moment: 'decimal:10,2', subtotal: 'decimal:10,2', relationships: { belongsTo: 'Sale, Product, InventoryBatch' } }

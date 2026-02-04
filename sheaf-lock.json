@@ -1,0 +1,26 @@
+{
+    "files": [],
+    "helpers": [],
+    "internalDependencies": {
+        "button": [
+            "badge",
+            "navbar",
+            "navlist",
+            "sidebar"
+        ],
+        "icon": [
+            "badge",
+            "navbar",
+            "navlist",
+            "sidebar",
+            "input"
+        ],
+        "badge": [
+            "navbar",
+            "navlist"
+        ],
+        "navlist": [
+            "sidebar"
+        ]
+    }
+}
