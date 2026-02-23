@@ -1,9 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Livewire\Inventory\Components;
 
 use Livewire\Component;
 
-class Sidebar extends Component
-{
-}
+final class Sidebar extends Component {}

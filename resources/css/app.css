@@ -3,11 +3,12 @@
 @import './theme.css'; /* By Sheaf.dev */
 @import 'tailwindcss';
 @import '../../vendor/tallstackui/tallstackui/css/v4.css';
+@import '../../vendor/spatie/livewire-filepond/resources/dist/filepond.css';
 
 @plugin '@tailwindcss/forms';
 
+@source '../../app/Providers/*.php';
 @source '../../vendor/tallstackui/tallstackui/**/*.php';
-
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 @source '../**/*.blade.php';
@@ -68,6 +69,63 @@
   --spacing: 0.25rem;
 }
 
+@layer base {
+
+    /* =========================================
+       1. LIGHT MODE (Default - Clean Grays)
+       ========================================= */
+
+    /* Firefox */
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: #d1d5db #f3f4f6; /* Gray-300 | Gray-100 */
+    }
+
+    /* Chromium / WebKit */
+    ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background-color: #f3f4f6; /* Gray-100 */
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background-color: #d1d5db; /* Gray-300 */
+        border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background-color: #9ca3af; /* Gray-400 */
+    }
+
+
+    /* =========================================
+       2. DARK MODE (Custom - Deep Space & Blue)
+       ========================================= */
+
+    /* Firefox */
+    .dark {
+        scrollbar-width: thin;
+        scrollbar-color: #2580ff #060A23;
+    }
+
+    /* Chromium / WebKit - Scope to .dark class */
+    .dark ::-webkit-scrollbar-track {
+        background-color: #060A23;
+    }
+
+    .dark ::-webkit-scrollbar-thumb {
+        background-color: #2580ff;
+        border-radius: 10px;
+    }
+
+    .dark ::-webkit-scrollbar-thumb:hover {
+        background-color: #1c6ce6;
+    }
+}
+
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
@@ -83,6 +141,10 @@
 
     --color-card: var(--card);
     --color-accent: var(--accent);
+
+    --text-xxs: 10px;
+    --text-xxs--line-height: 1.2rem;
+    --text-xxs--letter-spacing: 0.02rem;
 }
 
 

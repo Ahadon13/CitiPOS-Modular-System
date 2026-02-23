@@ -178,8 +178,8 @@
         <input
             @class([
                 'z-10',
-                'inline-block border p-2 w-full text-base sm:text-sm text-neutral-800 disabled:text-neutral-500 placeholder-neutral-400 disabled:placeholder-neutral-400/70 dark:text-neutral-300 dark:disabled:text-neutral-400 dark:placeholder-neutral-400 dark:disabled:placeholder-neutral-500',
-                'bg-white dark:bg-deep-space dark:disabled:bg-neutral-800',
+                'inline-block border p-2 w-full text-base sm:text-sm text-neutral-800 disabled:text-neutral-500 placeholder-neutral-400 disabled:placeholder-neutral-400/70 dark:text-neutral-300 dark:disabled:text-neutral-400 dark:placeholder-neutral-400 dark:disabled:placeholder-deep-space/50',
+                'bg-white dark:bg-deep-space/50 dark:disabled:bg-deep-space/50',
                 'disabled:cursor-not-allowed transition-colors duration-200',
                 'shadow-none dark:shadow-sm disabled:shadow-none rounded-box',
                 'focus:ring-2 focus:ring-offset-0 focus:outline-none',

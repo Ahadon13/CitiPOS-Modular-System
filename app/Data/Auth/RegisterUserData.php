@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Data\Auth;
 
 use App\Enums\Role;
@@ -7,7 +9,7 @@ use Illuminate\Support\Facades\Hash;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Support\Validation\ValidationContext;
 
-class RegisterUserData extends Data
+final class RegisterUserData extends Data
 {
     public function __construct(
         public string $name,
@@ -23,12 +25,12 @@ class RegisterUserData extends Data
             'name' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255', 'unique:users,username'],
             'password' => ['required', 'string', 'min:8'],
-            'role' => ['required', 'enum:' . Role::class],
+            'role' => ['required', 'enum:'.Role::class],
             'branch_id' => ['nullable', 'integer', 'exists:branches,id'],
         ];
     }
 
-     public function modelAttributes(): array
+    public function modelAttributes(): array
     {
         return [
             'name' => $this->name,

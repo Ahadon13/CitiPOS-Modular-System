@@ -1,7 +1,7 @@
 @php
     $classes = [
         'flex flex-col w-full [:has([data-collapsed]_&)_&]:items-center gap-y-1',
-        'py-1 px-2'
+        'py-1 px-3'
     ];
 @endphp
 

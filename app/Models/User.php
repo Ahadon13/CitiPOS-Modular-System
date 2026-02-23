@@ -1,18 +1,22 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
+use App\Models\Branch;
+use App\Models\Sale;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable
+final class User extends Authenticatable
 {
-    use HasFactory, HasRoles, HasApiTokens;
+    use HasApiTokens, HasFactory, HasRoles;
 
     /**
      * The attributes that are mass assignable.
@@ -37,6 +41,16 @@ class User extends Authenticatable
         'remember_token',
     ];
 
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
+    public function sales(): HasMany
+    {
+        return $this->hasMany(Sale::class);
+    }
+
     /**
      * Get the attributes that should be cast.
      *
@@ -56,15 +70,5 @@ class User extends Authenticatable
         return Attribute::make(
             get: fn () => $this->getRoleNames()->first(),
         );
-    }
-
-    public function branch(): BelongsTo
-    {
-        return $this->belongsTo(Branch::class);
-    }
-
-    public function sales(): HasMany
-    {
-        return $this->hasMany(Sale::class);
     }
 }

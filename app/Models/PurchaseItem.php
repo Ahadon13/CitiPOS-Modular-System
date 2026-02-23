@@ -1,10 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
+use App\Casts\MoneyCast;
+use App\Models\Purchase;
+use App\Models\Product;
+use App\Models\Unit;
 use Illuminate\Database\Eloquent\Model;
 
-class PurchaseItem extends Model
+final class PurchaseItem extends Model
 {
     /**
      * The attributes that are mass assignable.
@@ -21,23 +27,6 @@ class PurchaseItem extends Model
         'expiration_date',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'purchase_id' => 'integer',
-            'product_id' => 'integer',
-            'unit_id' => 'integer',
-            'quantity' => 'decimal:4',
-            'cost_per_unit' => 'decimal:2',
-            'expiration_date' => 'date',
-        ];
-    }
-
     public function purchase()
     {
         return $this->belongsTo(Purchase::class);
@@ -51,5 +40,22 @@ class PurchaseItem extends Model
     public function unit()
     {
         return $this->belongsTo(Unit::class);
+    }
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'purchase_id' => 'integer',
+            'product_id' => 'integer',
+            'unit_id' => 'integer',
+            'quantity' => 'decimal:4',
+            'cost_per_unit' => MoneyCast::class,
+            'expiration_date' => 'date',
+        ];
     }
 }

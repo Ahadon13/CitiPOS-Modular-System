@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Livewire\Auth;
 
 use App\Livewire\Forms\Auth\LoginForm;
@@ -8,7 +10,7 @@ use Livewire\Attributes\Layout;
 use Livewire\Component;
 
 #[Layout('components.layouts.auth', ['title' => 'Login'])]
-class Login extends Component
+final class Login extends Component
 {
     public LoginForm $form;
 

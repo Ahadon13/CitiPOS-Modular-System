@@ -1,12 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
+use App\Models\Product;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Supplier extends Model
+final class Supplier extends Model
 {
     use HasFactory;
 
@@ -20,6 +23,11 @@ class Supplier extends Model
         'contact_info',
     ];
 
+    public function products(): HasMany
+    {
+        return $this->hasMany(Product::class);
+    }
+
     /**
      * Get the attributes that should be cast.
      *
@@ -30,10 +38,5 @@ class Supplier extends Model
         return [
             'id' => 'integer',
         ];
-    }
-
-    public function products(): HasMany
-    {
-        return $this->hasMany(Product::class);
     }
 }

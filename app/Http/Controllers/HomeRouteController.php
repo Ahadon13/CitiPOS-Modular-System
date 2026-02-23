@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Enums\Role;
-use App\Http\Controllers\Controller;
 use Exception;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -30,7 +29,7 @@ final class HomeRouteController extends Controller
             return to_route('dashboard');
         }
 
-        if ($user->hasRole([Role::Cashier->value, Role::Pharmacist->value])) {
+        if ($user->hasRole([Role::GroceryCashier->value, Role::Pharmacist->value])) {
             return to_route('select-work');
         }
 

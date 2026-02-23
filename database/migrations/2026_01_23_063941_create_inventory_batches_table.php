@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -20,6 +22,7 @@ return new class extends Migration
             $table->string('batch_number')->nullable();
             $table->date('expiration_date')->nullable();
             $table->decimal('quantity_on_hand', 10, 4)->default(0);
+            $table->bigInteger('cost_per_unit')->default(0);
             $table->timestamps();
         });
 

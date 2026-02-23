@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Enums\Product;
 
 enum CategoryType: string
@@ -10,7 +12,7 @@ enum CategoryType: string
 
     public function label(): string
     {
-        return match($this) {
+        return match ($this) {
             self::Pharmacy => 'Pharmacy',
             self::Grocery => 'Grocery',
             self::MotorShop => 'Motor Shop',

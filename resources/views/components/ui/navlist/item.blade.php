@@ -7,12 +7,13 @@
     'label' => null,
     'href' => '#',
     'active' => null,
+    'size' => 'md', // 1. Added size property (default: md)
 ])
 
 @php
     // quick reference :
-        // [:not(:has([data-collapsed]_&))_&]: means if the sidebar is not collapsed
-        // [:has([data-collapsed]_&)_&]: means if the sidebar is collapsed
+    // [:not(:has([data-collapsed]_&))_&]: means if the sidebar is not collapsed
+    // [:has([data-collapsed]_&)_&]: means if the sidebar is collapsed
 
     $classes = [
         'isolate',
@@ -53,6 +54,25 @@
         }
     }
 
+    // --- SIZING LOGIC ---
+    // 2. Map out the corresponding Tailwind classes for text and icons
+    $textSizes = [
+        'sm' => 'text-sm',
+        'md' => 'text-base', // Your original default
+        'lg' => 'text-lg',
+    ];
+
+    $iconSizes = [
+        'sm' => '[:where(&)]:size-5! size-5!',
+        'md' => '[:where(&)]:size-6! size-6!', // Your original default
+        'lg' => '[:where(&)]:size-7! size-7!',
+    ];
+
+    // Fallback to 'md' if an invalid size is passed
+    $textSizeClass = $textSizes[$size] ?? $textSizes['md'];
+    $iconSizeClass = $iconSizes[$size] ?? $iconSizes['md'];
+
+
     // --- UPDATED ACTIVE LOGIC ---
 
     // 1. Check if the HREF matches the current URL (Default behavior)
@@ -90,13 +110,15 @@
             :condition="$collapsible"
         >
             <x-ui.icon
-                :attributes="$iconAttributes->class('[:where(&)]:size-5')"
+                {{-- 3. Apply the dynamic icon size --}}
+                :attributes="$iconAttributes->class($iconSizeClass)"
                 :name="$icon"
             />
         </x-ui.navlist.has-tooltip>
     @endif
 
-    <span class="text-base [:has([data-collapsed]_&)_&]:hidden">
+    {{-- 4. Apply the dynamic text size --}}
+    <span class="{{ $textSizeClass }} [:has([data-collapsed]_&)_&]:hidden">
         {{ $label }}
     </span>
 

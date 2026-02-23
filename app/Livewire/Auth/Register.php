@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace App\Livewire\Auth;
 
-use App\Constants;
 use App\Livewire\Forms\Auth\RegisterForm;
 use App\Support\Toast;
-use Illuminate\Support\Facades\Session;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -20,7 +18,7 @@ final class Register extends Component
     {
         $this->form->register();
 
-        Toast::success("Your account has been created successfully!");
+        Toast::success('Your account has been created successfully!');
 
         $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
     }

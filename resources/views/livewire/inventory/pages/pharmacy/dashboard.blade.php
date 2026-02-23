@@ -1,9 +1,8 @@
-<div class="space-y-6">
-
+<div class="max-w-7xl mx-auto space-y-6">
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
             <h1 class="text-2xl font-bold text-neutral-900 dark:text-white">Overview</h1>
-            <p class="text-neutral-500">
+            <p class="text-neutral-500 dark:text-neutral-400">
                 @if($this->isSuperAdmin)
                     Global Dashboard (All Branches)
                 @else
@@ -20,13 +19,41 @@
 
         <x-ui.card hoverless size="full" class="border-l-4 border-l-[#2580ff]!">
             <div class="flex items-center gap-4">
-                <div class="p-3 bg-blue-200 dark:bg-blue-900/50 rounded-lg">
-                    <x-ui.icon name="cube" class="size-6" />
+                <div class="p-3 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
+                    <x-ui.icon name="cube" class="size-6 text-blue-600! dark:text-blue-400!" />
                 </div>
                 <div>
-                    <p class="text-sm font-medium text-neutral-500">Total Items</p>
-                    <h3 class="text-3xl font-bold text-neutral-900 dark:text-white">
-                        {{ number_format($this->totalItems, 0) }}
+                    <p class="text-sm font-medium uppercase text-blue-500">Total Products</p>
+                    <h3 class="text-3xl font-bold text-blue-900 dark:text-blue-200">
+                        {{ number_format($this->totalProducts, 0) }}
+                    </h3>
+                </div>
+            </div>
+        </x-ui.card>
+
+         <x-ui.card hoverless size="full" class="border-l-4 border-l-emerald-500!">
+             <div class="flex items-center gap-4">
+                 <div class="p-3 bg-emerald-100 dark:bg-emerald-900/50 rounded-lg">
+                     <x-ui.icon name="squares-2x2" class="size-6 text-emerald-600! dark:text-emerald-400!" />
+                 </div>
+                 <div>
+                     <p class="text-sm font-medium uppercase text-emerald-500">Total Items</p>
+                     <h3 class="text-3xl font-bold text-emerald-900 dark:text-emerald-200">
+                         {{ number_format($this->totalItems, 0) }}
+                     </h3>
+                 </div>
+             </div>
+         </x-ui.card>
+
+        <x-ui.card hoverless size="full" class="border-l-4 border-l-yellow-500!">
+            <div class="flex items-center gap-4">
+                <div class="p-3 bg-yellow-100 dark:bg-yellow-900/50 rounded-lg">
+                    <x-ui.icon name="clock" class="size-6 text-yellow-600! dark:text-yellow-400!" />
+                </div>
+                <div>
+                    <p class="text-sm font-medium uppercase text-yellow-500">Low Stock</p>
+                    <h3 class="text-3xl font-bold text-yellow-900 dark:text-yellow-200">
+                        {{ number_format($this->lowStockCount) }}
                     </h3>
                 </div>
             </div>
@@ -34,31 +61,31 @@
 
         <x-ui.card hoverless size="full" class="border-l-4 border-l-orange-500!">
             <div class="flex items-center gap-4">
-                <div class="p-3 bg-orange-200 dark:bg-orange-900/50 rounded-lg">
-                    <x-ui.icon name="exclamation-triangle" class="size-6" />
+                <div class="p-3 bg-orange-100 dark:bg-orange-900/50 rounded-lg">
+                    <x-ui.icon name="exclamation-triangle" class="size-6 text-orange-600! dark:text-orange-400!" />
                 </div>
                 <div>
-                    <p class="text-sm font-medium text-neutral-500">Low Stock</p>
-                    <h3 class="text-3xl font-bold text-neutral-900 dark:text-white">
-                        {{ number_format($this->lowStockCount) }}
-                    </h3>
+                    <p class="text-sm font-medium uppercase text-orange-500">Expiring Soon</p>
+                    <div class="flex items-baseline gap-2">
+                        <h3 class="text-3xl font-bold text-orange-900 dark:text-orange-200">{{ $this->expiringBatches->count() }}</h3>
+                        @if($this->expiringBatches->count() > 0)
+                            <span class="text-xs text-orange-500 font-bold animate-pulse">Action Needed</span>
+                        @endif
+                    </div>
                 </div>
             </div>
         </x-ui.card>
 
         <x-ui.card hoverless size="full" class="border-l-4 border-l-red-500!">
             <div class="flex items-center gap-4">
-                <div class="p-3 bg-red-200 dark:bg-red-900/50 rounded-lg">
-                    <x-ui.icon name="clock" class="size-6" />
+                <div class="p-3 bg-red-100 dark:bg-red-900/50 rounded-lg">
+                    <x-ui.icon name="x-circle" class="size-6 text-red-600! dark:text-red-400!" />
                 </div>
                 <div>
-                    <p class="text-sm font-medium text-neutral-500">Expiring Soon</p>
-                    <div class="flex items-baseline gap-2">
-                        <h3 class="text-3xl font-bold text-neutral-900 dark:text-white">{{ $this->expiringBatches->count() }}</h3>
-                        @if($this->expiringBatches->count() > 0)
-                            <span class="text-xs text-red-500 font-bold animate-pulse">Action Needed</span>
-                        @endif
-                    </div>
+                    <p class="text-sm font-medium uppercase text-red-500">Out of Stock</p>
+                    <h3 class="text-3xl font-bold text-red-900 dark:text-red-200">
+                        {{ number_format($this->outOfStockCount, 0) }}
+                    </h3>
                 </div>
             </div>
         </x-ui.card>
@@ -116,35 +143,27 @@
         </div>
 
         <div class="lg:col-span-1">
-            <x-ui.card hoverless size="full" class="h-full">
+            <x-ui.card hoverless size="full" class="min-h-100!">
                 <x-ui.heading level="h3" size="sm" class="mb-4 flex items-center justify-between">
                     <span>Critical Expiry</span>
                 </x-ui.heading>
 
-                <div class="space-y-4">
+                <div class="space-y-4 overflow-y-scroll h-80 pr-2">
                     @forelse($this->expiringBatches as $batch)
                         @php
-                            $catName = $batch->product->productCategory->name ?? '';
+                            $catName = $batch->product->category->name ?? '';
                             $isPharmacy = str_contains($catName, 'Pharmacy') || str_contains($catName, 'Medicine');
                         @endphp
                         <div class="flex items-start gap-3 pb-3 border-b border-white/10 last:border-0 last:pb-0">
-                            <div class="mt-1">
-                                @if($isPharmacy)
-                                    <div class="w-2 h-2 rounded-full bg-red-500 ring-4 ring-red-50" title="Pharmacy Item (< 3 months)"></div>
-                                @else
-                                    <div class="w-2 h-2 rounded-full bg-orange-400 ring-4 ring-orange-50" title="General Item (< 1 month)"></div>
-                                @endif
-                            </div>
-
                             <div class="flex-1 min-w-0">
-                                <p class="text-sm font-medium text-neutral-900 truncate">
-                                    {{ $batch->product->name }}
+                                <p class="text-xs font-medium text-neutral-900 dark:text-white truncate">
+                                    {{ $batch->product->brand_name }}
                                 </p>
-                                <p class="text-xs text-neutral-500">
-                                    {{ $batch->batch_number }} • {{ number_format($batch->quantity_on_hand, 0) }} left
+                                <p class="text-xxs text-neutral-500 dark:text-neutral-400 truncate">
+                                    {{ $batch->batch_number }} • {{ number_format($batch->quantity_on_hand, 2) }} left
                                 </p>
                                 @if($this->isSuperAdmin)
-                                    <p class="text-[10px] text-blue-600 mt-1 uppercase tracking-wide">
+                                    <p class="text-xxs text-blue-600 mt-1 uppercase tracking-wide">
                                         {{ $batch->branch->name }}
                                     </p>
                                 @endif
@@ -191,7 +210,7 @@
                             <tr class="border-b border-black/10 dark:border-white/10 dark:bg-[#0a1331] bg-neutral-100/10 text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                                 <th class="px-6 py-4">Name</th>
                                 <th class="px-6 py-4">SKU/Barcode</th>
-                                <th class="px-6 py-4">Category</th>
+                                <th class="px-6 py-4">Product Code</th>
                                 <th class="px-6 py-4 text-center">Current Stock</th>
                                 <th class="px-6 py-4 text-center">Reorder At</th>
                                 <th class="px-6 py-4 text-right">Selling Price</th>
@@ -202,13 +221,13 @@
                             @forelse ($this->lowStockProducts as $product)
                                 @php
                                     // Try to find packaging matching the base unit, otherwise take first available
-                                    $basePkg = $product->productPackaging->where('unit_id', $product->base_unit_id)->first()
-                                               ?? $product->productPackaging->first();
+                                    $basePkg = $product->productPackagings->where('unit_id', $product->base_unit_id)->first()
+                                               ?? $product->productPackagings->first();
                                 @endphp
 
                                 <tr class="hover:bg-white/5 transition-colors group">
                                     <td class="px-6 py-4">
-                                        <div class="font-medium text-white">{{ $product->name }}</div>
+                                        <div class="font-medium text-black dark:text-white">{{ $product->brand_name }}</div>
                                         <div class="text-xs text-neutral-500">{{ $product->generic_name }}</div>
                                     </td>
 
@@ -217,28 +236,28 @@
                                     </td>
 
                                     <td class="px-6 py-4">
-                                        <span class="inline-flex items-center rounded-md bg-blue-400/10 px-2 py-1 text-xs font-medium text-blue-400 ring-1 ring-inset ring-blue-400/20">
-                                            {{ $product->productCategory->name ?? 'Uncategorized' }}
+                                        <span class="inline-flex items-center rounded-md bg-blue-400/10 px-2 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 ring-1 ring-inset ring-blue-400/20">
+                                            {{ $product->product_code ?? 'N/A' }}
                                         </span>
                                     </td>
 
                                     <td class="px-6 py-4 text-center">
                                         @if(($product->total_stock ?? 0) <= 0)
-                                            <span class="inline-flex items-center rounded-full bg-red-400/10 px-2 py-1 text-xs font-medium text-red-400 ring-1 ring-inset ring-red-400/20">
+                                            <span class="inline-flex items-center rounded-md bg-red-400/10 px-2 py-1 text-xs font-medium text-red-400 ring-1 ring-inset ring-red-400/20">
                                                 Out of Stock
                                             </span>
                                         @else
-                                            <span class="text-orange-400 font-bold">{{ number_format($product->total_stock, 0) }}</span>
-                                            <span class="text-xs text-neutral-500 ml-1">{{ $product->unit->abbreviation ?? 'pcs' }}</span>
+                                            <span class="text-orange-400 font-bold">{{ number_format($product->total_stock, 2) }}</span>
+                                            <span class="text-xs text-neutral-500 ml-1">{{ $product->baseUnit->abbreviation ?? 'pcs' }}</span>
                                         @endif
                                     </td>
 
                                     <td class="px-6 py-4 text-center text-neutral-500">
-                                        {{ number_format($product->reorder_level, 0) }}
+                                        {{ number_format($product->reorder_level, 2) }}
                                     </td>
 
-                                    <td class="px-6 py-4 text-right text-white">
-                                        {{ number_format($basePkg->price ?? 0, 2) }}
+                                    <td class="px-6 py-4 text-right font-semibold text-black dark:text-white">
+                                        @money($basePkg->price)
                                     </td>
                                 </tr>
                             @empty

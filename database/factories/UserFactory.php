@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Factories;
 
 use App\Models\Branch;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-class UserFactory extends Factory
+final class UserFactory extends Factory
 {
     /**
      * Define the model's default state.

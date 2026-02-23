@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -18,7 +20,8 @@ return new class extends Migration
             $table->foreignId('supplier_id')->constrained();
             $table->foreignId('category_id')->constrained('product_categories');
             $table->foreignId('base_unit_id')->constrained('units');
-            $table->string('name');
+            $table->string('product_code')->unique();
+            $table->string('name')->nullable();
             $table->string('brand_name')->nullable();
             $table->string('generic_name')->nullable();
             $table->boolean('requires_prescription')->default(false);

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -17,7 +19,7 @@ return new class extends Migration
             $table->foreignId('supplier_id')->constrained('suppliers');
             $table->string('reference_no')->unique(); // Invoice No
             $table->string('status')->default('pending');
-            $table->decimal('total_cost', 10, 2);
+            $table->bigInteger('total_cost')->default(0);
             $table->timestamps();
         });
     }

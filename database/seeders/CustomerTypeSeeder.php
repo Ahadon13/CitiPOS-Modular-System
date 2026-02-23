@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Seeders;
 
 use App\Models\CustomerType;
 use Illuminate\Database\Seeder;
 
-class CustomerTypeSeeder extends Seeder
+final class CustomerTypeSeeder extends Seeder
 {
     /**
      * Run the database seeds.

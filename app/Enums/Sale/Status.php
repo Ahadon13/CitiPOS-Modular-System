@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Enums\Sale;
 
 enum Status: string
@@ -10,7 +12,7 @@ enum Status: string
 
     public function label(): string
     {
-        return match($this) {
+        return match ($this) {
             self::Pending => 'Pending',
             self::Completed => 'Completed',
             self::Cancelled => 'Cancelled',

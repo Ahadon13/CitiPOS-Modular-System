@@ -1,12 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Factories;
 
 use App\Enums\Product\CategoryType;
 use App\Models\Supplier;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-class ProductFactory extends Factory
+final class ProductFactory extends Factory
 {
     /**
      * Define the model's default state.

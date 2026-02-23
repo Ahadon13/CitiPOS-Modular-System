@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -18,7 +20,7 @@ return new class extends Migration
             $table->foreignId('unit_id')->constrained('units'); // The unit we bought (e.g. Box)
 
             $table->decimal('quantity', 10, 4); // Bought 1.5 Boxes
-            $table->decimal('cost_per_unit', 10, 2);
+            $table->bigInteger('cost_per_unit')->default(0);
 
             $table->string('batch_number')->nullable();
             $table->date('expiration_date')->nullable();

@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Models\CustomerType;
+use App\Models\ProductCategory;
 use Illuminate\Database\Migrations\Migration;
 
 return new class extends Migration
@@ -33,5 +35,15 @@ return new class extends Migration
         foreach (App\Enums\Permission::cases() as $permission) {
             Spatie\Permission\Models\Permission::findOrCreate($permission->value);
         }
+
+        // Create default customer types
+        CustomerType::create(['name' => 'Regular', 'discount_percentage' => 0]);
+        CustomerType::create(['name' => 'Senior Citizen', 'discount_percentage' => 20.00]);
+        CustomerType::create(['name' => 'PWD', 'discount_percentage' => 20.00]);
+
+        // Create default product categories
+        ProductCategory::create(['name' => 'Pharmacy']);
+        ProductCategory::create(['name' => 'Grocery']);
+        ProductCategory::create(['name' => 'Motor Parts']);
     }
 };

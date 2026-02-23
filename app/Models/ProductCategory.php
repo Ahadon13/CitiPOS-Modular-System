@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
+use App\Models\Product;
 use Illuminate\Database\Eloquent\Model;
 
-class ProductCategory extends Model
+final class ProductCategory extends Model
 {
     /**
      * The attributes that are mass assignable.
@@ -14,6 +17,11 @@ class ProductCategory extends Model
     protected $fillable = [
         'name',
     ];
+
+    public function products()
+    {
+        return $this->hasMany(Product::class);
+    }
 
     /**
      * Get the attributes that should be cast.
@@ -25,10 +33,5 @@ class ProductCategory extends Model
         return [
 
         ];
-    }
-
-    public function products()
-    {
-        return $this->hasMany(Product::class);
     }
 }

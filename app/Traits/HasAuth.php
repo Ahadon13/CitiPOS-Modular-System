@@ -17,15 +17,6 @@ use Livewire\Attributes\Computed;
 trait HasAuth
 {
     /**
-     * Access the internal service.
-     */
-    #[Computed]
-    protected function authService(): AuthenticatedService
-    {
-        return app(AuthenticatedService::class);
-    }
-
-    /**
      * Get current user (Throws 401 if guest).
      */
     #[Computed]
@@ -77,5 +68,14 @@ trait HasAuth
     public function currentBranchId(): ?int
     {
         return $this->user->branch_id;
+    }
+
+    /**
+     * Access the internal service.
+     */
+    #[Computed]
+    protected function authService(): AuthenticatedService
+    {
+        return app(AuthenticatedService::class);
     }
 }

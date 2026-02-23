@@ -4,24 +4,27 @@
 ])
 
 @php
+    use Illuminate\Support\Arr;
+
     $errorMessages = [];
-    
-    // 1. From $errors bag 
+
+    // 1. From $errors bag
     if ($name && $errors->has($name)) {
-        $errorMessages = array_merge($errorMessages, $errors->get($name));
+        // Use Arr::flatten to safely convert wildcard array-of-arrays into a flat list of strings
+        $errorMessages = array_merge($errorMessages, Arr::flatten($errors->get($name)));
     }
-    
+
     // 2. From manual messages prop
     if (filled($messages)) {
-        $errorMessages = array_merge($errorMessages, Arr::wrap($messages));
+        $errorMessages = array_merge($errorMessages, Arr::flatten(Arr::wrap($messages)));
     }
-    
+
     $errorMessages = array_filter(array_unique($errorMessages));
-    
+
     $hasErrors = !empty($errorMessages);
-    
+
     $classes = [
-        '[&>[data-slot=icon]]:!text-red-600 [&>[data-slot=icon]]:dark:!text-red-400', // force our icon to take red color 
+        '[&>[data-slot=icon]]:!text-red-600 [&>[data-slot=icon]]:dark:!text-red-400',
         'mt-2 text-sm text-red-600 dark:text-red-400',
         'flex items-start gap-2',
         'hidden' => !$hasErrors,
@@ -29,13 +32,13 @@
 @endphp
 
 @if ($hasErrors)
-    <div 
+    <div
         aria-live="polite"
         role="alert"
-        {{ $attributes->class(Arr::toCssClasses($classes)) }} 
+        {{ $attributes->class(Arr::toCssClasses($classes)) }}
         data-slot="error"
     >
-        <x-ui.icon name="exclamation-circle" class="flex-shrink-0 w-4 h-4 mt-0.5" />
+        <x-ui.icon name="exclamation-circle" class="shrink-0 w-4 h-4 mt-1" />
         <div class="flex-1">
             @if (count($errorMessages) === 1)
                 <span>{{ $errorMessages[0] }}</span>

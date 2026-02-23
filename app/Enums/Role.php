@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Enums;
 
 enum Role: string
@@ -9,7 +11,6 @@ enum Role: string
     case MotorShopCashier = 'motor-shop-cashier';
     case GroceryCashier = 'grocery-cashier';
     case Pharmacist = 'pharmacist';
-
 
     /**
      * Get all admin roles.

@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Data\ProcessSale;
 
 use App\Enums\Product\Unit;
 use Spatie\LaravelData\Data;
 
-class SaleItemData extends Data
+final class SaleItemData extends Data
 {
     public function __construct(
         public int $product_id,

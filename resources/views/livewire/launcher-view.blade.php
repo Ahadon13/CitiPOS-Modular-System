@@ -78,7 +78,7 @@
         </div>
 
         <div class="col-span-1 relative group cursor-pointer border-neutral-600/30 border border-t-0 border-dashed p-10 hover:bg-electric-blue/10 transition-colors">
-            <a href="{{ route('inventory.dashboard') }}" wire:navigate class="flex flex-col items-center text-center h-full w-full">
+            <a href="{{ route('inventory.index') }}" wire:navigate class="flex flex-col items-center text-center h-full w-full">
                 <div class="absolute -bottom-[1px] -right-[1px] w-4 h-4 border-r border-b border-electric-blue"></div>
                 <div class="absolute -top-[1px] -right-[1px] w-4 h-4 border-r border-t border-electric-blue"></div>
                 <div class="absolute -bottom-[1px] -left-[1px] w-4 h-4 border-l border-b border-electric-blue"></div>

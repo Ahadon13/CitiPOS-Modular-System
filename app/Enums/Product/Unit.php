@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Enums\Product;
 
 enum Unit: string
@@ -14,7 +16,7 @@ enum Unit: string
 
     public function label(): string
     {
-        return match($this) {
+        return match ($this) {
             self::Piece => 'Piece',
             self::Box => 'Box',
             self::Packet => 'Packet',

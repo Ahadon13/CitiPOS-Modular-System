@@ -1,14 +1,26 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
+use App\Models\ProductCategory;
+use App\Models\ProductPackaging;
+use App\Models\InventoryBatch;
+use App\Models\PurchaseItem;
+use App\Models\SaleItem;
+use App\Models\Supplier;
+use App\Models\Unit;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Money\Currency;
+use Money\Money;
 
-class Product extends Model
+final class Product extends Model
 {
     use HasFactory;
 
@@ -21,6 +33,7 @@ class Product extends Model
         'supplier_id',
         'category_id',
         'base_unit_id',
+        'product_code',
         'name',
         'brand_name',
         'generic_name',
@@ -29,27 +42,9 @@ class Product extends Model
         'attributes',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'id' => 'integer',
-            'supplier_id' => 'integer',
-            'category_id' => 'integer',
-            'base_unit_id' => 'integer',
-            'reorder_level' => 'decimal:4',
-            'requires_prescription' => 'boolean',
-            'attributes' => 'array',
-        ];
-    }
-
     public function scopeSearch(Builder $query, string $term): void
     {
-        $term = trim($term);
+        $term = mb_trim($term);
 
         if (empty($term)) {
             return;
@@ -57,18 +52,37 @@ class Product extends Model
 
         $query->where(function (Builder $q) use ($term) {
             // Search Main Product Fields
-            $q->where('name', 'like', "%{$term}%")
-              ->orWhere('brand_name', 'like', "%{$term}%")
-              ->orWhere('generic_name', 'like', "%{$term}%")
+            $q->where('products.name', 'like', "%{$term}%")
+                ->orWhere('products.brand_name', 'like', "%{$term}%")
+                ->orWhere('products.generic_name', 'like', "%{$term}%")
               // Search Related Category Name
-              ->orWhereHas('category', function ($subQ) use ($term) {
-                  $subQ->where('name', 'like', "%{$term}%");
-              })
+                ->orWhereHas('category', function ($subQ) use ($term) {
+                    $subQ->where('name', 'like', "%{$term}%");
+                })
               // Search Related Barcodes (in ProductPackaging)
-              ->orWhereHas('productPackagings', function ($subQ) use ($term) {
-                  $subQ->where('barcode', 'like', "%{$term}%");
-              });
+                ->orWhereHas('productPackagings', function ($subQ) use ($term) {
+                    $subQ->where('barcode', 'like', "%{$term}%");
+                });
         });
+    }
+
+    /**
+     * Helper to create or add an inventory batch for this product.
+     */
+    public function addInventoryBatch(
+        int $branchId,
+        float $quantity,
+        float $costPerUnit,
+        ?string $batchNumber = null,
+        ?string $expirationDate = null
+    ) {
+        return $this->inventoryBatches()->create([
+            'branch_id' => $branchId,
+            'batch_number' => $batchNumber,
+            'quantity_on_hand' => $quantity,
+            'cost_per_unit' => $costPerUnit, // New column
+            'expiration_date' => $expirationDate,
+        ]);
     }
 
     public function supplier(): BelongsTo
@@ -104,5 +118,39 @@ class Product extends Model
     public function purchaseItems(): HasMany
     {
         return $this->hasMany(PurchaseItem::class);
+    }
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'id' => 'integer',
+            'supplier_id' => 'integer',
+            'category_id' => 'integer',
+            'base_unit_id' => 'integer',
+            'requires_prescription' => 'boolean',
+            'attributes' => 'array',
+        ];
+    }
+
+    protected function currentCost(): Attribute
+    {
+        return Attribute::make(
+            get: function ($value) {
+                if (is_null($value)) {
+                    return null;
+                }
+
+                // If it's already a Money object, return it;
+                // otherwise, convert the database string/int
+                return $value instanceof Money
+                    ? $value
+                    : new Money($value, new Currency('PHP')); // Use your default currency
+            }
+        );
     }
 }

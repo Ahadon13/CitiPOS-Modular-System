@@ -1,12 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
+use App\Casts\MoneyCast;
+use App\Models\Sale;
+use App\Models\Product;
+use App\Models\InventoryBatch;
+use App\Models\Unit;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class SaleItem extends Model
+final class SaleItem extends Model
 {
     use HasFactory;
 
@@ -22,25 +29,9 @@ class SaleItem extends Model
         'unit_id',
         'quantity',
         'price_at_moment',
+        'cost_at_moment',
         'subtotal',
     ];
-
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'id' => 'integer',
-            'sale_id' => 'integer',
-            'product_id' => 'integer',
-            'inventory_batch_id' => 'integer',
-            'price_at_moment' => 'decimal:2',
-            'subtotal' => 'decimal:2',
-        ];
-    }
 
     public function sale(): BelongsTo
     {
@@ -60,5 +51,25 @@ class SaleItem extends Model
     public function unit(): BelongsTo
     {
         return $this->belongsTo(Unit::class);
+    }
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'id' => 'integer',
+            'sale_id' => 'integer',
+            'product_id' => 'integer',
+            'inventory_batch_id' => 'integer',
+            'unit_id' => 'integer',
+            'quantity' => 'decimal:2',
+            'price_at_moment' => MoneyCast::class,
+            'cost_at_moment' => MoneyCast::class,
+            'subtotal' => MoneyCast::class,
+        ];
     }
 }

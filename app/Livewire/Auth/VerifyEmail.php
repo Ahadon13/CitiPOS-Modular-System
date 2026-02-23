@@ -22,7 +22,7 @@ final class VerifyEmail extends Component
             return;
         }
 
-        $authUser->sendEmailVerificationNotification(); 
+        $authUser->sendEmailVerificationNotification();
 
         Session::flash('status', 'verification-link-sent');
     }

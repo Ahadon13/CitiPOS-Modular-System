@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Actions\Auth;
 
 use App\Data\Auth\LoginUserData;
@@ -7,7 +9,7 @@ use App\Models\User;
 use App\Traits\HasDbTransaction;
 use Illuminate\Support\Facades\Hash;
 
-class LoginUser
+final class LoginUser
 {
     use HasDbTransaction;
 

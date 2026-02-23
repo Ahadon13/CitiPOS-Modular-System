@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -18,7 +20,7 @@ return new class extends Migration
 
             // Decimal for conversion (e.g., 0.5 if it's half a kilo)
             $table->decimal('conversion_factor', 10, 4)->default(1);
-            $table->decimal('price', 10, 2);
+            $table->bigInteger('price')->default(0);
             $table->string('barcode')->unique()->nullable();
             $table->timestamps();
         });

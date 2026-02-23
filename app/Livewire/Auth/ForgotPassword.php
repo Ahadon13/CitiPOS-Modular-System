@@ -5,16 +5,13 @@ declare(strict_types=1);
 namespace App\Livewire\Auth;
 
 use App\Livewire\Concerns\HasToast;
-use App\Support\Toast;
-use Filament\Forms\Concerns\InteractsWithForms;
-use Filament\Forms\Contracts\HasForms;
 use Illuminate\Support\Facades\Password;
-use Livewire\Attributes\Layout;
 use Livewire\Component;
 
-class ForgotPassword extends Component
+final class ForgotPassword extends Component
 {
     use HasToast;
+
     public string $email;
 
     public function sendPasswordResetLink(): void

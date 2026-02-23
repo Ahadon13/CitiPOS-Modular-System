@@ -1,13 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
+use App\Casts\MoneyCast;
+use App\Models\Branch;
+use App\Models\Customer;
+use App\Models\SaleItem;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Sale extends Model
+final class Sale extends Model
 {
     use HasFactory;
 
@@ -24,22 +31,6 @@ class Sale extends Model
         'grand_total',
         'status',
     ];
-
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'id' => 'integer',
-            'branch_id' => 'integer',
-            'user_id' => 'integer',
-            'customer_id' => 'integer',
-            'grand_total' => 'decimal:2',
-        ];
-    }
 
     public function branch(): BelongsTo
     {
@@ -59,5 +50,21 @@ class Sale extends Model
     public function saleItems(): HasMany
     {
         return $this->hasMany(SaleItem::class);
+    }
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'id' => 'integer',
+            'branch_id' => 'integer',
+            'user_id' => 'integer',
+            'customer_id' => 'integer',
+            'grand_total' => MoneyCast::class,
+        ];
     }
 }

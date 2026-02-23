@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Factories;
 
 use App\Enums\Product\Unit;
@@ -8,7 +10,7 @@ use App\Models\Product;
 use App\Models\Sale;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-class SaleItemFactory extends Factory
+final class SaleItemFactory extends Factory
 {
     /**
      * Define the model's default state.

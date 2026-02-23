@@ -55,7 +55,7 @@
         <script>
             loadDarkMode()
         </script>
-        <x-ui.toast :maxToasts="1" />
+        <x-ui.toast :maxToasts="10" position="top-right" />
     </body>
 
 </html>

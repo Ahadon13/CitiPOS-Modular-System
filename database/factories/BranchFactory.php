@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-class BranchFactory extends Factory
+final class BranchFactory extends Factory
 {
     /**
      * Define the model's default state.

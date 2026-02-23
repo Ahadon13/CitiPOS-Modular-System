@@ -1,13 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
+use App\Casts\MoneyCast;
+use App\Models\Branch;
+use App\Models\Product;
+use App\Models\SaleItem;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class InventoryBatch extends Model
+final class InventoryBatch extends Model
 {
     use HasFactory;
 
@@ -22,23 +28,8 @@ class InventoryBatch extends Model
         'batch_number',
         'expiration_date',
         'quantity_on_hand',
+        'cost_per_unit',
     ];
-
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'id' => 'integer',
-            'branch_id' => 'integer',
-            'product_id' => 'integer',
-            'quantity_on_hand' => 'decimal:4',
-            'expiration_date' => 'date',
-        ];
-    }
 
     public function branch(): BelongsTo
     {
@@ -55,4 +46,20 @@ class InventoryBatch extends Model
         return $this->hasMany(SaleItem::class);
     }
 
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'id' => 'integer',
+            'branch_id' => 'integer',
+            'product_id' => 'integer',
+            'expiration_date' => 'date',
+            'quantity_on_hand' => 'decimal:2',
+            'cost_per_unit' => MoneyCast::class,
+        ];
+    }
 }

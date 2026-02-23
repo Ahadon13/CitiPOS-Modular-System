@@ -1,17 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Actions\POS;
 
-use App\Enums\Sale\Status;
-use App\Data\ProcessSale\SaleItemData;
 use App\Data\ProcessSale\SaleData;
-use App\Models\Sale;
+use App\Data\ProcessSale\SaleItemData;
+use App\Enums\Sale\Status;
 use App\Models\InventoryBatch;
+use App\Models\Sale;
 use App\Traits\HasDbTransaction;
 use Exception;
 use Illuminate\Support\Str;
 
-class ProcessSale
+final class ProcessSale
 {
     use HasDbTransaction;
 
@@ -44,14 +46,14 @@ class ProcessSale
                 // If specific batch not provided, find the oldest batch (FIFO)
                 $batchId = $item->inventory_batch_id;
 
-                if (!$batchId) {
+                if (! $batchId) {
                     $batch = InventoryBatch::where('product_id', $item->product_id)
                         ->where('branch_id', $data->branch_id)
                         ->where('quantity_on_hand', '>', 0)
                         ->orderBy('expiration_date', 'asc') // FIFO
                         ->first();
 
-                    if (!$batch || $batch->quantity_on_hand < $item->quantity) {
+                    if (! $batch || $batch->quantity_on_hand < $item->quantity) {
                         // Your trait will catch this and rollback everything
                         throw new Exception("Insufficient stock for Product ID: {$item->product_id}");
                     }
@@ -60,7 +62,7 @@ class ProcessSale
                 } else {
                     $batch = InventoryBatch::findOrFail($batchId);
                     if ($batch->quantity_on_hand < $item->quantity) {
-                         throw new Exception("Insufficient stock in selected batch.");
+                        throw new Exception('Insufficient stock in selected batch.');
                     }
                 }
 

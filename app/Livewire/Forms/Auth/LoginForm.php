@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Livewire\Forms\Auth;
 
-use App\Models\User;
 use App\Actions\Auth\LoginUser;
 use App\Data\Auth\LoginUserData;
+use App\Models\User;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
@@ -23,7 +23,6 @@ final class LoginForm extends Form
     public string $password = '';
 
     /**
-     * @return User
      * @throws ValidationException
      */
     public function authenticate(): User

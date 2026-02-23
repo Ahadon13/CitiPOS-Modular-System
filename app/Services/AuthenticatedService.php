@@ -1,12 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Enums\Role;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 
-class AuthenticatedService
+final class AuthenticatedService
 {
     /**
      * Get the currently authenticated user.

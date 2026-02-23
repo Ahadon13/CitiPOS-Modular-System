@@ -1,12 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Seeders;
 
 use App\Models\Branch;
-use App\Models\ProductCategory;
-use App\Models\CustomerType;
 use App\Models\InventoryBatch;
 use App\Models\Product;
+use App\Models\ProductCategory;
 use App\Models\ProductPackaging;
 use App\Models\Supplier;
 use App\Models\Unit;
@@ -14,7 +15,7 @@ use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
-class DatabaseSeeder extends Seeder
+final class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
@@ -45,17 +46,14 @@ class DatabaseSeeder extends Seeder
 
         // 3. Create Settings (Categories & Units)
         // These replace your old Enums
-        $catPharmacy = ProductCategory::create(['name' => 'Pharmacy']);
-        $catMotor = ProductCategory::create(['name' => 'Motor Parts']);
+        $catPharmacy = ProductCategory::where('name', 'Pharmacy')->first();
+        $catMotor = ProductCategory::where('name', 'Motor Parts')->first();
 
         $unitPiece = Unit::create(['name' => 'Piece', 'abbreviation' => 'pc', 'allow_decimal' => false]);
         $unitBox = Unit::create(['name' => 'Box', 'abbreviation' => 'box', 'allow_decimal' => false]);
         $unitSet = Unit::create(['name' => 'Set', 'abbreviation' => 'set', 'allow_decimal' => false]);
 
         // 4. Create Customer Types
-        CustomerType::create(['name' => 'Regular', 'discount_percentage' => 0]);
-        CustomerType::create(['name' => 'Senior Citizen', 'discount_percentage' => 20.00]);
-        CustomerType::create(['name' => 'PWD', 'discount_percentage' => 20.00]);
 
         // 5. Create Suppliers
         $unilab = Supplier::create(['name' => 'Unilab Phils', 'contact_info' => '09123456789']);
@@ -68,7 +66,7 @@ class DatabaseSeeder extends Seeder
             'supplier_id' => $unilab->id,
             'category_id' => $catPharmacy->id, // Linked to ProductCategory
             'base_unit_id' => $unitPiece->id,  // We count stock in "Pieces"
-
+            'product_code' => 'BIO-500MG-001', // Unique product code for easy reference
             'name' => 'Biogesic 500mg',
             'brand_name' => 'Unilab',
             'generic_name' => 'Paracetamol',
@@ -81,9 +79,10 @@ class DatabaseSeeder extends Seeder
         // We only create EXTRA packaging here.
         ProductPackaging::create([
             'product_id' => $biogesic->id,
-            'unit_id' => $unitBox->id, // Selling by Box
-            'conversion_factor' => 500, // 1 Box = 500 Pieces
-            'price' => 2300.00,
+            'unit_id' => $unitBox->id,
+            'conversion_factor' => 500,
+            // CHANGED: 2300.00 becomes 230000 (cents)
+            'price' => 230000,
             'barcode' => 'BIO-BOX-001',
         ]);
 
@@ -103,13 +102,13 @@ class DatabaseSeeder extends Seeder
             'supplier_id' => $yamaha->id,
             'category_id' => $catMotor->id,
             'base_unit_id' => $unitSet->id, // We count stock in "Sets"
-
+            'product_code' => 'YP-BRAKE-001', // Unique product code for easy reference
             'name' => 'Front Brake Pad',
             'brand_name' => 'Yamaha Genuine',
             'generic_name' => 'Brake Pad',
             'attributes' => [
                 'compatible_models' => ['Mio i125', 'Mio Soul i', 'Mio Sporty'],
-                'part_number' => 'YP-BRAKE-001'
+                'part_number' => 'YP-BRAKE-001',
             ],
         ]);
 
@@ -122,7 +121,8 @@ class DatabaseSeeder extends Seeder
             'product_id' => $brakePad->id,
             'unit_id' => $unitSet->id,
             'conversion_factor' => 1,
-            'price' => 350.00,
+            // CHANGED: 350.00 becomes 35000 (cents)
+            'price' => 35000,
             'barcode' => 'MIO-BRAKE-SET',
         ]);
 

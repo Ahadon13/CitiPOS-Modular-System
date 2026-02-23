@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Actions\Auth\RegisterUser;
 use App\Actions\Inventory\CreateProduct;
 use App\Actions\POS\ProcessSale;
+use App\Data\Auth\RegisterUserData;
 use App\Data\Inventory\ProductData;
 use App\Data\Inventory\ProductUnitData;
-use App\Data\Auth\RegisterUserData;
 use App\Data\ProcessSale\SaleData;
 use App\Data\ProcessSale\SaleItemData;
 use App\Enums\Product\CategoryType;
@@ -43,7 +45,7 @@ test('it can register a user successfully', function () {
     $this->assertDatabaseHas('users', [
         'username' => 'johndoe123',
         'role' => 'cashier', // Ensure this matches Role::Cashier->value if it is a BackedEnum
-        'branch_id' => $branch->id
+        'branch_id' => $branch->id,
     ]);
 
     expect(Hash::check('securepassword', $user->password))->toBeTrue();
@@ -85,7 +87,7 @@ test('it processes sale and deducts inventory correctly', function () {
     $user = User::factory()->create(['branch_id' => $branch->id]);
 
     $product = Product::create([
-        'supplier_id' => 1, 'name' => 'Test Item', 'category_type' => 'General'
+        'supplier_id' => 1, 'name' => 'Test Item', 'category_type' => 'General',
     ]);
 
     // Create initial stock
@@ -93,7 +95,7 @@ test('it processes sale and deducts inventory correctly', function () {
         'branch_id' => $branch->id,
         'product_id' => $product->id,
         'quantity_on_hand' => 100,
-        'batch_number' => 'BATCH-001'
+        'batch_number' => 'BATCH-001',
     ]);
 
     $saleItem = new SaleItemData(
@@ -121,20 +123,20 @@ test('it processes sale and deducts inventory correctly', function () {
     // Check Sale Record
     $this->assertDatabaseHas('sales', [
         'id' => $sale->id,
-        'grand_total' => 500.00
+        'grand_total' => 500.00,
     ]);
 
     // Check Sale Item
     $this->assertDatabaseHas('sale_items', [
         'sale_id' => $sale->id,
         'product_id' => $product->id,
-        'quantity' => 10
+        'quantity' => 10,
     ]);
 
     // Check Inventory Deduction (100 - 10 = 90)
     $this->assertDatabaseHas('inventory_batches', [
         'id' => $batch->id,
-        'quantity_on_hand' => 90
+        'quantity_on_hand' => 90,
     ]);
 });
 
@@ -182,6 +184,6 @@ test('it rolls back transaction if inventory is insufficient', function () {
     // Ensure Inventory was NOT deducted
     $this->assertDatabaseHas('inventory_batches', [
         'id' => $batch->id,
-        'quantity_on_hand' => 5
+        'quantity_on_hand' => 5,
     ]);
 });

@@ -1,6 +1,8 @@
 import "./globals/theme.js"; /* By Sheaf.dev */
-
+import "./globals/modals.js";
 import "./bootstrap";
+// Spatie
+import "../../vendor/spatie/livewire-filepond/resources/dist/filepond";
 import {
     Livewire,
     Alpine,

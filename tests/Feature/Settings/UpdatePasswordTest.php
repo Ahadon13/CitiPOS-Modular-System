@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Livewire\Settings\Account;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
-use Livewire\Livewire;
+
 use function Pest\Livewire\livewire;
 
 test('password can be updated', function () {

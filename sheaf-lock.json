@@ -1,5 +1,12 @@
 {
-    "files": [],
+    "files": {
+        "resources/js/globals/modals.js": [
+            "modal"
+        ],
+        "resources/js/utils.js": [
+            "modal"
+        ]
+    },
     "helpers": [],
     "internalDependencies": {
         "button": [
@@ -13,7 +20,9 @@
             "navbar",
             "navlist",
             "sidebar",
-            "input"
+            "input",
+            "breadcrumbs",
+            "button"
         ],
         "badge": [
             "navbar",

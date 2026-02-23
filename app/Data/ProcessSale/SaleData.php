@@ -1,15 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Data\ProcessSale;
 
 use Spatie\LaravelData\Data;
 
-class SaleData extends Data
+final class SaleData extends Data
 {
     public function __construct(
         public int $branch_id,
         public int $user_id,
-        public ?int $customer_id = null,
+        public ?int $customer_id,
         public array $items
     ) {}
 

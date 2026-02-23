@@ -11,14 +11,16 @@
 
         <x-ui.layout.main>
             <x-ui.layout.header>
-                @if ($inventory)
-                <x-ui.navbar>
-                    <x-ui.navbar.item class="bg-[--alpha(var(--color-primary)_/5%)]" label="POS Terminal" icon="shopping-cart" href="{{ route('pos.dashboard') }}" />
-                </x-ui.navbar>
-                @endif
+                <!-- Realtime Date and Time -->
+                <div class="flex flex-col items-start ml-5" x-data="{ time: new Date().toLocaleTimeString() }" x-init="setInterval(() => time = new Date().toLocaleTimeString(), 1000)">
+                    <span class="font-semibold" x-text="time"></span>
+                    <span class="text-xs font-medium text-gray-500">
+                        {{ now()->format('F j, Y') }}
+                    </span>
+                </div>
 
                 <!-- User menu, search, etc. -->
-                <div class="ml-auto flex items-center gap-3 mr-2">
+                <div class="ml-auto flex items-center gap-3 mr-5">
                     <x-ui.theme-switcher.variants.inline />
                     <x-ui.separator vertical />
                     {{-- User Information --}}
@@ -34,7 +36,7 @@
             </x-ui.layout.header>
 
             <!-- Your page content -->
-            <div class="m-6">
+            <div class="m-5">
                 {{ $slot }}
             </div>
         </x-ui.layout.main>

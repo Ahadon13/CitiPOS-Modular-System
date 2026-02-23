@@ -44,7 +44,7 @@
         'isolate',
         '[grid-area:sidebar]',
         'z-40 bg-white dark:bg-card lg:block',
-        'border-r dark:border-white/5 border-black/5',
+        'border-r dark:border-white/10 border-black/10',
         'transition-[width] duration-500',
         'overflow-x-visible',
         '!overflow-y-auto' => $scrollable, // Only make scrollable if needed

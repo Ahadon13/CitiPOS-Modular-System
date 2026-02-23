@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -19,7 +21,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained();
             $table->foreignId('customer_id')->nullable()->constrained();
             $table->string('reference_no')->unique();
-            $table->decimal('grand_total', 10, 2);
+            $table->bigInteger('grand_total')->default(0);
             $table->string('status')->default('completed');
             $table->timestamps();
         });
