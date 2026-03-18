@@ -1,5 +1,5 @@
 <x-slot:title>
-    {{ $title ?? 'POSAI' }}
+    {{ $title ?? 'CitiPOS' }}
 </x-slot:title>
 
 <x-layouts.base>

@@ -20,7 +20,10 @@ final class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        if ($this->app->environment('local') && class_exists(\Laravel\Telescope\TelescopeServiceProvider::class)) {
+            $this->app->register(\Laravel\Telescope\TelescopeServiceProvider::class);
+            $this->app->register(TelescopeServiceProvider::class);
+        }
     }
 
     /**
@@ -58,11 +61,11 @@ final class AppServiceProvider extends ServiceProvider
         // Add the custom @money directive
         Blade::directive('money', function ($expression) {
             return "<?php echo \App\Support\MoneyHelper::format($expression); ?>";
-        });
+});
 
-        // Add the custom @datetime directive
-        Blade::directive('datetime', function ($expression) {
-            return "<?php echo \App\Support\DateHelper::format($expression); ?>";
-        });
-    }
+// Add the custom @datetime directive
+Blade::directive('datetime', function ($expression) {
+return "<?php echo \App\Support\DateHelper::format($expression); ?>";
+});
+}
 }

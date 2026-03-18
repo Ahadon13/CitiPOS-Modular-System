@@ -5,8 +5,8 @@
 
 @php
     $classes = [
-        '[grid-area:header] z-40 p-2 my-auto min-h-[var(--header-height)] border-b flex items-center dark:border-b-white/10 border-neutral-800/10',
-        'sticky top-0 bg-white dark:bg-card' => $sticky,
+        '[grid-area:header] bg-white dark:bg-card z-40 p-2 my-auto min-h-[var(--header-height)] border-b flex items-center dark:border-b-white/10 border-neutral-800/10',
+        'sticky top-0' => $sticky,
     ];
 @endphp
 

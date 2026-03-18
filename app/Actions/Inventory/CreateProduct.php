@@ -16,11 +16,12 @@ final class CreateProduct
     public function execute(ProductData $productData, InventoryBatchData $batchData): Product|false
     {
         return $this->dbTransaction(function () use ($productData, $batchData) {
-
             // 1. Create the Main Product Record
             $product = Product::create([
                 'supplier_id' => $productData->supplier_id,
-                'category_id' => $productData->product_category_id,
+                'category_id' =>  $productData->category_id,
+                // remember that the category is actually the "product_category_id" in the products table, which references the "categories" table
+                'product_category_id' => $productData->product_category_id,
                 'base_unit_id' => $productData->base_unit_id,
                 'product_code' => $productData->product_code,
                 'name' => $productData->name,
@@ -36,7 +37,7 @@ final class CreateProduct
                 'unit_id' => $productData->base_unit_id,
                 'conversion_factor' => $productData->conversion,
                 'price' => $productData->base_price,
-                'barcode' => $productData->base_barcode,
+                'barcode' => !empty($productData->base_barcode) ? $productData->base_barcode : null,
             ]);
 
             // 3. Create Additional Packagings
@@ -45,7 +46,7 @@ final class CreateProduct
                     'unit_id' => $pkg['unit_id'],
                     'conversion_factor' => $pkg['conversion_factor'],
                     'price' => $pkg['price'],
-                    'barcode' => $pkg['barcode'] ?? null,
+                    'barcode' => !empty($pkg['barcode']) ? $pkg['barcode'] : null,
                 ]);
             }
 

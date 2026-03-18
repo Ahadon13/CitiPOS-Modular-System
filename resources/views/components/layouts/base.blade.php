@@ -8,7 +8,7 @@
                 content="width=device-width, initial-scale=1.0">
         <meta name="csrf-token"
                 content="{{ csrf_token() }}">
-        <title> POSAI {{ isset($title) ? '| ' . $title : '' }}</title>
+        <title> CitiPOS {{ isset($title) ? '| ' . $title : '' }}</title>
         <link rel="icon" type="image/x-icon" href="{{ asset('favicon.png') }}">
 
         <tallstackui:script />
@@ -56,6 +56,7 @@
             loadDarkMode()
         </script>
         <x-ui.toast :maxToasts="10" position="top-right" />
+        <x-ui.confirm-modal />
     </body>
 
 </html>

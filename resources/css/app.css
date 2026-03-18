@@ -157,3 +157,10 @@
 button {
     cursor: pointer;
 }
+
+.calc-btn-primary {
+    @apply flex items-center justify-center rounded-xl h-14 text-xl font-medium text-white shadow-sm transition-all active:scale-95 bg-primary-500 hover:bg-primary-600;
+}
+.calc-btn-neutral {
+    @apply flex items-center justify-center rounded-xl h-14 font-medium shadow-sm transition-all active:scale-95 bg-white dark:bg-white/5 border border-black/10 dark:border-white/10 text-neutral-900 dark:text-white hover:bg-neutral-50 dark:hover:bg-white/10;
+}

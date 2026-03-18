@@ -67,7 +67,7 @@
                 id: Date.now() + Math.random(),
                 type: details.type || 'info',
                 content: details.content,
-                duration: details.duration || 30000,
+                duration: details.duration || 10000,
                 showProgress: details.showProgress !== false
             };
 

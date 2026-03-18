@@ -26,7 +26,7 @@
     $classes = [
         '[&>[data-slot=icon]]:!text-red-600 [&>[data-slot=icon]]:dark:!text-red-400',
         'mt-2 text-sm text-red-600 dark:text-red-400',
-        'flex items-start gap-2',
+        'flex items-center gap-2',
         'hidden' => !$hasErrors,
     ];
 @endphp
@@ -38,7 +38,7 @@
         {{ $attributes->class(Arr::toCssClasses($classes)) }}
         data-slot="error"
     >
-        <x-ui.icon name="exclamation-circle" class="shrink-0 w-4 h-4 mt-1" />
+        <x-ui.icon name="exclamation-circle" class="shrink-0 w-4 h-4" />
         <div class="flex-1">
             @if (count($errorMessages) === 1)
                 <span>{{ $errorMessages[0] }}</span>

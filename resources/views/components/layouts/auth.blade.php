@@ -1,104 +1,57 @@
 @props(['title' => ''])
 <x-layouts.base :title="$title">
-    <div class="relative z-10 mx-auto flex h-screen overflow-hidden flex-col">
+    <div class="relative flex min-h-screen w-full flex-col overflow-hidden bg-neutral-50 dark:bg-[#060A23] z-0">
 
-            <!-- Top Border Pattern -->
-            <div class="grid grid-cols-5">
-                <div class="dark:border-neutral-800 border-neutral-400 border !border-l-0 !border-r-0 !border-t-0 border-dashed py-6"
-                     style="mask: linear-gradient(to right, transparent 0%, black 80%, black 100%); -webkit-mask: linear-gradient(to right, transparent 0%, black 80%, black 100%);">
-                </div>
-                <div class="dark:border-neutral-800 border-neutral-400 bg-background z-40 col-span-3 border !border-t-0 border-dashed py-10">
-                </div>
-                <div class="dark:border-neutral-800 border-neutral-400 border !border-l-0 !border-r-0 !border-t-0 border-dashed py-6"
-                     style="mask: linear-gradient(to left, transparent 0%, black 80%, black 100%); -webkit-mask: linear-gradient(to left, transparent 0%, black 80%, black 100%);">
-                </div>
-            </div>
+        <div class="absolute -top-40 -left-40 size-125 bg-primary-400 dark:bg-green-500/20! rounded-full mix-blend-multiply filter blur-[100px] opacity-30 animate-blob pointer-events-none">
+        </div>
+        <div class="absolute -bottom-40 -right-40 size-125 bg-primary-400 dark:bg-green-500/20! rounded-full mix-blend-multiply filter blur-[100px] opacity-30 animate-blob pointer-events-none animation-delay-2000">
+        </div>
 
-            <!-- Main Section -->
-            <div class="grid grid-cols-5">
-                <div class="dark:border-neutral-800 border-neutral-400 hidden border !border-l-0 !border-r-0 border-t-0 border-dashed py-6 lg:flex"
-                     style="mask: linear-gradient(to right, transparent 0%, black 80%, black 100%); -webkit-mask: linear-gradient(to right, transparent 0%, black 80%, black 100%);">
+        <div class="absolute top-6 left-6 md:top-10 md:left-10 z-20">
+            <a href="/" class="flex items-center gap-2 text-sm font-medium text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors">
+                <x-ui.icon name="arrow-left" class="size-4" />
+                Back to Home
+            </a>
+        </div>
+
+        <div class="mx-auto flex w-full max-w-7xl flex-1 flex-col items-center justify-center px-6 pt-16 lg:flex-row lg:gap-24 z-10">
+
+            <div class="w-full max-w-lg mb-12 lg:mb-0 space-y-8">
+                <div class="flex items-center gap-3">
+                    <x-app.logo />
                 </div>
-                <!-- Form section -->
-                <div
-                     class="dark:border-neutral-800 border-neutral-400 before:dark:border-neutral-800 relative col-span-5 border border-t-0 border-dashed before:absolute before:-left-16 before:-top-16 before:h-32 before:w-32 before:animate-pulse before:rounded-full before:border before:border-dashed before:content-[''] lg:col-span-3 dark:before:border-white/20">
-                    <div class="mx-auto flex max-w-sm flex-col items-center justify-center py-4 md:min-h-[60vh]">
-                        <div class="py-6">
-                            <x-app.logo />
-                        </div>
-                        {{ $slot }}
+
+                <div class="space-y-4">
+                    <h1 class="text-4xl md:text-5xl font-extrabold text-[#0a1331] dark:text-white tracking-tight">
+                        Welcome back
+                    </h1>
+                    <p class="text-lg text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                        Continue with your account and manage sales, inventory, and reports in one dashboard.
+                    </p>
+                </div>
+
+                <div class="space-y-4 pt-4 hidden sm:block">
+                    <div class="rounded-2xl border border-neutral-300/60 dark:border-white/10 bg-white/50 dark:bg-[#0a1331]/50 px-6 py-4">
+                        <p class="text-neutral-700 dark:text-neutral-300">Real-time sales monitoring.</p>
+                    </div>
+                    <div class="rounded-2xl border border-neutral-300/60 dark:border-white/10 bg-white/50 dark:bg-[#0a1331]/50 px-6 py-4">
+                        <p class="text-neutral-700 dark:text-neutral-300">Built for Filipino stores with local payment workflows.</p>
                     </div>
                 </div>
-
-                <div class="dark:border-neutral-800 border-neutral-400 hidden border !border-l-0 !border-r-0 border-t-0 border-dashed py-6 lg:flex"
-                     style="mask: linear-gradient(to left, transparent 0%, black 80%, black 100%); -webkit-mask: linear-gradient(to left, transparent 0%, black 80%, black 100%);">
-                </div>
             </div>
 
-            <!-- Empty bottom -->
-            <div class="grid grow grid-cols-5">
-                <div class="dark:border-neutral-800 border-neutral-400 hidden border !border-b-0 !border-l-0 !border-r-0 border-t-0 border-dashed py-6 lg:flex"
-                     style="mask: linear-gradient(to right, transparent 0%, black 80%, black 100%); -webkit-mask: linear-gradient(to right, transparent 0%, black 80%, black 100%);">
-                </div>
-                <div
-                     class="dark:border-neutral-800 border-neutral-400 before:dark:border-neutral-800 relative col-span-5 border !border-b-0 border-t-0 border-dashed py-10 before:absolute before:animate-pulse before:-right-10 before:-top-10 before:z-40 before:h-20 before:w-20 before:rotate-45 before:border before:border-dashed before:bg-background before:content-[''] lg:col-span-3 dark:before:border-white/20">
-                    <!-- SVG -->
-                    {{-- <svg class="pointer-events-none absolute -right-10 -top-10 z-50 h-20 w-20 rotate-45"
-                         viewBox="0 0 80 80">
-                        <defs>
-                            <radialGradient id="particle-glow"
-                                            cx="50%"
-                                            cy="50%"
-                                            r="4">
-                                <stop offset="0%"
-                                      style="stop-color:#3b82f6;stop-opacity:1" />
-                                <stop offset="100%"
-                                      style="stop-color:#60a5fa;stop-opacity:0.8" />
-                                <stop offset="100%"
-                                      style="stop-color:#93c5fd;stop-opacity:0" />
-                            </radialGradient>
-                            <path id="diamond-path"
-                                  d="M 80,80 L 80,0 L 0,0 L 0,80 Z"
-                                  fill="none"
-                                  stroke="none" />
-                        </defs>
-                        <g>
-                            <line x1="-30"
-                                  y1="2"
-                                  x2="20"
-                                  y2="0"
-                                  stroke="var(--color-primary-brand)"
-                                  stroke-width="3"
-                                  opacity="1"
-                                  stroke-linecap="round">
-                                <animateMotion dur="3.8s"
-                                               repeatCount="indefinite"
-                                               rotate="auto">
-                                    <mpath href="#diamond-path" />
-                                </animateMotion>
-                            </line>
-
-                            <line x1="-6"
-                                  y1="3"
-                                  x2="6"
-                                  y2="1"
-                                  stroke="var(--color-primary-brand)"
-                                  stroke-width="2"
-                                  opacity="0.7"
-                                  stroke-linecap="round">
-                                <animateMotion dur="3.8s"
-                                               repeatCount="indefinite"
-                                               rotate="auto"
-                                               begin="-0.2s">
-                                    <mpath href="#diamond-path" />
-                                </animateMotion>
-                            </line>
-                        </g>
-                    </svg> --}}
-                </div>
-                <div class="dark:border-neutral-800 border-neutral-400 hidden border !border-b-0 !border-l-0 !border-r-0 border-t-0 border-dashed py-6 lg:flex"
-                     style="mask: linear-gradient(to left, transparent 0%, black 80%, black 100%); -webkit-mask: linear-gradient(to left, transparent 0%, black 80%, black 100%);">
-                </div>
+            <div class="w-full max-w-md lg:ml-auto">
+                {{ $slot }}
             </div>
+
+        </div>
+
+        <div class="w-full pb-8 text-center z-10">
+            <p class="text-sm text-neutral-500 dark:text-neutral-400">
+                By signing in, you agree to our
+                <a href="#" class="text-primary-600 hover:text-primary-700 dark:text-primary-400 hover:underline">Terms of Service</a> and
+                <a href="#" class="text-primary-600 hover:text-primary-700 dark:text-primary-400 hover:underline">Privacy Policy</a>.
+            </p>
+        </div>
     </div>
 </x-layouts.base>

@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Casts\MoneyCast;
+use App\Enums\Sale\Status;
 use App\Models\Branch;
 use App\Models\Customer;
 use App\Models\SaleItem;
 use App\Models\User;
+use App\Models\PaymentMethod;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -27,10 +29,18 @@ final class Sale extends Model
         'branch_id',
         'user_id',
         'customer_id',
-        'reference_no',
         'grand_total',
         'status',
+        'payment_method_id',
+        'payment_reference',
+        'amount_tendered',
+        'change_amount',
     ];
+
+    public function paymentMethod(): BelongsTo
+    {
+        return $this->belongsTo(PaymentMethod::class);
+    }
 
     public function branch(): BelongsTo
     {
@@ -64,7 +74,10 @@ final class Sale extends Model
             'branch_id' => 'integer',
             'user_id' => 'integer',
             'customer_id' => 'integer',
+            'status' => Status::class,
             'grand_total' => MoneyCast::class,
+            'amount_tendered' => MoneyCast::class,
+            'change_amount' => MoneyCast::class,
         ];
     }
 }

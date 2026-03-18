@@ -39,10 +39,10 @@
         <div class="hidden gap-4 lg:flex lg:items-center lg:justify-end">
             @guest
                 <div class="space-x-4">
-                    <a href="{{ route('login') }}"
-                       class="text-sm font-semibold leading-6 text-neutral-900 dark:text-neutral-200">Login</a>
-                    <a href="{{ route('register') }}"
-                       class="rounded-md border border-neutral-300/40 bg-white px-3 py-1 text-sm font-semibold text-neutral-900 dark:border-white/20 dark:bg-white/5 dark:text-white">Register</a>
+                    <a href="{{ route('auth.login') }}"
+                       class="text-sm font-semibold leading-6 text-neutral-900 dark:text-neutral-200">Sign in</a>
+                    {{-- <a href="{{ route('register') }}"
+                       class="rounded-md border border-neutral-300/40 bg-white px-3 py-1 text-sm font-semibold text-neutral-900 dark:border-white/20 dark:bg-white/5 dark:text-white">Register</a> --}}
                 </div>
             @endguest
         </div>
@@ -83,10 +83,10 @@
                 <div class="-my-6 divide-y divide-base-200/10">
                     <div class="py-6">
                         @guest
-                            <a href="{{ route('login') }}"
-                               class="-mx-3 block rounded-field px-3 py-2.5 text-base font-semibold leading-7 text hover:bg-base-200/10 bg-base-100/6">Login</a>
-                            <a href="{{ route('register') }}"
-                               class="mt-2 block rounded-md border ring-1 ring-base-200/10 bg-base-200/20 px-3 py-2.5 text-base font-semibold text-base-100">Register</a>
+                            <a href="{{ route('auth.login') }}"
+                               class="-mx-3 block rounded-field px-3 py-2.5 text-base font-semibold leading-7 text hover:bg-base-200/10 bg-base-100/6">Sign in</a>
+                            {{-- <a href="{{ route('register') }}"
+                               class="mt-2 block rounded-md border ring-1 ring-base-200/10 bg-base-200/20 px-3 py-2.5 text-base font-semibold text-base-100">Register</a> --}}
                         @endguest
                     </div>
                 </div>

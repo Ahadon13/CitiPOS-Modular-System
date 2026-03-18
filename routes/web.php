@@ -13,14 +13,13 @@ use App\Livewire\Auth\Login;
 use App\Livewire\Auth\Register;
 use App\Livewire\Auth\ResetPassword;
 use App\Livewire\Auth\VerifyEmail;
-use App\Livewire\Inventory\Pages\Pharmacy\Dashboard;
-use App\Livewire\Inventory\Pages\Pharmacy\Product;
-use App\Livewire\Inventory\Pages\Pharmacy\Product\CreateProduct;
-use App\Livewire\Inventory\Pages\Pharmacy\Product\ImportProduct;
-use App\Livewire\Inventory\Pages\Pharmacy\Purchase;
+// Inventory Pages
+use App\Livewire\Inventory\Pages\Pharmacy\{Dashboard, Product, Settings, Stocks, Transaction, Customer, Purchase};
+use App\Livewire\Inventory\Pages\Pharmacy\Product\{CreateProduct, EditProduct, ImportProduct };
+use App\Livewire\Inventory\Pages\Pharmacy\Purchase\{CreatePurchase, RecordPurchase};
+// POS Pages
+use App\Livewire\PointOfSale\Pages\Pharmacy\ProcessSale;
 use App\Livewire\LauncherView;
-use App\Livewire\Settings\Account;
-use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', Livewire\Home::class)->name('welcome');
@@ -36,27 +35,6 @@ Route::get('/forgot-password', ForgotPassword::class)->name('forgot-password');
 
 Route::get('reset-password/{token}', ResetPassword::class)->name('password.reset');
 
-// Route::middleware('auth')->group(function () {
-//     Route::get('/dashboard', Dashboard::class)->name('dashboard');
-//     Route::get('/settings/account', Account::class)->name('settings.account');
-// });
-
-// Route::middleware(['auth'])->group(function () {
-//     Route::get('/auth/verify-email', VerifyEmail::class)
-//         ->name('verification.notice');
-//     Route::post('/logout', Logout::class)
-//         ->name('app.auth.logout');
-//     Route::get('confirm-password', ConfirmPassword::class)
-//         ->name('password.confirm');
-// });
-
-// Route::middleware(['auth', 'signed'])->group(function () {
-//     Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
-//         $request->fulfill();
-
-//         return redirect(route('home'));
-//     })->name('verification.verify');
-// });
 
 /*
 *-----------------------------------------
@@ -113,13 +91,25 @@ Route::group([
                 'role:'.Role::Pharmacist->value,
             ],
         ], function () {
+            // DASHBOARD ROUTE
             Route::get('/dashboard', Dashboard::class)->name('dashboard');
-
+            // PRODUCT ROUTES
             Route::get('/products', Product::class)->name('products');
             Route::get('/products/create', CreateProduct::class)->name('products.create');
+            Route::get('/products/{product}/edit', EditProduct::class)->name('products.edit');
             Route::get('/products/import', ImportProduct::class)->name('products.import');
-
+            // STOCK ROUTE
+            Route::get('/stocks', Stocks::class)->name('stocks');
+            // PURCHASE ROUTES
             Route::get('/purchases', Purchase::class)->name('purchases');
+            Route::get('/purchases/create', CreatePurchase::class)->name('purchases.create');
+            Route::get('/purchases/record', RecordPurchase::class)->name('purchases.record');
+            // TRANSACTION ROUTE
+            Route::get('/transactions', Transaction::class)->name('transactions');
+            // CUSTOMER ROUTE
+            Route::get('/customers', Customer::class)->name('customers');
+            // SETTINGS ROUTE
+            Route::get('/settings', Settings::class)->name('settings');
         });
 
         // GROCERY ROUTES
@@ -130,7 +120,7 @@ Route::group([
                 'role:'.Role::GroceryCashier->value,
             ],
         ], function () {
-            //
+           //
         });
     });
 
@@ -144,6 +134,15 @@ Route::group([
         'prefix' => 'pos',
         'as' => 'pos.',
     ], function () {
-        Route::get('/dashboard', Dashboard::class)->name('dashboard');
+        Route::group([
+            'prefix' => 'pharmacy',
+            'as' => 'pharmacy.',
+            'middleware' => [
+                'role:'.Role::Pharmacist->value,
+            ],
+        ], function () {
+            // PROCESS SALE
+            Route::get('/process-sale', ProcessSale::class)->name('process-sale');
+        });
     });
 });

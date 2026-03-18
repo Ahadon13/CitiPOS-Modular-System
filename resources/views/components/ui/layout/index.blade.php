@@ -6,20 +6,22 @@
 @php
     $basePath = 'ui.layout.variant';
     $variantPath = match($variant) {
-        'sidebar-main', 'header-sidebar' => "{$basePath}.{$variant}",
+        'sidebar-main', 'header-sidebar', 'header-only' => "{$basePath}.{$variant}", // Added header-only here!
         default => "{$basePath}.sidebar-main",
     };
 @endphp
 
-{{-- use the propriate layout based on the variant --}}
-<x-dynamic-component 
-    :component="$variantPath" 
-    :collapsable="$collapsable" 
-> 
+{{-- use the appropriate layout based on the variant --}}
+<x-dynamic-component
+    :component="$variantPath"
+    :collapsable="$collapsable"
+>
     {{ $slot }}
 </x-dynamic-component>
 
 {{-- solves alpine limitations 🙂 --}}
-<x-ui.layout.runtime 
-    :$collapsable
-/>
+@if($variant !== 'header-only')
+    <x-ui.layout.runtime
+        :$collapsable
+    />
+@endif

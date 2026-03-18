@@ -86,25 +86,63 @@
         </x-ui.card>
     </div>
 
-    <x-ui.card hoverless size="full" class="overflow-hidden p-0">
-
+    <x-ui.card hoverless size="full" class="p-0">
         <div class="px-6 py-5 border-b border-black/10 dark:border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-
             <div class="w-full md:w-72">
                 <x-ui.input
                     wire:model.live.debounce.300ms="search"
-                    leftIcon="magnifying-glass"
+                    leftIcon="magnifying-glass" clearable
                     placeholder="Search name, SKU, brand..."
                     class="w-full"
                 />
             </div>
 
             <div class="flex items-center gap-3">
-                <x-ui.checkbox wire:model.live="lowStockOnly" size="sm" label="Low Stock" />
-                <x-ui.checkbox wire:model.live="outOfStockOnly" size="sm" label="Out of Stock" />
+                <x-ui.dropdown checkbox checkboxVariant>
+                    <x-slot:button>
+                        <x-ui.button icon="funnel" variant="soft" size="sm">
+                            Filters
+                        </x-ui.button>
+                    </x-slot:button>
 
-                <x-ui.button size="sm" variant="outline" icon="printer">
-                    Print
+                    <x-slot:menu>
+                        <x-ui.dropdown.item wire:model.live="lowStockOnly">
+                            Low Stock
+                        </x-ui.dropdown.item>
+                        <x-ui.dropdown.item wire:model.live="outOfStockOnly">
+                            Out of Stock
+                        </x-ui.dropdown.item>
+                        <x-ui.dropdown.item wire:model.live="requirePrescription">
+                            Requires Prescription
+                        </x-ui.dropdown.item>
+                        <x-ui.dropdown.item wire:model.live="active">
+                            Enabled
+                        </x-ui.dropdown.item>
+                        <x-ui.dropdown.item wire:model.live="disabled">
+                            Disabled
+                        </x-ui.dropdown.item>
+                    </x-slot:menu>
+                </x-ui.dropdown>
+
+
+                <x-ui-select.styled
+                    invalidate
+                    wire:model.live="productCategories"
+                    :options="$this->categories"
+                    class="w-full"
+                    searchable
+                    multiple
+                    placeholder="Select categories..."
+                />
+                <x-ui.button
+                    size="sm"
+                    variant="outline"
+                    icon="arrow-down-tray"
+                    wire:click="exportProducts"
+                    wire:loading.attr="disabled"
+                    wire:target="exportProducts"
+                >
+                    Export in Excel
                 </x-ui.button>
             </div>
         </div>
@@ -118,44 +156,52 @@
                                 <th class="px-6 py-4">Name</th>
                                 <th class="px-6 py-4">Barcode</th>
                                 <th class="px-6 py-4">Product Code</th>
-                                <th class="px-6 py-4 text-right">Expiration Date</th>
+                                <th class="px-6 py-4">Product Category</th>
+                                {{-- <th class="px-6 py-4 text-right">Expiration Date</th> --}}
                                 <th class="px-6 py-4 text-center">Stock</th>
                                 <th class="px-6 py-4 text-center">Reorder Level</th>
                                 <th class="px-6 py-4 text-center">Requires Prescription</th>
-                                <th class="px-6 py-4 text-right">Cost</th>
-                                <th class="px-6 py-4 text-right">Price</th>
-                                <th class="px-6 py-4 text-right">Actions</th>
+                                <th class="px-6 py-4 text-center">Status</th>
+                                {{-- <th class="px-6 py-4 text-right">Cost</th>
+                                <th class="px-6 py-4 text-right">Price</th> --}}
+                                <th class="px-6 py-4 text-center">Actions</th>
                             </tr>
                         </thead>
 
                         <tbody class="divide-y divide-black/10 dark:divide-white/10 bg-neutral-50 dark:bg-[#060A23]">
                             @forelse ($this->products as $product)
-                                @php
-                                    $basePkg = $product->productPackagings->where('unit_id', $product->base_unit_id)->first()
-                                                ?? $product->productPackagings->first();
-                                    // Since we sorted by expiration_date ASC in the controller, ->first() is the oldest/current batch.
-                                    $currentBatch = $product->inventoryBatches->first();
-                                @endphp
+                            @php
+                            $basePkg = $product->productPackagings->where('unit_id', $product->base_unit_id)->first()
+                            ?? $product->productPackagings->first();
+                            // Since we sorted by expiration_date ASC in the controller, ->first() is the oldest/current batch.
+                            $currentBatch = $product->inventoryBatches->first();
+                            @endphp
 
-                                <tr class="hover:bg-white/5 transition-colors group">
-                                    <td class="px-6 py-4">
-                                        <div class="font-medium text-neutral-900 dark:text-white">{{ $product->brand_name }}</div>
-                                        <div class="flex gap-2 text-xs text-neutral-500">
-                                            <span>{{ $product->generic_name }}</span>
-                                        </div>
-                                    </td>
+                            <tr class="hover:bg-white/5 transition-colors group">
+                                <td class="px-6 py-4">
+                                    <div class="font-medium text-neutral-900 dark:text-white">{{ $product->brand_name }}</div>
+                                    <div class="flex gap-2 text-xs text-neutral-500">
+                                        <span>{{ $product->generic_name }}</span>
+                                    </div>
+                                </td>
 
-                                    <td class="px-6 py-4 font-mono text-neutral-600 dark:text-neutral-400">
-                                        {{ $basePkg->barcode ?? 'N/A' }}
-                                    </td>
+                                <td class="px-6 py-4 font-mono text-neutral-600 dark:text-neutral-400">
+                                    {{ $basePkg->barcode ?: 'N/A' }}
+                                </td>
 
-                                    <td class="px-6 py-4">
-                                        <span class="inline-flex items-center rounded-md bg-blue-400/10 px-2 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 ring-1 ring-inset ring-blue-400/20">
-                                            {{ $product->product_code ?? 'N/A' }}
-                                        </span>
-                                    </td>
+                                <td class="px-6 py-4">
+                                    <span class="inline-flex items-center rounded-md bg-blue-400/10 px-2 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 ring-1 ring-inset ring-blue-400/20">
+                                        {{ $product->product_code ?? 'N/A' }}
+                                    </span>
+                                </td>
 
-                                    <td class="px-6 py-4 text-right">
+                                <td class="px-6 py-4">
+                                    <span class="inline-flex items-center rounded-md bg-purple-400/10 px-2 py-1 text-xs font-medium text-purple-600 dark:text-purple-400 ring-1 ring-inset ring-purple-400/20">
+                                        {{ $product->category->name ?? 'Uncategorized' }}
+                                    </span>
+                                </td>
+
+                                {{-- <td class="px-6 py-4 text-right">
                                         @if($currentBatch && $currentBatch->expiration_date)
                                             @php
                                                 $expiryDate = \Carbon\Carbon::parse($currentBatch->expiration_date);
@@ -165,77 +211,107 @@
 
                                             <div class="flex flex-col items-center">
                                                 <span class="text-sm font-medium {{ $expired ? 'text-red-600' : ($isSoon ? 'text-orange-600' : 'text-neutral-900 dark:text-white') }}">
-                                                    {{ $expiryDate->format('M d, Y') }}
-                                                </span>
-                                                <span class="text-[10px] uppercase {{ $expired ? 'text-red-500' : ($isSoon ? 'text-orange-500' : 'text-green-500') }}">
-                                                    {{ $expired ? 'Expired' : ($isSoon ? 'Expiring Soon' : 'Active Batch') }}
-                                                </span>
-                                            </div>
-                                        @else
-                                            <span class="text-neutral-500 italic">No Active Batches</span>
-                                        @endif
-                                    </td>
+                                {{ $expiryDate->format('M d, Y') }}
+                                </span>
+                                <span class="text-[10px] uppercase {{ $expired ? 'text-red-500' : ($isSoon ? 'text-orange-500' : 'text-green-500') }}">
+                                    {{ $expired ? 'Expired' : ($isSoon ? 'Expiring Soon' : 'Active Batch') }}
+                                </span>
+                                </div>
+                                @else
+                                <span class="text-neutral-500 italic">No Active Batches</span>
+                                @endif
+                                </td> --}}
 
-                                    <td class="px-6 py-4 text-center">
-                                        @php $stock = $product->total_stock ?? 0; @endphp
+                                <td class="px-6 py-4 text-center">
+                                    @php $stock = $product->total_stock ?? 0; @endphp
 
-                                        @if($stock <= 0)
-                                            <span class="inline-flex items-center rounded-md whitespace-nowrap bg-red-400/10 px-2 py-1 text-xs font-medium text-red-600 dark:text-red-400 ring-1 ring-inset ring-red-400/20">
-                                                Out of Stock
-                                            </span>
+                                    @if($stock <= 0) <span class="inline-flex items-center rounded-md whitespace-nowrap bg-red-400/10 px-2 py-1 text-xs font-medium text-red-600 dark:text-red-400 ring-1 ring-inset ring-red-400/20">
+                                        Out of Stock
+                                        </span>
                                         @elseif($stock < $product->reorder_level)
                                             <span class="text-yellow-500 font-bold" title="Below Reorder Level ({{ number_format($product->reorder_level, 2) }})">
                                                 {{ number_format($stock, 2) }}
                                             </span>
                                             <span class="text-xs text-neutral-500">{{ $product->baseUnit->abbreviation ?? '' }}</span>
-                                        @else
+                                            @else
                                             <span class="text-neutral-900 dark:text-white font-medium">{{ number_format($stock, 2) }}</span>
                                             <span class="text-xs text-neutral-500">{{ $product->baseUnit->abbreviation ?? '' }}</span>
-                                        @endif
-                                    </td>
+                                            @endif
+                                </td>
 
-                                    <td class="px-6 py-4 text-center">
-                                        <span class="text-neutral-900 dark:text-white font-medium">{{ number_format($product->reorder_level, 2) }}</span>
-                                        <span class="text-xs text-neutral-500">{{ $product->baseUnit->abbreviation ?? '' }}</span>
-                                    </td>
+                                <td class="px-6 py-4 text-center">
+                                    <span class="text-neutral-900 dark:text-white font-medium">{{ number_format($product->reorder_level, 2) }}</span>
+                                    <span class="text-xs text-neutral-500">{{ $product->baseUnit->abbreviation ?? '' }}</span>
+                                </td>
 
-                                    <td class="px-6 py-4 text-center">
-                                        @if(!$product->requires_prescription)
-                                            <span class="inline-flex items-center rounded-md bg-yellow-400/10 px-2 py-1 text-xs font-medium text-yellow-600 dark:text-yellow-400 ring-1 ring-inset ring-yellow-400/20">
-                                                No
-                                            </span>
-                                        @else
-                                            <span class="inline-flex items-center rounded-md bg-green-400/10 px-2 py-1 text-xs font-medium text-green-600 dark:text-green-400 ring-1 ring-inset ring-green-400/20">
-                                                Yes
-                                            </span>
-                                        @endif
-                                    </td>
+                                <td class="px-6 py-4 text-center">
+                                    @if(!$product->requires_prescription)
+                                    <span class="inline-flex items-center rounded-md bg-yellow-400/10 px-2 py-1 text-xs font-medium text-yellow-600 dark:text-yellow-400 ring-1 ring-inset ring-yellow-400/20">
+                                        No
+                                    </span>
+                                    @else
+                                    <span class="inline-flex items-center rounded-md bg-green-400/10 px-2 py-1 text-xs font-medium text-green-600 dark:text-green-400 ring-1 ring-inset ring-green-400/20">
+                                        Yes
+                                    </span>
+                                    @endif
+                                </td>
 
-                                    <td class="px-6 py-4 text-right text-neutral-900 dark:text-white font-medium">
+                                <td class="px-6 py-4 text-center">
+                                    @if(!$product->is_active)
+                                    <span class="inline-flex items-center rounded-md bg-red-400/10 px-2 py-1 text-xs font-medium text-red-600 dark:text-red-400 ring-1 ring-inset ring-red-400/20">
+                                        Disabled
+                                    </span>
+                                    @else
+                                    <span class="inline-flex items-center rounded-md bg-green-400/10 px-2 py-1 text-xs font-medium text-green-600 dark:text-green-400 ring-1 ring-inset ring-green-400/20">
+                                        Enabled
+                                    </span>
+                                    @endif
+                                </td>
+
+                                {{-- <td class="px-6 py-4 text-right text-neutral-900 dark:text-white font-medium">
                                         @money($currentBatch?->cost_per_unit)
                                     </td>
 
                                     <td class="px-6 py-4 text-right text-neutral-900 dark:text-white font-medium">
                                         @money($basePkg->price)
-                                    </td>
+                                    </td> --}}
 
-                                    <td class="px-6 py-4 text-right">
-                                        <x-ui.button size="xs" variant="ghost" icon="pencil-square" href="#">Edit</x-ui.button>
-                                    </td>
-                                </tr>
+                                <td class="px-6 py-4 text-right">
+                                    <div class="flex items-center justify-center gap-2">
+                                        <x-ui.button size="xs" icon="shopping-cart" variant="outline" color="emerald" title="Adjust stock" x-on:click="$dispatch('open-adjust-stock-modal', { id: {{ $product->id }} })" />
+                                        <x-ui.button size="xs" icon="pencil-square" variant="outline" color="blue" href="{{ route('inventory.pharmacy.products.edit', ['product' => $product]) }}" wire:navigate title="Edit Product" />
+                                        <x-ui.button size="xs" :icon="$product->is_active ? 'eye-slash' : 'eye'" variant="outline" title="Toggle Status" :color="$product->is_active ? 'orange' : 'indigo'" wire:click="toggleStatus({{ $product }})" wire:custom-confirm="Are you sure you want to {{ $product->is_active ? 'disable' : 'enable' }} {{ $product->brand_name }}?" />
+                                    </div>
+                                </td>
+                            </tr>
                             @empty
-                                <tr>
-                                    <td colspan="10" class="px-6 py-24 text-center">
-                                        <div class="flex flex-col items-center justify-center">
-                                            <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-neutral-100 dark:bg-white/5">
-                                                <x-ui.icon name="magnifying-glass" class="h-5 w-5 text-neutral-400" />
+                            <tr>
+                                <td colspan="10" class="px-6 py-24 text-center">
+                                    <x-ui.empty>
+                                        <x-ui.empty.media class="flex items-center justify-center w-12 h-12 rounded-full bg-neutral-100 dark:bg-card">
+                                            <x-ui.icon name="cube" class="size-6" />
+                                        </x-ui.empty.media>
+
+                                        <x-ui.empty.contents>
+                                            <x-ui.heading>No products found</x-ui.heading>
+                                            <x-ui.text class="opacity-70">
+                                                You haven't created any products yet.
+                                            </x-ui.text>
+
+                                            <div class="flex gap-2">
+                                                <x-ui.button size="sm" href="{{ route('inventory.pharmacy.products.import') }}" icon="arrow-down-tray">
+                                                    Import Products
+                                                </x-ui.button>
+                                                <x-ui.button size="sm" href="{{ route('inventory.pharmacy.products.create') }}" icon="plus" wire:navigate>
+                                                    Add Product
+                                                </x-ui.button>
                                             </div>
-                                            <h3 class="text-sm font-semibold text-neutral-900 dark:text-white">No products found</h3>
-                                            <p class="mt-1 text-sm text-neutral-500">Try adjusting your search or filters.</p>
-                                        </div>
-                                    </td>
-                                </tr>
+                                        </x-ui.empty.contents>
+                                    </x-ui.empty>
+                                </td>
+                            </tr>
                             @endforelse
+
                         </tbody>
                     </table>
                 </div>
@@ -250,5 +326,8 @@
             </div>
         </div>
     </x-ui.card>
+
+    {{-- Adjust Stock Modal --}}
+    <livewire:inventory.pages.pharmacy.product.adjust-stock-modal wire:model="adjust_product" />
 </div>
 

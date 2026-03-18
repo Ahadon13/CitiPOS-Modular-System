@@ -92,6 +92,36 @@
                     </x-ui.field>
                 </div>
 
+                 <x-ui.field required class="mt-5">
+                    <x-ui.label>Product Category</x-ui.label>
+                    <x-ui-select.styled
+                        invalidate
+                        wire:model="form.product_category_id"
+                        :options="$this->categories"
+                        searchable
+                        placeholder="Select or create a Category (e.g. Pain Relief)"
+                    >
+                    {{-- Slot for the "Create" button at the bottom of the dropdown --}}
+                    <x-slot:after>
+                        <div
+                            x-show="search?.length > 0"
+                            class="px-2 py-2 border-t border-gray-100 dark:border-white/10"
+                        >
+                            <x-ui.button
+                                class="w-full justify-center"
+                                size="sm"
+                                variant="outline"
+                                {{-- 1. Hide the dropdown, 2. Call Livewire method with the search term --}}
+                                x-on:click="show = false; $wire.createCategory(search)"
+                            >
+                                <span x-html="`Create new category: <b>${search}</b>`"></span>
+                            </x-ui.button>
+                        </div>
+                    </x-slot:after>
+                    </x-ui-select.styled>
+                    <x-ui.error name="form.product_category_id" />
+                </x-ui.field>
+
                 <x-ui.field class="mt-5">
                     <x-ui.label>Description (Optional)</x-ui.label>
                     <x-ui.textarea
@@ -202,8 +232,7 @@
                             :options="$this->units"
                             searchable
                             placeholder="Select or create a Unit (e.g. Piece)"
-                        >
-                        </x-ui-select.styled>
+                        />
                         <x-ui.error name="form.base_unit_id" />
                     </x-ui.field>
 

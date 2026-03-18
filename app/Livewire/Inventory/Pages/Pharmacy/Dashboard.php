@@ -34,7 +34,7 @@ final class Dashboard extends Component
         $query = Product::query();
 
         // STRICT: Only count Pharmacy products
-        $this->applyPharmacyScope($query, 'category');
+        $this->applyPharmacyScope($query, 'productCategory');
 
         return $query->count();
     }
@@ -50,7 +50,7 @@ final class Dashboard extends Component
             }], 'quantity_on_hand');
 
         // 2. STRICT: Only check Pharmacy products
-        $this->applyPharmacyScope($query, 'category');
+        $this->applyPharmacyScope($query, 'productCategory');
 
         return $query->havingRaw('COALESCE(total_stock, 0) = 0')
             ->count();
@@ -62,9 +62,36 @@ final class Dashboard extends Component
         $query = InventoryBatch::query()->where('branch_id', $this->currentBranchId);
 
         // STRICT: Only count Pharmacy items
-        $this->applyPharmacyScope($query, 'product.category');
+        $this->applyPharmacyScope($query, 'product.productCategory');
 
         return (float) $query->sum('quantity_on_hand');
+    }
+
+    #[Computed]
+    public function expiringSoonCount(): int
+    {
+        $query = InventoryBatch::query()
+            ->where('branch_id', $this->currentBranchId)
+            ->where('quantity_on_hand', '>', 0)
+            ->where('expiration_date', '>', Carbon::now()) // Must be in the future
+            ->where('expiration_date', '<=', Carbon::now()->addMonths(3));
+
+        $this->applyPharmacyScope($query, 'product.productCategory');
+
+        return $query->count();
+    }
+
+    #[Computed]
+    public function expiredCount(): int
+    {
+        $query = InventoryBatch::query()
+            ->where('branch_id', $this->currentBranchId)
+            ->where('quantity_on_hand', '>', 0)
+            ->where('expiration_date', '<=', Carbon::now()); // In the past
+
+        $this->applyPharmacyScope($query, 'product.productCategory');
+
+        return $query->count();
     }
 
     #[Computed]
@@ -77,7 +104,7 @@ final class Dashboard extends Component
             }], 'quantity_on_hand');
 
         // 2. STRICT: Only check Pharmacy products
-        $this->applyPharmacyScope($query, 'category');
+        $this->applyPharmacyScope($query, 'productCategory');
 
         return $query->havingRaw('COALESCE(total_stock, 0) < products.reorder_level')
             ->count();
@@ -87,19 +114,18 @@ final class Dashboard extends Component
     public function expiringBatches()
     {
         $query = InventoryBatch::query()
-            ->with(['product.category', 'branch'])
+            ->with(['product.productCategory', 'branch'])
             ->where('quantity_on_hand', '>', 0)
             ->where('branch_id', $this->currentBranchId);
 
-        // 1. STRICT: Only Pharmacy items
-        $this->applyPharmacyScope($query, 'product.category');
+        $this->applyPharmacyScope($query, 'product.productCategory');
 
-        // 2. Pharmacy Expiry Logic (3 Months)
-        // Since this dashboard is purely pharmacy, we only need the 3-month rule.
-        $query->where('expiration_date', '<=', Carbon::now()->addMonths(3));
+        // Only fetch items that are expiring soon, but haven't actually expired yet.
+        $query->where('expiration_date', '>', Carbon::now())
+              ->where('expiration_date', '<=', Carbon::now()->addMonths(3));
 
         return $query->orderBy('expiration_date', 'asc')
-            ->limit(20) // Increased limit for scrolling
+            ->limit(20)
             ->get();
     }
 
@@ -111,7 +137,7 @@ final class Dashboard extends Component
             ->whereBetween('created_at', [Carbon::now()->subDays(6)->startOfDay(), Carbon::now()->endOfDay()]);
 
         // STRICT: Only include sales containing Pharmacy items
-        $query->whereHas('saleItems.product.category', function ($q) {
+        $query->whereHas('saleItems.product.productCategory', function ($q) {
             $q->whereIn('name', $this->targetCategories);
         });
 
@@ -136,13 +162,13 @@ final class Dashboard extends Component
     public function lowStockProducts()
     {
         $query = Product::query()
-            ->with(['category', 'baseUnit'])
+            ->with(['productCategory', 'baseUnit'])
             ->with(['productPackagings' => function ($q) {
                 $q->orderBy('conversion_factor', 'asc');
             }]);
 
         // 1. STRICT: Only Pharmacy products
-        $this->applyPharmacyScope($query, 'category');
+        $this->applyPharmacyScope($query, 'productCategory');
 
         // 2. Calculate Stock & Filter
         return $query
@@ -154,6 +180,21 @@ final class Dashboard extends Component
             ->paginate($this->perPage, ['*'], 'low_stock_page');
     }
 
+    #[Computed]
+    public function expiredBatches()
+    {
+        $query = InventoryBatch::query()
+            ->with(['product.productCategory', 'product.baseUnit'])
+            ->where('quantity_on_hand', '>', 0)
+            ->where('branch_id', $this->currentBranchId)
+            ->where('expiration_date', '<=', Carbon::now()); // In the past
+
+        $this->applyPharmacyScope($query, 'product.productCategory');
+
+        return $query->orderBy('expiration_date', 'asc')
+            ->paginate($this->perPage, ['*'], 'expired_page');
+    }
+
     public function getAdditionalPageResetProperties(): array
     {
         return [];
@@ -162,7 +203,7 @@ final class Dashboard extends Component
     /**
      * Helper to apply the strict Pharmacy filter.
      */
-    protected function applyPharmacyScope(Builder $query, string $relationPathToCategory = 'product.category'): void
+    protected function applyPharmacyScope(Builder $query, string $relationPathToCategory = 'product.productCategory'): void
     {
         $query->whereHas($relationPathToCategory, function ($q) {
             $q->whereIn('name', $this->targetCategories);

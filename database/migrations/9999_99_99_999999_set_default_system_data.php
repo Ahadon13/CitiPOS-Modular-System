@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Enums\Product\Unit;
 use App\Models\CustomerType;
 use App\Models\ProductCategory;
 use Illuminate\Database\Migrations\Migration;
@@ -45,5 +46,13 @@ return new class extends Migration
         ProductCategory::create(['name' => 'Pharmacy']);
         ProductCategory::create(['name' => 'Grocery']);
         ProductCategory::create(['name' => 'Motor Parts']);
+
+        // Create default units from enums
+        foreach (Unit::cases() as $unit) {
+            App\Models\Unit::firstOrCreate([
+                'name' => $unit->label(),
+                'abbreviation' => $unit->value,
+            ]);
+        }
     }
 };

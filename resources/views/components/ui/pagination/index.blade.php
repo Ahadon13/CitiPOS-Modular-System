@@ -2,6 +2,7 @@
     'data',
     'perPageOptions' => [10, 25, 50, 100],
     'minimal' => false,
+    'perPageName' => 'Quantity',
 ])
 
 <div {{ $attributes->class('flex items-center w-full gap-4 justify-between') }}>
@@ -16,7 +17,7 @@
                     :options="$perPageOptions"
                 />
             </x-ui.field>
-            <x-ui.label>Quantity</x-ui.label>
+            <x-ui.label>{{ $perPageName }}</x-ui.label>
         </div>
     @endif
     @if ($data instanceof Illuminate\Pagination\LengthAwarePaginator)

@@ -87,7 +87,7 @@
                 <h2 class="text-lg font-semibold">How to format your file</h2>
             </div>
             <div class="flex gap-3">
-                <x-ui.button variant="outline" size="sm" icon="arrow-down-tray">
+                <x-ui.button variant="outline" size="sm" icon="arrow-down-tray" href="{{ asset('storage/import/sample_template.xlsx') }}">
                     Download Template
                 </x-ui.button>
             </div>
@@ -105,6 +105,7 @@
                         <th class="px-4 py-3 font-medium text-green-600 dark:text-green-400">product_code</th>
                         <th class="px-4 py-3 font-medium text-green-600 dark:text-green-400">brand_name</th>
                         <th class="px-4 py-3 font-medium text-green-600 dark:text-green-400">generic_name</th>
+                        <th class="px-4 py-3 font-medium text-green-600 dark:text-green-400">category</th>
                         <th class="px-4 py-3 font-medium text-green-600 dark:text-green-400">supplier</th>
                         <th class="px-4 py-3 font-medium text-green-600 dark:text-green-400">unit</th>
                         <th class="px-4 py-3 font-medium text-green-600 dark:text-green-400">conversion</th>
@@ -125,6 +126,7 @@
                         <td class="px-4 py-3 font-mono text-xs">PRD-001</td>
                         <td class="px-4 py-3">Biogesic</td>
                         <td class="px-4 py-3">Paracetamol</td>
+                        <td class="px-4 py-3">Pain Relievers</td>
                         <td class="px-4 py-3">Acme Pharma</td>
                         <td class="px-4 py-3">tablet</td>
                         <td class="px-4 py-3">1</td>
@@ -143,7 +145,8 @@
                         <td class="px-4 py-3 font-mono text-xs text-blue-600 dark:text-blue-400 font-bold border-l-2 border-blue-500">PRD-001</td>
                         <td class="px-4 py-3 text-neutral-400 italic">Leave blank</td>
                         <td class="px-4 py-3 text-neutral-400 italic">Leave blank</td>
-                        <td class="px-4 py-3 text-neutral-400 italic">Leave blank
+                        <td class="px-4 py-3 text-neutral-400 italic">Leave blank</td>
+                        <td class="px-4 py-3 text-neutral-400 italic">Leave blank</td>
                         <td class="px-4 py-3 font-medium">box</td>
                         <td class="px-4 py-3 font-medium">100</td>
                         <td class="px-4 py-3 text-neutral-400 italic">Leave blank</td>
@@ -189,7 +192,7 @@
                     <span class="text-xs font-bold uppercase tracking-wider text-green-600 dark:text-green-400">Required Columns</span>
                     <div class="flex flex-wrap gap-2">
                         @php
-                        $required = ['product_code', 'brand_name', 'generic_name', 'supplier', 'unit', 'conversion', 'cost_price', 'selling_price', 'quantity_on_hand', 'reorder_level', 'expiration_date'];
+                        $required = ['product_code', 'brand_name', 'generic_name', 'category', 'supplier', 'unit', 'conversion', 'cost_price', 'selling_price', 'quantity_on_hand', 'reorder_level', 'expiration_date'];
                         @endphp
                         @foreach($required as $col)
                         <div class="px-3 py-1.5 text-sm rounded-md border border-green-200 bg-green-50 text-green-700 dark:border-green-500/20 dark:bg-green-500/10 dark:text-green-400">

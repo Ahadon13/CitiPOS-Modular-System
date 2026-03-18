@@ -57,6 +57,7 @@ final class LoginForm extends Form
 
             // Re-throw so the frontend shows the error
             throw $e;
+
         }
     }
 

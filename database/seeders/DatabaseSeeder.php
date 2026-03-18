@@ -64,7 +64,7 @@ final class DatabaseSeeder extends Seeder
         // ==========================================
         $biogesic = Product::create([
             'supplier_id' => $unilab->id,
-            'category_id' => $catPharmacy->id, // Linked to ProductCategory
+            'product_category_id' => $catPharmacy->id, // Linked to ProductCategory
             'base_unit_id' => $unitPiece->id,  // We count stock in "Pieces"
             'product_code' => 'BIO-500MG-001', // Unique product code for easy reference
             'name' => 'Biogesic 500mg',
@@ -100,7 +100,7 @@ final class DatabaseSeeder extends Seeder
         // ==========================================
         $brakePad = Product::create([
             'supplier_id' => $yamaha->id,
-            'category_id' => $catMotor->id,
+            'product_category_id' => $catMotor->id,
             'base_unit_id' => $unitSet->id, // We count stock in "Sets"
             'product_code' => 'YP-BRAKE-001', // Unique product code for easy reference
             'name' => 'Front Brake Pad',

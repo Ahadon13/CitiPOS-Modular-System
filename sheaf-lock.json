@@ -5,9 +5,22 @@
         ],
         "resources/js/utils.js": [
             "modal"
+        ],
+        "resources/views/components/ui/tab/index.blade.php": [
+            "tabs"
+        ],
+        "resources/views/components/ui/tab/group.blade.php": [
+            "tabs"
+        ],
+        "resources/views/components/ui/tab/panel.blade.php": [
+            "tabs"
         ]
     },
-    "helpers": [],
+    "helpers": {
+        "popup": [
+            "select"
+        ]
+    },
     "internalDependencies": {
         "button": [
             "badge",
@@ -22,7 +35,9 @@
             "sidebar",
             "input",
             "breadcrumbs",
-            "button"
+            "button",
+            "select",
+            "dropdown"
         ],
         "badge": [
             "navbar",
@@ -30,6 +45,9 @@
         ],
         "navlist": [
             "sidebar"
+        ],
+        "text": [
+            "select"
         ]
     }
 }

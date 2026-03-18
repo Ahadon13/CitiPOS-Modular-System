@@ -22,6 +22,7 @@ final class ProductPharmacyForm extends Form
     public string $generic_name = '';
 
     public string $product_code = '';
+    public ?int $category_id = null;
 
     public bool $requires_prescription = false;
 
@@ -55,6 +56,7 @@ final class ProductPharmacyForm extends Form
         return [
             // Product
             'supplier_id' => ['required', 'exists:suppliers,id'],
+            'category_id' => ['required', 'exists:categories,id'],
             'base_unit_id' => ['required', 'exists:units,id'],
             'product_code' => ['required', 'string', 'max:255', 'unique:products,product_code'],
             'brand_name' => ['required', 'string', 'max:255'],
@@ -95,6 +97,8 @@ final class ProductPharmacyForm extends Form
             'product_code.required' => 'Please enter a unique product code.',
             'product_code.max' => 'The product code is too long (maximum 255 characters, including letters, numbers, and dashes).',
             'product_code.unique' => 'This product code is already in use. Please choose a different one.',
+            'category_id.required' => 'Please select a category for the product.',
+            'category_id.exists' => 'The selected category does not exist.',
 
             'reorder_level.required' => 'Please set a low stock alert level.',
             'reorder_level.min' => 'The low stock alert level must be at least 1.',
@@ -138,12 +142,12 @@ final class ProductPharmacyForm extends Form
         $attributes = [
             'description' => $this->description,
         ];
-
         // 1. Map to ProductData
         $productData = ProductData::validateAndCreate([
             'supplier_id' => $this->supplier_id,
             'product_category_id' => $pharmacy->id,
             'base_unit_id' => $this->base_unit_id,
+            'category_id' => $this->category_id,
             'product_code' => $this->product_code,
             'name' => null,
             'brand_name' => $this->brand_name,
@@ -156,7 +160,6 @@ final class ProductPharmacyForm extends Form
             'attributes' => $attributes,
             'packagings' => $formattedPackagings,
         ]);
-
         // 2. Map to InventoryBatchData
         $batchData = InventoryBatchData::validateAndCreate([
             'branch_id' => auth()->user()->branch_id,
@@ -165,7 +168,6 @@ final class ProductPharmacyForm extends Form
             'batch_number' => $this->batch_number ?: null,
             'expiration_date' => $this->expiration_date ?: null,
         ]);
-
         // 3. Pass both to the Action
         $action = app(CreateProduct::class);
         return $action->execute($productData, $batchData);

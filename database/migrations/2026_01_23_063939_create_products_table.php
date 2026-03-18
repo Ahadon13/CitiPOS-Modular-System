@@ -18,13 +18,15 @@ return new class extends Migration
         Schema::create('products', function (Blueprint $table) {
             $table->id();
             $table->foreignId('supplier_id')->constrained();
-            $table->foreignId('category_id')->constrained('product_categories');
+            $table->foreignId('category_id')->nullable()->constrained('categories');
+            $table->foreignId('product_category_id')->constrained('product_categories');
             $table->foreignId('base_unit_id')->constrained('units');
             $table->string('product_code')->unique();
             $table->string('name')->nullable();
             $table->string('brand_name')->nullable();
             $table->string('generic_name')->nullable();
             $table->boolean('requires_prescription')->default(false);
+            $table->boolean('is_active')->default(true);
             $table->decimal('reorder_level', 10, 4)->default(20);
             $table->json('attributes')->nullable();
             $table->timestamps();

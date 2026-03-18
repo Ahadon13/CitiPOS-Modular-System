@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Validator;
 use Livewire\Form;
 use Maatwebsite\Excel\Facades\Excel;
 use Maatwebsite\Excel\HeadingRowImport;
+use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 
 class ProductImportPharmacyForm extends Form
 {
@@ -25,14 +26,15 @@ class ProductImportPharmacyForm extends Form
             'product_code' => ['required', 'string', 'max:255'],
             'brand_name' => ['nullable', 'string', 'max:255'],
             'generic_name' => ['nullable', 'string', 'max:255'],
-            'supplier' => ['nullable', 'string'],
+            'category' => ['nullable', 'string', 'max:255'],
+            'supplier' => ['nullable', 'string', 'max:255'],
             'unit' => ['required', 'string'],
             'conversion' => ['required', 'numeric', 'min:1'],
             'cost_price' => ['nullable', 'numeric', 'min:0'],
             'selling_price' => ['required', 'numeric', 'min:1'],
             'quantity_on_hand' => ['nullable', 'numeric', 'min:0'],
             'reorder_level' => ['nullable', 'numeric', 'min:1'],
-            'expiration_date' => ['nullable', 'date', 'after:today'],
+            'expiration_date' => ['nullable', 'date:Y-m-d', 'after:today'],
             'barcode' => ['nullable', 'string', 'max:255'],
             'requires_prescription' => ['nullable', 'string', 'in:yes,no,Yes,No'],
             'batch_number' => ['nullable', 'string', 'max:255'],
@@ -92,7 +94,7 @@ class ProductImportPharmacyForm extends Form
         $actualHeaders = $headings[0][0] ?? [];
 
         $requiredHeaders = [
-            'product_code', 'brand_name', 'generic_name', 'supplier',
+            'product_code', 'brand_name', 'generic_name', 'category', 'supplier',
             'unit', 'conversion', 'cost_price', 'selling_price', 'quantity_on_hand'
         ];
 
@@ -134,6 +136,31 @@ class ProductImportPharmacyForm extends Form
             if (empty($row['product_code'])) continue;
 
             $code = $row['product_code'];
+
+            // --- DATE TO Y-m-d ---
+            if (!empty($row['expiration_date'])) {
+                $expDateRaw = $row['expiration_date'];
+
+                // Check if it is a numeric Excel Serial Date
+                if (is_numeric($expDateRaw)) {
+                    try {
+                        // Convert Serial Date to PHP DateTime object, then format it
+                        $row['expiration_date'] = ExcelDate::excelToDateTimeObject($expDateRaw)->format('Y-m-d');
+                    } catch (\Exception $e) {
+                        $this->importErrors[] = "Row {$rowNum} ({$code}): Invalid date format for expiration_date.";
+                        continue; // Skip further validation for this row to prevent crashes
+                    }
+                }
+                // If it's a string like "12/12/2026" that Excel didn't parse as a serial
+                elseif (is_string($expDateRaw)) {
+                     try {
+                         $row['expiration_date'] = \Carbon\Carbon::parse($expDateRaw)->format('Y-m-d');
+                     } catch (\Exception $e) {
+                         $this->importErrors[] = "Row {$rowNum} ({$code}): Invalid date format for expiration_date.";
+                         continue;
+                     }
+                }
+            }
 
             // Run Standard Data Rules
             $validator = Validator::make($row, $this->rowRules());

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Casts\MoneyCast;
+use App\Enums\Purchase\Status;
 use App\Models\Branch;
 use App\Models\Supplier;
 use App\Models\PurchaseItem;
@@ -20,8 +21,10 @@ final class Purchase extends Model
     protected $fillable = [
         'branch_id',
         'supplier_id',
-        'reference_no',
-        'status',
+        'user_id',          // The staff who created the PO
+        'reference_no',     // e.g., PO-20260305-001
+        'status',           // pending, receiving (partial), completed, cancelled
+        'expected_delivery_date',
         'total_cost',
     ];
 
@@ -33,6 +36,11 @@ final class Purchase extends Model
     public function supplier()
     {
         return $this->belongsTo(Supplier::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 
     public function purchaseItems()
@@ -50,9 +58,11 @@ final class Purchase extends Model
         return [
             'branch_id' => 'integer',
             'supplier_id' => 'integer',
+            'user_id' => 'integer',
             'reference_no' => 'string',
-            'status' => 'string',
+            'status' => Status::class,
             'total_cost' => MoneyCast::class,
+            'expected_delivery_date' => 'date',
         ];
     }
 }

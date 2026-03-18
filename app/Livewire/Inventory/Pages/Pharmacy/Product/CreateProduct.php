@@ -6,7 +6,7 @@ namespace App\Livewire\Inventory\Pages\Pharmacy\Product;
 
 use App\Livewire\Concerns\HasToast;
 use App\Livewire\Forms\Inventory\ProductPharmacyForm;
-use App\Models\ProductCategory;
+use App\Models\Category;
 use App\Models\Supplier;
 use App\Models\Unit;
 use App\Traits\HasAuth;
@@ -21,16 +21,21 @@ final class CreateProduct extends Component
 
     public ProductPharmacyForm $form;
 
-    #[Computed]
-    public function categories()
-    {
-        return ProductCategory::whereIn('name', ['Pharmacy', 'Medicine'])->get();
-    }
 
     #[Computed]
     public function suppliers()
     {
         return Supplier::orderBy('name')->get()->map(fn ($s) => [
+            'label' => $s->name,
+            'value' => $s->id,
+        ]);
+    }
+
+     #[Computed]
+    public function categories()
+    {
+        // Only show Pharmacy categories in the dropdown
+        return Category::orderBy('name')->get()->map(fn ($s) => [
             'label' => $s->name,
             'value' => $s->id,
         ]);
@@ -73,5 +78,23 @@ final class CreateProduct extends Component
 
         // Automatically select the new supplier in the form
         $this->form->supplier_id = $supplier->id;
+        $this->toastSuccess("Supplier '{$supplier->name}' created and selected!");
+    }
+
+    public function createCategory(string $name)
+    {
+        // Simple validation to prevent empty creates
+        if (blank($name)) {
+            return;
+        }
+
+        // Create the category
+        $category = Category::create([
+            'name' => $name,
+        ]);
+
+        // Automatically select the new category in the form
+        $this->form->category_id = $category->id;
+        $this->toastSuccess("Category '{$category->name}' created and selected!");
     }
 }

@@ -7,6 +7,7 @@
     'closeByEscaping' => true,
     'openEventName' => 'open-modal',
     'closeEventName' => 'close-modal',
+    'forceCloseEventName' => 'force-close-modal',
     'description' => null,
     'displayClasses' => 'flex flex-col',
     'footer' => null,
@@ -24,7 +25,7 @@
     'backdrop' => 'blur', // blur, dark, transparent
     'persistent' => false, // prevents closing by clicking away or escape
     'animation' => null, // scale, slide, fade
-    'position' => 'top', // center, top, bottom
+    'position' => 'center', // center, top, bottom
 ])
 
 @php
@@ -143,6 +144,12 @@
                     this.open();
                 }
             });
+
+             window.addEventListener(this.forceCloseEventName, (e) => {
+                if (e.detail?.id === this.modalId) {
+                    this.forceClose();
+                }
+            });
         },
 
         open() {
@@ -155,9 +162,10 @@
             $modal.close(this.modalId);
             this.isOpen = false;
         },
-        forseClose() {
+
+        forceClose() {
             // clean the global $modal store (mandantory even for isolated modals)
-            $modal.close(this.modalId);
+            $modal.forceClose(this.modalId);
             this.isOpen = false;
         },
 
@@ -268,7 +276,8 @@
                     @endif
 
                     @class([
-                        'relative flex w-full flex-col bg-white shadow-xl ring-1 ring-neutral-900/5 dark:bg-neutral-900 dark:ring-white/10',
+                        'relative flex w-full flex-col bg-white shadow-xl ring-1 ring-neutral-900/5 bg-white dark:bg-card dark:ring-white/10',
+
                         $widthClass,
                         'rounded-box' => !$slideover && $width !== 'screen',
                         'h-[100vh]' => $slideover || $width === 'screen',

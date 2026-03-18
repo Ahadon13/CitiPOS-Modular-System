@@ -19,6 +19,7 @@ final class ProductData extends Data
         public float $conversion,
         public int $base_price,
         public array $packagings,
+        public int $category_id,
         public ?array $attributes,
         public ?string $base_barcode,
         public ?string $name,
@@ -31,6 +32,7 @@ final class ProductData extends Data
         return [
             'supplier_id' => ['required', 'exists:suppliers,id'],
             'product_category_id' => ['required', 'exists:product_categories,id'],
+            'category_id' => ['nullable', 'exists:categories,id'],
             'base_unit_id' => ['required', 'exists:units,id'],
             'product_code' => ['required', 'string', 'max:255', 'unique:products,product_code'],
 
@@ -40,7 +42,7 @@ final class ProductData extends Data
             'requires_prescription' => ['boolean'],
             'reorder_level' => ['required', 'numeric', 'min:0'],
             'attributes' => ['nullable', 'array'],
-            'attributes.description' => ['nullable', 'string', 'max:1000'],
+            'attributes.description' => ['nullable', 'string'],
 
             'base_price' => ['required', 'integer', 'min:0'],
             'conversion' => ['required', 'numeric', 'min:1'],
@@ -60,6 +62,7 @@ final class ProductData extends Data
             // Dropdowns
             'supplier_id.required' => 'Please select a supplier.',
             'base_unit_id.required' => 'Please select a base unit for tracking stock.',
+            'category_id.required' => 'Please select a category for the product.',
 
             // Text Inputs
             'brand_name.max' => 'The brand name is too long (maximum 255 characters).',

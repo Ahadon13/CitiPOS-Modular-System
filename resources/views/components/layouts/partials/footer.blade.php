@@ -3,7 +3,7 @@
         <div class="mb-6 flex w-full items-center justify-center">
             <x-app.logo />
         </div>
-        <p class="text-base-200 mt-10 text-center text-xs leading-5">&copy; 2026 POSAI. All rights reserved.
+        <p class="text-base-200 mt-10 text-center text-xs leading-5">&copy; 2026 CitiPOS. All rights reserved.
         </p>
     </div>
 </footer>

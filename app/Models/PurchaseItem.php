@@ -20,11 +20,12 @@ final class PurchaseItem extends Model
     protected $fillable = [
         'purchase_id',
         'product_id',
-        'unit_id',
-        'quantity',
+        'unit_id',           // E.g., The ID for "Box"
+        'quantity_ordered',  // How many we asked for
+        'quantity_received', // How many actually arrived
         'cost_per_unit',
-        'batch_number',
-        'expiration_date',
+        'batch_number',      // Nullable until received
+        'expiration_date',   // Nullable until received
     ];
 
     public function purchase()
@@ -50,10 +51,12 @@ final class PurchaseItem extends Model
     protected function casts(): array
     {
         return [
+            'id' => 'integer',
             'purchase_id' => 'integer',
             'product_id' => 'integer',
             'unit_id' => 'integer',
-            'quantity' => 'decimal:4',
+            'quantity_ordered' => 'decimal:4',
+            'quantity_received' => 'decimal:4',
             'cost_per_unit' => MoneyCast::class,
             'expiration_date' => 'date',
         ];

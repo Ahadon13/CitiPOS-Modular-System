@@ -42,7 +42,7 @@
             class=" border-neutral-600/30  relative col-span-5 border border-t-0 border-dashed py-10 before:absolute before:-right-10 before:-top-10 before:z-40 before:h-20 before:w-20 before:rotate-45 before:border before:border-dashed before:content-[''] lg:col-span-3 before:border-neutral-600/30 dark:before:border-white/15 before:bg-background">
 
             <x-ui.text class="opacity-50 mx-auto max-w-2xl px-4 text-center sm:text-lg md:px-0">
-                POSAI is a unified Point of Sale and Inventory system that brings clarity and control to your daily operations. It’s innovative, robust, and built to scale with your business.
+                CitiPOS is a unified Point of Sale and Inventory system that brings clarity and control to your daily operations. It’s innovative, robust, and built to scale with your business.
             </x-ui.text>
         </div>
 

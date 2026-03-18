@@ -37,7 +37,7 @@
          [&_[data-slot=icon]]:text-neutral-800
          data-[active-link]:text-[var(--color-primary)]',
         // gaps and padding
-        'gap-x-2 pl-3 pr-3 py-1.5 rounded-md',
+        'gap-x-2.5 pl-3 pr-3 py-1.5 rounded-md',
         // When collapsed: remove horizontal padding, keep vertical padding for centering
         '[:has([data-collapsed]_&)_&]:p-2',
     ];

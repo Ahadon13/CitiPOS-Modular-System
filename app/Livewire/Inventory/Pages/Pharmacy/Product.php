@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Livewire\Inventory\Pages\Pharmacy;
 
+use App\Exports\ProductsExport;
+use App\Livewire\Concerns\HasToast;
 use App\Models\Product as ProductModel;
+use App\Models\Category;
 use App\Models\ProductCategory;
 use App\Models\InventoryBatch;
 use App\Traits\HasAuth;
@@ -15,16 +18,25 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Maatwebsite\Excel\Facades\Excel;
 
 #[Layout('components.layouts.app', ['title' => 'Pharmacy Inventory', 'inventory' => true])]
 final class Product extends Component
 {
-    use HasAuth, HasDataTable, WithPagination;
+    use HasAuth, HasToast, HasDataTable, WithPagination;
 
     #[Url]
     public bool $lowStockOnly = false;
     #[Url]
     public bool $outOfStockOnly = false;
+    #[Url]
+    public bool $requirePrescription = false;
+    #[Url]
+    public bool $active = false;
+    #[Url]
+    public bool $disabled = false;
+    public ?array $adjust_product = null;
+    public array $productCategories = [];
 
     /**
      * Hardcoded categories for this specific Page.
@@ -33,17 +45,17 @@ final class Product extends Component
 
     protected function getAdditionalPageResetProperties(): array
     {
-        return ['lowStockOnly', 'outOfStockOnly'];
+        return ['lowStockOnly', 'outOfStockOnly', 'requirePrescription', 'active', 'disabled', 'productCategories'];
     }
 
     #[Computed]
     public function categories()
     {
         // Only show Pharmacy categories in the dropdown
-        return ProductCategory::query()
-            ->whereIn('name', $this->targetCategories)
-            ->orderBy('name')
-            ->get();
+        return Category::orderBy('name')->get()->map(fn ($s) => [
+            'label' => $s->name,
+            'value' => $s->id,
+        ]);
     }
 
     #[Computed]
@@ -54,7 +66,7 @@ final class Product extends Component
             ->with(['baseUnit', 'productPackagings']); // Basic eager loading
 
         // 1. OPTIMIZATION: Use JOIN instead of whereHas for Category (Faster)
-        $query->join('product_categories', 'products.category_id', '=', 'product_categories.id')
+        $query->join('product_categories', 'products.product_category_id', '=', 'product_categories.id')
               ->whereIn('product_categories.name', $this->targetCategories);
 
         // 2. Apply Branch Scope
@@ -74,12 +86,22 @@ final class Product extends Component
 
         $query->when($this->lowStockOnly, fn ($q) => $q->havingRaw('COALESCE(total_stock, 0) < products.reorder_level'));
         $query->when($this->outOfStockOnly, fn ($q) => $q->havingRaw('COALESCE(total_stock, 0) = 0'));
+        $query->when($this->requirePrescription, fn ($q) => $q->where('requires_prescription', true));
+        $query->when($this->active, fn ($q) => $q->where('is_active', true));
+        $query->when($this->disabled, fn ($q) => $q->where('is_active', false));
 
-        // 5. Pagination
+        // 5. Filter by categories (if any)
+        $query->when(!empty($this->productCategories), function ($q) {
+            $q->whereHas('category', function ($subQ) {
+                $subQ->whereIn('id', $this->productCategories);
+            });
+        });
+
+        // 6. Pagination
         $products = $query->orderBy($this->sort['column'], $this->sort['direction'])
             ->paginate($this->perPage);
 
-        // 6. KEY OPTIMIZATION: Eager Load Batches for THIS PAGE only.
+        // 7. KEY OPTIMIZATION: Eager Load Batches for THIS PAGE only.
         // Instead of asking DB to find "Min Expiry" and "Cost" for everyone,
         // we get the batches for these 15 items and let PHP find the first one.
         if ($products->getCollection()->isNotEmpty()) {
@@ -102,7 +124,7 @@ final class Product extends Component
 
         // 2. Base Product Query
         $productQuery = ProductModel::query()
-            ->whereIn('category_id', $categoryIds);
+            ->whereIn('product_category_id', $categoryIds);
 
         // 3. Calculate Metrics
         return [
@@ -132,10 +154,45 @@ final class Product extends Component
             'near_expiry' => InventoryBatch::query()
                 ->where('branch_id', $branchId)
                 ->where('quantity_on_hand', '>', 0) // Only count items we actually have
-                ->whereHas('product', fn($q) => $q->whereIn('category_id', $categoryIds))
+                ->whereHas('product', fn($q) => $q->whereIn('product_category_id', $categoryIds))
                 ->where('expiration_date', '<=', now()->addMonths(3))
                 ->count(),
         ];
+    }
+
+    public function toggleStatus(ProductModel $product): void
+    {
+        try {
+            $product->toggleActive();
+
+            $status = $product->is_active ? 'activated' : 'disabled';
+
+            $this->toastSuccess("Product '{$product->brand_name}' has been {$status}.");
+
+        } catch (\Exception $e) {
+            $this->toastError('Failed to update product status: ' . $e->getMessage());
+        }
+    }
+
+    public function exportProducts()
+    {
+        try {
+            $fileName = 'Pharmacy_Products_' . now()->format('Y_m_d_His') . '.xlsx';
+
+            return Excel::download(
+                new ProductsExport(
+                    $this->currentBranchId,
+                    $this->targetCategories,
+                    $this->productCategories,
+                    $this->search ?? '',
+                    $this->lowStockOnly,
+                    $this->outOfStockOnly
+                ),
+                $fileName
+            );
+        } catch (\Exception $e) {
+            $this->toastError('Failed to generate export: ' . $e->getMessage());
+        }
     }
 
 }

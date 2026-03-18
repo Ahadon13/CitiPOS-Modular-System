@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\Product\CategoryType;
 use App\Models\ProductCategory;
+use App\Models\Category;
 use App\Models\ProductPackaging;
 use App\Models\InventoryBatch;
 use App\Models\PurchaseItem;
@@ -32,6 +34,7 @@ final class Product extends Model
     protected $fillable = [
         'supplier_id',
         'category_id',
+        'product_category_id',
         'base_unit_id',
         'product_code',
         'name',
@@ -39,6 +42,7 @@ final class Product extends Model
         'generic_name',
         'reorder_level',
         'requires_prescription',
+        'is_active',
         'attributes',
     ];
 
@@ -55,6 +59,7 @@ final class Product extends Model
             $q->where('products.name', 'like', "%{$term}%")
                 ->orWhere('products.brand_name', 'like', "%{$term}%")
                 ->orWhere('products.generic_name', 'like', "%{$term}%")
+                ->orWhere('products.product_code', 'like', "%{$term}%")
               // Search Related Category Name
                 ->orWhereHas('category', function ($subQ) use ($term) {
                     $subQ->where('name', 'like', "%{$term}%");
@@ -92,6 +97,11 @@ final class Product extends Model
 
     public function category(): BelongsTo
     {
+        return $this->belongsTo(Category::class);
+    }
+
+    public function productCategory(): BelongsTo
+    {
         return $this->belongsTo(ProductCategory::class);
     }
 
@@ -120,6 +130,39 @@ final class Product extends Model
         return $this->hasMany(PurchaseItem::class);
     }
 
+    // Helper for toggling active status
+    public function toggleActive(): void
+    {
+        $this->is_active = ! $this->is_active;
+        $this->save();
+    }
+
+     /**
+      * Scope a query to only include products in the Pharmacy category.
+      *
+     * @param  Builder<Product>  $query
+     * @return Builder<Product>
+     */
+    public function scopeIsPharmacy(Builder $query): Builder
+    {
+        return $query->whereHas('productCategory', function ($subQ) {
+            $subQ->where('name', CategoryType::Pharmacy->value);
+        });
+    }
+
+    /**
+     * Scope a query to only include products in the Grocery category.
+     *
+     * @param  Builder<Product>  $query
+     * @return Builder<Product>
+     */
+    public function scopeIsGrocery(Builder $query): Builder
+    {
+        return $query->whereHas('productCategory', function ($subQ) {
+            $subQ->where('name', CategoryType::Grocery->value);
+        });
+    }
+
     /**
      * Get the attributes that should be cast.
      *
@@ -131,8 +174,10 @@ final class Product extends Model
             'id' => 'integer',
             'supplier_id' => 'integer',
             'category_id' => 'integer',
+            'product_category_id' => 'integer',
             'base_unit_id' => 'integer',
             'requires_prescription' => 'boolean',
+            'is_active' => 'boolean',
             'attributes' => 'array',
         ];
     }

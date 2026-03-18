@@ -4,90 +4,69 @@ declare(strict_types=1);
 
 namespace App\Actions\POS;
 
+use App\Actions\Inventory\DeductInventoryBatch;
 use App\Data\ProcessSale\SaleData;
 use App\Data\ProcessSale\SaleItemData;
-use App\Enums\Sale\Status;
-use App\Models\InventoryBatch;
 use App\Models\Sale;
 use App\Traits\HasDbTransaction;
-use Exception;
-use Illuminate\Support\Str;
 
 final class ProcessSale
 {
     use HasDbTransaction;
 
-    public function execute(SaleData $data): Sale|false
+    // Inject the separated inventory action
+    public function __construct(
+        private readonly DeductInventoryBatch $deductInventoryAction
+    ) {}
+
+    /**
+     * @param SaleData $saleData
+     * @param SaleItemData[] $itemsData
+     */
+    public function execute(SaleData $saleData, array $itemsData): Sale
     {
-        return $this->dbTransaction(function () use ($data) {
+        return $this->dbTransaction(function () use ($saleData, $itemsData) {
 
-            // 1. Create the base Sale record
-            // We set grand_total to 0 initially, we will calculate it as we go
-            $sale = Sale::create(array_merge(
-                $data->modelAttributes(),
-                [
-                    'status' => Status::Completed->value,
-                    'grand_total' => 0,
-                    'transaction_code' => Str::upper(Str::random(10)),
-                ]
-            ));
+            // 1. Calculate Grand Total
+            $grandTotal = collect($itemsData)->sum(fn(SaleItemData $item) => $item->subtotal);
 
-            $runningTotal = 0;
+            // 2. Create Sale
+            $sale = Sale::create([
+                'branch_id'    => $saleData->branch_id,
+                'user_id'      => $saleData->user_id,
+                'customer_id'  => $saleData->customer_id,
+                'payment_method_id' => $saleData->payment_method_id,
+                'payment_reference' => $saleData->payment_reference,
+                'amount_tendered'   => $saleData->amount_tendered,
+                'change_amount'     => $saleData->change_amount,
+                'grand_total'  => $grandTotal,
+                'status'       => $saleData->status,
+            ]);
 
-            // 2. Process Items
-            foreach ($data->items as $item) {
+            // 3. Process Items
+            foreach ($itemsData as $item) {
+                // Insert the Item
+                $sale->saleItems()->create([
+                    'product_id'         => $item->product_id,
+                    'inventory_batch_id' => $item->inventory_batch_id,
+                    'unit_id'            => $item->unit_id,
+                    'quantity'           => $item->quantity,
+                    'price_at_moment'    => $item->price_at_moment,
+                    'cost_at_moment'     => $item->cost_at_moment,
+                    'subtotal'           => $item->subtotal,
+                ]);
 
-                // A. Calculate Subtotal
-                $subtotal = $item->quantity * $item->price_at_moment;
-                $runningTotal += $subtotal;
-
-                // B. Handle Inventory Deduction
-                // Note: Logic assumes strict batch tracking.
-                // If specific batch not provided, find the oldest batch (FIFO)
-                $batchId = $item->inventory_batch_id;
-
-                if (! $batchId) {
-                    $batch = InventoryBatch::where('product_id', $item->product_id)
-                        ->where('branch_id', $data->branch_id)
-                        ->where('quantity_on_hand', '>', 0)
-                        ->orderBy('expiration_date', 'asc') // FIFO
-                        ->first();
-
-                    if (! $batch || $batch->quantity_on_hand < $item->quantity) {
-                        // Your trait will catch this and rollback everything
-                        throw new Exception("Insufficient stock for Product ID: {$item->product_id}");
-                    }
-
-                    $batchId = $batch->id;
-                } else {
-                    $batch = InventoryBatch::findOrFail($batchId);
-                    if ($batch->quantity_on_hand < $item->quantity) {
-                        throw new Exception('Insufficient stock in selected batch.');
-                    }
-                }
-
-                // Deduct Stock
-                $batch->decrement('quantity_on_hand', $item->quantity);
-
-                // C. Create SaleItem
-                $saleItem = new SaleItemData(
-                    product_id: $item->product_id,
-                    quantity: $item->quantity,
-                    unit_name: $item->unit_name,
-                    price_at_moment: $item->price_at_moment,
-                    inventory_batch_id: $batchId
+                // Deduct from Inventory using the reusable Action
+                $this->deductInventoryAction->execute(
+                    batchId: $item->inventory_batch_id,
+                    productId: $item->product_id,
+                    unitId: $item->unit_id,
+                    soldQuantity: $item->quantity
                 );
-
-                $sale->saleItems()->create(array_merge(
-                    $saleItem->modelAttributes(),
-                    ['subtotal' => $subtotal]
-                ));
             }
 
-            // 3. Finalize Grand Total
-            $sale->update(['grand_total' => $runningTotal]);
-
-            return $sale->load('saleItems');
+            return $sale;
         });
     }
+
 }

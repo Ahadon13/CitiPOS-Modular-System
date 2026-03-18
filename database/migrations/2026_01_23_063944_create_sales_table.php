@@ -20,7 +20,10 @@ return new class extends Migration
             $table->foreignId('branch_id')->constrained();
             $table->foreignId('user_id')->constrained();
             $table->foreignId('customer_id')->nullable()->constrained();
-            $table->string('reference_no')->unique();
+            $table->foreignId('payment_method_id')->nullable()->constrained('payment_methods')->nullOnDelete();
+            $table->string('payment_reference')->nullable();
+            $table->decimal('amount_tendered', 10, 2)->default(0);
+            $table->decimal('change_amount', 10, 2)->default(0);
             $table->bigInteger('grand_total')->default(0);
             $table->string('status')->default('completed');
             $table->timestamps();
