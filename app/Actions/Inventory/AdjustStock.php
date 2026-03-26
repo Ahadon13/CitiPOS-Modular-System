@@ -19,8 +19,8 @@ final class AdjustStock
         ?int $batchId = null,
         ?string $batchNumber = null,
         ?string $expiryDate = null,
-    ): void {
-        $this->dbTransaction(function () use ($branchId, $productId, $type, $quantity, $batchId, $batchNumber, $expiryDate) {
+    ): bool {
+        return $this->dbTransaction(function () use ($branchId, $productId, $type, $quantity, $batchId, $batchNumber, $expiryDate) {
 
             if ($type === 'deduct') {
                 // Find the specific batch to deduct from
@@ -35,6 +35,7 @@ final class AdjustStock
 
                 $batch->decrement('quantity_on_hand', $quantity);
 
+                return true;
             }
             elseif ($type === 'add') {
                 // Adding stock creates a new batch (or adds to an existing one if batch number matches perfectly)
@@ -52,7 +53,9 @@ final class AdjustStock
 
                 $batch->quantity_on_hand += $quantity;
                 $batch->save();
-
+                return true;
+            } else {
+                throw new \Exception("Invalid adjustment type.");
             }
         });
     }

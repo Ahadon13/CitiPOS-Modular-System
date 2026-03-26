@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Livewire\PointOfSale\Pages\Pharmacy;
 
-use App\Actions\Inventory\DeductInventoryBatch;
+use App\Actions\POS\ProcessSale as ProcessSaleAction;
+use App\Data\ProcessSale\SaleData;
+use App\Data\ProcessSale\SaleItemData;
+use App\Enums\Sale\Status;
 use App\Livewire\Concerns\HasToast;
 use App\Models\Customer;
 use App\Models\CustomerType;
@@ -12,9 +15,10 @@ use App\Models\Category;
 use App\Models\InventoryBatch;
 use App\Models\PaymentMethod;
 use App\Models\Product;
+use App\Models\ProductPackaging;
 use App\Traits\HasAuth;
 use App\Traits\HasDataTable;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -119,9 +123,10 @@ final class ProcessSale extends Component
     #[Computed]
     public function customers()
     {
-        return Customer::orderBy('name')->get()->map(fn ($c) => [
-            'label' => $c->name,
+        return Customer::with('customerType')->orderBy('name')->get()->map(fn ($c) => [
+            'label' => $c->name . ($c->customerType ? " ({$c->customerType->name} - {$c->customerType->discount_percentage}%)" : ''),
             'value' => $c->id,
+            'type_id' => $c->customer_type_id, // Important for linking
         ]);
     }
 
@@ -132,6 +137,12 @@ final class ProcessSale extends Component
             'label' => $type->name,
             'value' => $type->id,
         ]);
+    }
+
+    #[Computed]
+    public function customerTypesData()
+    {
+        return CustomerType::select('id', 'name', 'discount_percentage')->get();
     }
 
     public function saveCustomer()
@@ -168,46 +179,58 @@ final class ProcessSale extends Component
     }
 
     /**
-     * Complete Order Processing Logic
+     * Handles the Checkout payload from Alpine.js
      */
     public function submitOrder(array $checkoutData)
     {
-        $cart = $checkoutData['cart'];
+        // 1. Backend Validation
+        $validator = Validator::make($checkoutData, [
+            'cart' => ['required', 'array', 'min:1'],
+            'payment_method_id' => ['required', 'integer', 'exists:payment_methods,id'],
+            'amount_received' => ['required', 'numeric', 'min:0'],
+            'change_amount' => ['required', 'numeric', 'min:0'],
+            'discount_amount' => ['nullable', 'numeric', 'min:0'],
+            'applied_discount_type_id' => ['nullable', 'integer', 'exists:customer_types,id'],
+            'reference_number' => ['nullable', 'string'],
+            'remarks' => ['nullable', 'string'],
+        ]);
 
-        if (empty($cart)) {
-            $this->toastError('Cart is empty.');
+        if ($validator->fails()) {
+            $this->toastError('Validation failed. Please check the checkout details.');
             return;
         }
 
+        $validated = $validator->validated();
+
         try {
-            DB::beginTransaction();
+            // 2. Prepare SaleData DTO (Convert monetary values to CENTS)
+            $saleData = new SaleData(
+                branch_id: $this->currentBranchId,
+                user_id: $this->user->id,
+                payment_method_id: (int) $validated['payment_method_id'],
+                amount_tendered: (int) round($validated['amount_received'] * 100),
+                change_amount: (int) round($validated['change_amount'] * 100),
+                discount_amount: (int) round(($validated['discount_amount'] ?? 0) * 100),
+                customer_id: $this->customerMode === 'customer' ? $this->customer_id : null,
+                discount_type_id: (int) $validated['applied_discount_type_id'] ?? null,
+                payment_reference: $validated['reference_number'] ?? null,
+                status: Status::Completed
+            );
 
-            // 1. Calculate Discounts (e.g., 20% for PWD/Senior)
-            $discountPercentage = 0;
-            if ($this->customerMode === 'customer' && $this->customer_id) {
-                $customer = Customer::with('customerType')->find($this->customer_id);
-                $type = strtolower($customer->customerType->name ?? '');
+            // 3. Process Cart Items & Resolve FIFO Batches
+            $itemsData = [];
 
-                if (in_array($type, ['pwd', 'senior citizen', 'senior'])) {
-                    $discountPercentage = 0.20; // 20% discount
-                }
-            }
+            foreach ($validated['cart'] as $cartItem) {
+                $remainingToDeduct = (float) $cartItem['quantity'];
 
-            $subtotal = collect($cart)->sum(fn($item) => $item['price'] * $item['quantity']);
-            $discountAmount = $subtotal * $discountPercentage;
-            $grandTotal = $subtotal - $discountAmount;
+                // Fetch packaging to secure the exact conversion factor and unit_id
+                $packaging = ProductPackaging::findOrFail($cartItem['packaging_id']);
+                $unitId = $packaging->unit_id;
+                $conversionFactor = (float) $packaging->conversion_factor;
+                $priceCents = (int) round($cartItem['price'] * 100);
 
-            // 2. TODO: Create your Transaction/Sale record here
-            // $sale = Sale::create(['total' => $grandTotal, 'customer_id' => $this->customer_id, ... ]);
-
-            $deductAction = app(DeductInventoryBatch::class);
-
-            // 3. Loop through cart items and deduct inventory
-            foreach ($cart as $item) {
-                $remainingToDeduct = (float) $item['quantity'];
-
-                // Find active batches for this product in this branch using FIFO (Oldest first)
-                $batches = InventoryBatch::where('product_id', $item['product_id'])
+                // Fetch available inventory batches (FIFO: Oldest first)
+                $batches = InventoryBatch::where('product_id', $cartItem['product_id'])
                     ->where('branch_id', $this->currentBranchId)
                     ->where('quantity_on_hand', '>', 0)
                     ->orderBy('created_at', 'asc')
@@ -216,36 +239,45 @@ final class ProcessSale extends Component
                 foreach ($batches as $batch) {
                     if ($remainingToDeduct <= 0) break;
 
-                    // Deduct what we can from this batch
-                    $deductFromThisBatch = min($batch->quantity_on_hand, $remainingToDeduct);
+                    // Calculate how much BASE quantity this specific batch needs to provide
+                    $baseNeeded = $remainingToDeduct * $conversionFactor;
+                    $baseTaken = min($batch->quantity_on_hand, $baseNeeded);
 
-                    // Call your action safely
-                    $deductAction->execute(
-                        $batch->id,
-                        $item['product_id'],
-                        $item['unit_id'], // Requires unit_id logic in your DB, mapped in cart
-                        $deductFromThisBatch
+                    // Convert the taken base quantity back to the Packaged quantity for the DTO
+                    $qtyTaken = $baseTaken / $conversionFactor;
+
+                    // Calculate the cost of 1 unit of the SELECTED packaging
+                    $unitCostCents = (int) $batch->cost_per_unit->getAmount();
+                    $packagingCostCents = (int) round($unitCostCents * $conversionFactor);
+
+                    $itemsData[] = new SaleItemData(
+                        product_id: $cartItem['product_id'],
+                        inventory_batch_id: $batch->id,
+                        unit_id: $unitId, // Secured from backend packaging
+                        quantity: $qtyTaken,
+                        price_at_moment: $priceCents,
+                        cost_at_moment: $packagingCostCents,
+                        subtotal: (int) round($qtyTaken * $priceCents)
                     );
 
-                    // Create SaleItem Record here if needed...
-                    // $sale->items()->create([...])
-
-                    $remainingToDeduct -= $deductFromThisBatch;
+                    $remainingToDeduct -= $qtyTaken;
                 }
 
-                if ($remainingToDeduct > 0) {
-                    throw new \Exception("Insufficient total stock to fulfill {$item['name']}");
+                // If we ran out of batches before fulfilling the cart item:
+                if (round($remainingToDeduct, 4) > 0) {
+                    throw new \Exception("Insufficient stock in inventory for {$cartItem['name']}. Another transaction may have consumed it.");
                 }
             }
 
-            DB::commit();
+            // 4. Execute the fully structured Action
+            $action = app(ProcessSaleAction::class);
+            $action->execute($saleData, $itemsData);
 
-            // Tell frontend to clear cart and close modal
+            // 5. Cleanup
             $this->dispatch('sale-completed');
             $this->toastSuccess('Payment processed successfully!');
 
         } catch (\Exception $e) {
-            DB::rollBack();
             $this->toastError('Transaction failed: ' . $e->getMessage());
         }
     }

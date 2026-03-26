@@ -58,7 +58,6 @@ final class InventoryBatch extends Model
             'branch_id' => 'integer',
             'product_id' => 'integer',
             'expiration_date' => 'date',
-            'quantity_on_hand' => 'decimal:2',
             'cost_per_unit' => MoneyCast::class,
         ];
     }

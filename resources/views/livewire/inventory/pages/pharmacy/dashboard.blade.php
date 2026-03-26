@@ -207,6 +207,92 @@
         </div>
     </div>
 
+    {{-- ========================================== --}}
+    {{-- IN-DEMAND PRODUCTS (TOP SELLERS)           --}}
+    {{-- ========================================== --}}
+    <x-ui.card hoverless size="full" class="overflow-hidden p-0 border-indigo-500/30">
+        <div class="px-6 py-5 border-b border-black/10 dark:border-white/10 flex items-center justify-between bg-indigo-50/30 dark:bg-indigo-900/10">
+            <div>
+                <x-ui.heading level="h3" size="sm" class="text-indigo-700 dark:text-indigo-400 flex items-center gap-2">
+                    <x-ui.icon name="fire" class="size-5" />
+                    Top In-Demand Products
+                </x-ui.heading>
+                <p class="text-sm text-neutral-500 mt-1">Highest moving items in the last 30 days.</p>
+            </div>
+        </div>
+
+        <div class="w-full">
+            <div class="w-full text-sm text-neutral-300">
+                <div class="w-full overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="border-b border-black/10 dark:border-white/10 dark:bg-[#0a1331] bg-neutral-100/10 text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                                <th class="px-6 py-4">Rank</th>
+                                <th class="px-6 py-4">Product Name</th>
+                                <th class="px-6 py-4">Dosage</th>
+                                <th class="px-6 py-4">Product Code</th>
+                                <th class="px-6 py-4 text-center">Total Volume Sold</th>
+                                <th class="px-6 py-4 text-right">Revenue Generated</th>
+                            </tr>
+                        </thead>
+
+                        <tbody class="divide-y divide-black/10 dark:divide-white/10 bg-neutral-50 dark:bg-[#060A23]">
+                            @forelse ($this->topDemandProducts as $index => $item)
+                            <tr class="hover:bg-indigo-50/50 dark:hover:bg-indigo-900/20 transition-colors group">
+                                <td class="px-6 py-4">
+                                    <div class="size-8 rounded-lg flex items-center justify-center font-black text-sm {{ $index === 0 ? 'bg-amber-100 text-amber-600' : ($index === 1 ? 'bg-slate-200 text-slate-600' : ($index === 2 ? 'bg-orange-100 text-orange-700' : 'bg-neutral-100 dark:bg-white/10 text-neutral-500')) }}">
+                                        #{{ $index + 1 }}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="font-medium text-black dark:text-white">{{ $item->product->brand_name ?? 'Unknown' }}</div>
+                                    <div class="text-xs text-neutral-500">{{ $item->product->generic_name ?? '' }}</div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="font-medium text-black dark:text-white">{{ $item->product->dosage ?? 'N/A' }}</div>
+                                    <div class="text-xs text-neutral-500">{{ $item->product->form ?? '' }}</div>
+                                </td>
+                                <td class="px-6 py-4 font-mono text-neutral-400">
+                                    <span class="inline-flex items-center rounded-md bg-neutral-400/10 px-2 py-1 text-xs font-medium text-neutral-600 dark:text-neutral-400 ring-1 ring-inset ring-neutral-400/20">
+                                        {{ $item->product->product_code ?? 'N/A' }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <span class="text-indigo-600 dark:text-indigo-400 font-bold text-lg">{{ number_format($item->total_sold, 2) }}</span>
+                                    <span class="text-xs text-neutral-500 ml-1">{{ $item->product->baseUnit->abbreviation ?? 'pcs' }}</span>
+                                </td>
+                                <td class="px-6 py-4 text-right font-semibold text-black dark:text-white">
+                                    @money(\Money\Money::PHP((int) ($item->total_revenue ?? 0)))
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="6" class="px-6 py-16 text-center">
+                                    <div class="flex flex-col items-center justify-center">
+                                        <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-transparent ring-2 ring-indigo-400">
+                                            <x-ui.icon name="chart-bar" class="h-5 w-5 text-indigo-400!" />
+                                        </div>
+                                        <h3 class="text-sm font-semibold text-black dark:text-white">No sales data yet</h3>
+                                        <p class="mt-1 text-sm text-neutral-500">Demand will be calculated once products are sold.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="border-t border-black/10 dark:border-white/10 pb-4 px-4 flex justify-center">
+                <x-ui.pagination
+                    wire:model.live="perPage"
+                    :per-page-options="$perPageOptions"
+                    :data="$this->topDemandProducts"
+                />
+            </div>
+            </div>
+        </div>
+    </x-ui.card>
+
     <x-ui.card hoverless size="full" class="overflow-hidden p-0">
         <div class="px-6 py-5 border-b border-black/10 dark:border-white/10 flex items-center justify-between">
             <div>
@@ -227,7 +313,7 @@
                         <thead>
                             <tr class="border-b border-black/10 dark:border-white/10 dark:bg-[#0a1331] bg-neutral-100/10 text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                                 <th class="px-6 py-4">Name</th>
-                                <th class="px-6 py-4">SKU/Barcode</th>
+                                <th class="px-6 py-4">Dosage</th>
                                 <th class="px-6 py-4">Product Code</th>
                                 <th class="px-6 py-4 text-center">Current Stock</th>
                                 <th class="px-6 py-4 text-center">Reorder At</th>
@@ -245,12 +331,13 @@
 
                                 <tr class="hover:bg-white/5 transition-colors group">
                                     <td class="px-6 py-4">
-                                        <div class="font-medium text-black dark:text-white">{{ $product->brand_name }}</div>
-                                        <div class="text-xs text-neutral-500">{{ $product->generic_name }}</div>
+                                        <div class="font-medium text-black dark:text-white">{{ $product->brand_name ?? 'Unknown'}}</div>
+                                        <div class="text-xs text-neutral-500">{{ $product->generic_name ?? 'N/A' }}</div>
                                     </td>
 
                                     <td class="px-6 py-4 font-mono text-neutral-400">
-                                        {{ $basePkg->barcode ?? 'N/A' }}
+                                        <div class="font-medium text-black dark:text-white">{{ $product->dosage ?? 'N/A' }}</div>
+                                        <div class="text-xs text-neutral-500">{{ $product->form ?? 'N/A' }}</div>
                                     </td>
 
                                     <td class="px-6 py-4">
@@ -335,7 +422,7 @@
                             @forelse ($this->expiredBatches as $batch)
                             <tr class="hover:bg-rose-50/50 dark:hover:bg-rose-900/20 transition-colors group">
                                 <td class="px-6 py-4">
-                                    <div class="font-medium text-black dark:text-white">{{ $batch->product->brand_name ?? 'Unknown' }}</div>
+                                    <div class="font-medium text-black dark:text-white">{{ $batch->product->brand_name ?? 'Unknown' }} - {{ $batch->product->dosage ?? '' }} - {{ $batch->product->form ?? '' }}</div>
                                     <div class="text-xs text-neutral-500">{{ $batch->product->generic_name ?? 'Unknown' }}</div>
                                 </td>
                                 <td class="px-6 py-4 font-mono text-neutral-400">

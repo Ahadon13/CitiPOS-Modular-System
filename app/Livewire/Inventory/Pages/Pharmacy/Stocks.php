@@ -89,7 +89,7 @@ final class Stocks extends Component
         return $query->get()->map(function ($product) {
             return [
                 'value' => $product->id,
-                'label' => $product->brand_name . ' (' . $product->generic_name . ')',
+                'label' => $product->brand_name  . ' - ' . $product->dosage . ' (' . $product->generic_name . ')',
             ];
         })->toArray();
     }

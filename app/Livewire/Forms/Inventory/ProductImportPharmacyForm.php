@@ -26,6 +26,8 @@ class ProductImportPharmacyForm extends Form
             'product_code' => ['required', 'string', 'max:255'],
             'brand_name' => ['nullable', 'string', 'max:255'],
             'generic_name' => ['nullable', 'string', 'max:255'],
+            'dosage' => ['nullable', 'string', 'max:255'],
+            'form' => ['nullable', 'string', 'max:255'],
             'category' => ['nullable', 'string', 'max:255'],
             'supplier' => ['nullable', 'string', 'max:255'],
             'unit' => ['required', 'string'],
@@ -94,7 +96,7 @@ class ProductImportPharmacyForm extends Form
         $actualHeaders = $headings[0][0] ?? [];
 
         $requiredHeaders = [
-            'product_code', 'brand_name', 'generic_name', 'category', 'supplier',
+            'product_code', 'brand_name', 'generic_name', 'dosage', 'category', 'supplier',
             'unit', 'conversion', 'cost_price', 'selling_price', 'quantity_on_hand'
         ];
 

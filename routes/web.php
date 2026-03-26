@@ -7,6 +7,9 @@ use App\Enums\Role;
 use App\Http\Controllers\HomeRouteController;
 use App\Http\Controllers\InventoryRoleController;
 use App\Livewire;
+use App\Livewire\Admin\Pages\Branches;
+use App\Livewire\Admin\Pages\Dashboard as PagesDashboard;
+use App\Livewire\Admin\Pages\OwnerHub;
 use App\Livewire\Auth\ConfirmPassword;
 use App\Livewire\Auth\ForgotPassword;
 use App\Livewire\Auth\Login;
@@ -14,7 +17,7 @@ use App\Livewire\Auth\Register;
 use App\Livewire\Auth\ResetPassword;
 use App\Livewire\Auth\VerifyEmail;
 // Inventory Pages
-use App\Livewire\Inventory\Pages\Pharmacy\{Dashboard, Product, Settings, Stocks, Transaction, Customer, Purchase};
+use App\Livewire\Inventory\Pages\Pharmacy\{Dashboard, Product, Settings, Stocks, Transaction, Customer, Expenses, Purchase, Reports};
 use App\Livewire\Inventory\Pages\Pharmacy\Product\{CreateProduct, EditProduct, ImportProduct };
 use App\Livewire\Inventory\Pages\Pharmacy\Purchase\{CreatePurchase, RecordPurchase};
 // POS Pages
@@ -71,6 +74,33 @@ Route::group([
 
     /*
     *-----------------------------------------
+    *              ADMIN ROUTES
+    *-----------------------------------------
+    */
+
+    Route::group([
+        'prefix' => 'admin',
+        'as' => 'admin.',
+        'middleware' => [
+            'role:'.Role::SuperAdmin->value . '|' . Role::Admin->value,
+        ],
+    ], function () {
+        Route::get('/owner-hub', OwnerHub::class)->name('hub');
+        Route::get('/owner-dashboard', PagesDashboard::class)->name('dashboard');
+        Route::get('/branches', Branches::class)->name('branches');
+        Route::get('/branches/{branch}', Branches\ViewBranch::class)->name('branches.view');
+
+        Route::group([
+            'prefix' => 'pharmacy',
+            'as' => 'pharmacy.',
+        ], function () {
+            // PROCESS SALE
+            Route::get('/process-sale', ProcessSale::class)->name('process-sale');
+        });
+    });
+
+    /*
+    *-----------------------------------------
     *          INVENTORY ROUTES
     *-----------------------------------------
     */
@@ -104,12 +134,16 @@ Route::group([
             Route::get('/purchases', Purchase::class)->name('purchases');
             Route::get('/purchases/create', CreatePurchase::class)->name('purchases.create');
             Route::get('/purchases/record', RecordPurchase::class)->name('purchases.record');
+            // EXPENSES ROUTE
+            Route::get('/expenses', Expenses::class)->name('expenses');
             // TRANSACTION ROUTE
             Route::get('/transactions', Transaction::class)->name('transactions');
             // CUSTOMER ROUTE
             Route::get('/customers', Customer::class)->name('customers');
             // SETTINGS ROUTE
             Route::get('/settings', Settings::class)->name('settings');
+            // REPORTS ROUTE
+            Route::get('/reports', Reports::class)->name('reports');
         });
 
         // GROCERY ROUTES
@@ -146,3 +180,7 @@ Route::group([
         });
     });
 });
+
+// Catch-all route that starts with 'admin' and redirects to admin dashboard
+Route::get('admin/{any?}', fn () => redirect()->route('admin.dashboard'))
+    ->where('any', '.*');

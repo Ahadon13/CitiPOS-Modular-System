@@ -14,7 +14,6 @@ final class ProcessSale
 {
     use HasDbTransaction;
 
-    // Inject the separated inventory action
     public function __construct(
         private readonly DeductInventoryBatch $deductInventoryAction
     ) {}
@@ -27,36 +26,22 @@ final class ProcessSale
     {
         return $this->dbTransaction(function () use ($saleData, $itemsData) {
 
-            // 1. Calculate Grand Total
-            $grandTotal = collect($itemsData)->sum(fn(SaleItemData $item) => $item->subtotal);
+            // 1. Calculate Subtotal from items, then apply discount for Grand Total
+            $subtotal = collect($itemsData)->sum(fn(SaleItemData $item) => $item->subtotal);
+            $grandTotal = $subtotal - $saleData->discount_amount;
 
-            // 2. Create Sale
-            $sale = Sale::create([
-                'branch_id'    => $saleData->branch_id,
-                'user_id'      => $saleData->user_id,
-                'customer_id'  => $saleData->customer_id,
-                'payment_method_id' => $saleData->payment_method_id,
-                'payment_reference' => $saleData->payment_reference,
-                'amount_tendered'   => $saleData->amount_tendered,
-                'change_amount'     => $saleData->change_amount,
-                'grand_total'  => $grandTotal,
-                'status'       => $saleData->status,
-            ]);
+            // 2. Create Sale using the DTO attributes and the calculated total
+            $sale = Sale::create(array_merge($saleData->modelAttributes(), [
+                'subtotal'    => $subtotal, // Optional: save subtotal if your DB has this column
+                'grand_total' => $grandTotal,
+            ]));
 
-            // 3. Process Items
+            // 3. Process Items & Inventory
             foreach ($itemsData as $item) {
                 // Insert the Item
-                $sale->saleItems()->create([
-                    'product_id'         => $item->product_id,
-                    'inventory_batch_id' => $item->inventory_batch_id,
-                    'unit_id'            => $item->unit_id,
-                    'quantity'           => $item->quantity,
-                    'price_at_moment'    => $item->price_at_moment,
-                    'cost_at_moment'     => $item->cost_at_moment,
-                    'subtotal'           => $item->subtotal,
-                ]);
+                $sale->saleItems()->create($item->modelAttributes());
 
-                // Deduct from Inventory using the reusable Action
+                // Deduct from Inventory using your reusable Action
                 $this->deductInventoryAction->execute(
                     batchId: $item->inventory_batch_id,
                     productId: $item->product_id,
@@ -68,5 +53,4 @@ final class ProcessSale
             return $sale;
         });
     }
-
 }

@@ -43,17 +43,13 @@ final class Dashboard extends Component
     #[Computed]
     public function outOfStockCount(): int
     {
-        $query = Product::query()
-            // 1. Calculate Stock
-            ->withSum(['inventoryBatches as total_stock' => function ($query) {
-                $query->where('branch_id', $this->currentBranchId);
-            }], 'quantity_on_hand');
+        $query = InventoryBatch::query()->where('branch_id', $this->currentBranchId)
+            ->where('quantity_on_hand', '<=', 0);
 
-        // 2. STRICT: Only check Pharmacy products
-        $this->applyPharmacyScope($query, 'productCategory');
+        // STRICT: Only check Pharmacy products
+        $this->applyPharmacyScope($query, 'product.productCategory');
 
-        return $query->havingRaw('COALESCE(total_stock, 0) = 0')
-            ->count();
+        return $query->count();
     }
 
     #[Computed]
@@ -193,6 +189,25 @@ final class Dashboard extends Component
 
         return $query->orderBy('expiration_date', 'asc')
             ->paginate($this->perPage, ['*'], 'expired_page');
+    }
+
+    #[Computed]
+    public function topDemandProducts()
+    {
+
+        return \App\Models\SaleItem::selectRaw('product_id, SUM(quantity) as total_sold, SUM(subtotal) as total_revenue')
+            ->whereHas('sale', function ($q) {
+                // Only count sales from this branch
+                $q->where('branch_id', $this->currentBranchId);
+            })
+            ->whereHas('product.productCategory', function ($q) {
+                // STRICT: Only include Pharmacy/Medicine products
+                $q->whereIn('name', $this->targetCategories);
+            })
+            ->with(['product.baseUnit']) // Eager load the product and its base unit to prevent N+1 queries
+            ->groupBy('product_id')
+            ->orderByDesc('total_sold') // Order by the highest quantity sold
+            ->paginate($this->perPage, ['*'], 'top_demand_page');
     }
 
     public function getAdditionalPageResetProperties(): array

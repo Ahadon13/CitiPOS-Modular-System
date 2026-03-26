@@ -105,6 +105,7 @@
                         <th class="px-4 py-3 font-medium text-green-600 dark:text-green-400">product_code</th>
                         <th class="px-4 py-3 font-medium text-green-600 dark:text-green-400">brand_name</th>
                         <th class="px-4 py-3 font-medium text-green-600 dark:text-green-400">generic_name</th>
+                        <th class="px-4 py-3 font-medium text-green-600 dark:text-green-400">dosage</th>
                         <th class="px-4 py-3 font-medium text-green-600 dark:text-green-400">category</th>
                         <th class="px-4 py-3 font-medium text-green-600 dark:text-green-400">supplier</th>
                         <th class="px-4 py-3 font-medium text-green-600 dark:text-green-400">unit</th>
@@ -117,6 +118,7 @@
                         <th class="px-4 py-3 font-medium">barcode</th>
                         <th class="px-4 py-3 font-medium">batch_number</th>
                         <th class="px-4 py-3 font-medium">requires_prescription</th>
+                        <th class="px-4 py-3 font-medium">form</th>
                         <th class="px-4 py-3 font-medium">description</th>
                     </tr>
                 </thead>
@@ -126,6 +128,7 @@
                         <td class="px-4 py-3 font-mono text-xs">PRD-001</td>
                         <td class="px-4 py-3">Biogesic</td>
                         <td class="px-4 py-3">Paracetamol</td>
+                        <td class="px-4 py-3">500mg</td>
                         <td class="px-4 py-3">Pain Relievers</td>
                         <td class="px-4 py-3">Acme Pharma</td>
                         <td class="px-4 py-3">tablet</td>
@@ -138,11 +141,13 @@
                         <td class="px-4 py-3 text-neutral-400">480123456</td>
                         <td class="px-4 py-3 text-neutral-400">BATCH-001</td>
                         <td class="px-4 py-3 text-neutral-400">No</td>
+                        <td class="px-4 py-3 text-neutral-400">tablet</td>
                         <td class="px-4 py-3 text-neutral-400">Pain relief medication</td>
                     </tr>
                     {{-- Packaging Row --}}
                     <tr class="bg-neutral-50/50 dark:bg-white/[0.02]">
                         <td class="px-4 py-3 font-mono text-xs text-blue-600 dark:text-blue-400 font-bold border-l-2 border-blue-500">PRD-001</td>
+                        <td class="px-4 py-3 text-neutral-400 italic">Leave blank</td>
                         <td class="px-4 py-3 text-neutral-400 italic">Leave blank</td>
                         <td class="px-4 py-3 text-neutral-400 italic">Leave blank</td>
                         <td class="px-4 py-3 text-neutral-400 italic">Leave blank</td>
@@ -158,6 +163,7 @@
                         <td class="px-4 py-3 text-neutral-400 italic">Leave blank</td>
                         <td class="px-4 py-3 text-neutral-400 italic">Leave blank</td>
                         <td class="px-4 py-3 text-neutral-400 italic">Leave blank</td>
+                        <td class="px-4 py-3 text-neutral-400 italic">Leave blank</td>
                     </tr>
                 </tbody>
             </table>
@@ -166,8 +172,9 @@
         {{-- Grouping Logic Explanation --}}
         <ul class="space-y-2 text-sm text-neutral-600 dark:text-neutral-400 mb-8 list-disc list-inside">
             <li><strong>product_code</strong> must be unique for each distinct product.</li>
+            <li><strong>dosage and form</strong>. Dosage is used to measure the amount of the product <code class="font-mono text-xs bg-neutral-100 dark:bg-white/10 px-1 py-0.5 rounded">(e.g., 100mg)</code>, while the form indicates the physical state of the product <code class="font-mono text-xs bg-neutral-100 dark:bg-white/10 px-1 py-0.5 rounded">(e.g., tablet, capsule, liquid)</code>.</li>
             <li><strong>Grouping Packagings:</strong> Use the exact same <code class="font-mono text-xs bg-neutral-100 dark:bg-white/10 px-1 py-0.5 rounded">product_code</code> on multiple rows to group them. The first row must be the base unit (conversion = 1).</li>
-            <li><strong>unit</strong> must exactly match existing records in your system.
+            <li><strong>unit</strong> must exactly match existing records in your system. this is the sale unit on how you can sell the product. For example, if your base unit is "Piece" and you also sell in "Box" which contains 100 pieces, you would have two rows with the same product_code: one with unit "Piece" and conversion 1, and another with unit "Box" and conversion 100. The system will automatically link them together based on the product_code.
                 <code class="font-mono text-xs bg-neutral-100 dark:bg-white/10 px-1 py-0.5 rounded">
                     (Available units:
                     @forelse($this->units as $unit)
@@ -192,7 +199,7 @@
                     <span class="text-xs font-bold uppercase tracking-wider text-green-600 dark:text-green-400">Required Columns</span>
                     <div class="flex flex-wrap gap-2">
                         @php
-                        $required = ['product_code', 'brand_name', 'generic_name', 'category', 'supplier', 'unit', 'conversion', 'cost_price', 'selling_price', 'quantity_on_hand', 'reorder_level', 'expiration_date'];
+                        $required = ['product_code', 'brand_name', 'dosage', 'generic_name', 'category', 'supplier', 'unit', 'conversion', 'cost_price', 'selling_price', 'quantity_on_hand', 'reorder_level', 'expiration_date'];
                         @endphp
                         @foreach($required as $col)
                         <div class="px-3 py-1.5 text-sm rounded-md border border-green-200 bg-green-50 text-green-700 dark:border-green-500/20 dark:bg-green-500/10 dark:text-green-400">
@@ -207,7 +214,7 @@
                     <span class="text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Optional Columns</span>
                     <div class="flex flex-wrap gap-2">
                         @php
-                        $optional = ['description', 'requires_prescription', 'batch_number', 'barcode'];
+                        $optional = ['description', 'form','requires_prescription', 'batch_number', 'barcode'];
                         @endphp
                         @foreach($optional as $col)
                         <div class="px-3 py-1.5 text-sm rounded-md border border-neutral-200 bg-neutral-50 text-neutral-700 dark:border-white/10 dark:bg-white/5 dark:text-neutral-300">

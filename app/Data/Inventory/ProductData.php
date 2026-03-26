@@ -20,11 +20,13 @@ final class ProductData extends Data
         public int $base_price,
         public array $packagings,
         public int $category_id,
+        public string $dosage,
         public ?array $attributes,
         public ?string $base_barcode,
         public ?string $name,
         public ?string $brand_name,
         public ?string $generic_name,
+        public ?string $form,
     ) {}
 
     public static function rules(?ValidationContext $context = null): array
@@ -39,6 +41,8 @@ final class ProductData extends Data
             'name' => ['nullable', 'string', 'max:255'],
             'brand_name' => ['nullable', 'string', 'max:255'],
             'generic_name' => ['nullable', 'string', 'max:255'],
+            'dosage' => ['required', 'string', 'max:255'],
+            'form' => ['nullable', 'string', 'max:255'],
             'requires_prescription' => ['boolean'],
             'reorder_level' => ['required', 'numeric', 'min:0'],
             'attributes' => ['nullable', 'array'],
@@ -67,6 +71,8 @@ final class ProductData extends Data
             // Text Inputs
             'brand_name.max' => 'The brand name is too long (maximum 255 characters).',
             'generic_name.max' => 'The generic name is too long (maximum 255 characters).',
+            'dosage.max' => 'The dosage is too long (maximum 255 characters).',
+            'form.max' => 'The form is too long (maximum 255 characters).',
             'product_code.required' => 'Please enter a unique product code.',
             'product_code.max' => 'The product code is too long (maximum 255 characters, including letters, numbers, and dashes).',
             'product_code.unique' => 'This product code is already in use. Please choose a different one.',

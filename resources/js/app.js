@@ -13,10 +13,25 @@ import ApexCharts from "apexcharts";
 
 window.ApexCharts = ApexCharts;
 
-window.posApp = (paymentMethods = []) => {
+window.posApp = (
+    paymentMethods = [],
+    customerTypes = [],
+    customerMode,
+    customerId,
+    customers = [],
+) => {
     return {
         cart: [],
-        paymentMethods: paymentMethods, // Injected from Blade
+        paymentMethods: paymentMethods,
+        customerTypes: customerTypes,
+
+        // Use Alpine's Entangle logic via parameters
+        customerMode: customerMode,
+        customerId: customerId,
+        customersData: customers,
+
+        walkInDiscountTypeId: "", // Track manual discount selection for walk-ins
+
         isCalculatorOpen: false,
         checkoutState: {
             payment_method_id: "",
@@ -50,8 +65,46 @@ window.posApp = (paymentMethods = []) => {
             );
         },
 
+        get discountPercentage() {
+            let percentage = 0;
+
+            if (this.customerMode === "customer" && this.customerId) {
+                // Find the customer, then find their type's discount
+                let customer = this.customersData.find(
+                    (c) => c.value == this.customerId,
+                );
+                if (customer && customer.type_id) {
+                    let type = this.customerTypes.find(
+                        (t) => t.id == customer.type_id,
+                    );
+                    // FIX: Divide by 100 to convert 20 into 0.20
+                    if (type)
+                        percentage =
+                            (parseFloat(type.discount_percentage) || 0) / 100;
+                }
+            } else if (
+                this.customerMode === "walk_in" &&
+                this.walkInDiscountTypeId
+            ) {
+                // Use the manually selected walk-in discount
+                let type = this.customerTypes.find(
+                    (t) => t.id == this.walkInDiscountTypeId,
+                );
+                // FIX: Divide by 100 to convert 20 into 0.20
+                if (type)
+                    percentage =
+                        (parseFloat(type.discount_percentage) || 0) / 100;
+            }
+
+            return percentage;
+        },
+
+        get discountAmount() {
+            return this.netSales * this.discountPercentage;
+        },
+
         get total() {
-            return this.netSales; // Add global tax/discount logic here later
+            return this.netSales - this.discountAmount;
         },
 
         get change() {
@@ -173,9 +226,16 @@ window.posApp = (paymentMethods = []) => {
                 amount_received: parseFloat(this.checkoutState.amount_received),
                 reference_number: this.checkoutState.reference_number,
                 remarks: this.checkoutState.remarks,
+                change_amount: parseFloat(this.change.toFixed(2)),
+                // Send the calculated discount data so the backend can verify it
+                applied_discount_type_id:
+                    this.customerMode === "walk_in"
+                        ? this.walkInDiscountTypeId
+                        : null,
+                discount_amount: this.discountAmount,
+                grand_total: this.total,
             };
 
-            // Call Livewire
             $wire.submitOrder(payload);
         },
 
@@ -190,14 +250,6 @@ window.posApp = (paymentMethods = []) => {
         },
 
         handleKeydown(e) {
-            console.log(
-                "Key pressed:",
-                e.key,
-                "Ctrl:",
-                e.ctrlKey,
-                "Meta:",
-                e.metaKey,
-            );
             if (e.key.toLowerCase() === "k" && (e.ctrlKey || e.metaKey)) {
                 e.preventDefault();
                 this.focusSearch();
@@ -230,6 +282,57 @@ window.posApp = (paymentMethods = []) => {
                     ),
                 );
             }
+        },
+    };
+};
+
+window.transactionManager = () => {
+    return {
+        selectedTx: null,
+
+        viewTx(transaction) {
+            this.selectedTx = transaction;
+            console.table("Selected transaction:", this.selectedTx);
+            window.dispatchEvent(
+                new CustomEvent("open-modal", {
+                    detail: { id: "view-transaction-modal" },
+                }),
+            );
+        },
+
+        formatMoney(cents) {
+            if (!cents) return "₱0.00";
+            return (
+                "₱" +
+                (cents / 100).toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                })
+            );
+        },
+
+        formatDate(dateString) {
+            if (!dateString) return "";
+            const d = new Date(dateString);
+            return d.toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+            });
+        },
+
+        formatTime(dateString) {
+            if (!dateString) return "";
+            const d = new Date(dateString);
+            return d.toLocaleTimeString("en-US", {
+                hour: "2-digit",
+                minute: "2-digit",
+            });
+        },
+
+        capitalize(str) {
+            if (!str) return "";
+            return str.charAt(0).toUpperCase() + str.slice(1);
         },
     };
 };

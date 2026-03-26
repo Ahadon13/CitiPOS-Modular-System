@@ -1,5 +1,4 @@
-<div class="flex flex-col md:flex-row w-full h-full" x-data="posApp(@js($this->activePaymentMethods))" @keydown.window="handleKeydown($event)">
-
+<div class="flex flex-col md:flex-row w-full h-full" x-data="posApp(@js($this->activePaymentMethods), @js($this->customerTypesData), @entangle('customerMode'), @entangle('customer_id'), @js($this->customers))" @keydown.window="handleKeydown($event)">
     {{-- ========================================== --}}
     {{-- LEFT COLUMN: PRODUCT SELECTION (LIST ONLY) --}}
     {{-- ========================================== --}}
@@ -50,34 +49,51 @@
 
             <div class="flex flex-col gap-2">
                 @foreach($this->products as $product)
-                <div x-data="{ selectedPkgId: {{ $product->packagings[0]['id'] ?? 'null' }} }" @click="increase({{ $product->id }}, '{{ addslashes($product->name) }}', '{{ addslashes($product->generic_name) }}', {{ $product->stock }}, {{ json_encode($product->packagings) }}, selectedPkgId)" class="cursor-pointer flex items-center justify-between p-3 rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#0a1331] hover:border-electric-blue dark:hover:border-electric-blue transition-all hover:shadow-sm active:scale-[0.99] {{ $product->stock <= 0 ? 'opacity-60 grayscale pointer-events-none' : '' }}">
+                <div x-data="{ selectedPkgId: {{ $product->packagings[0]['id'] ?? 'null' }} }"
+                    x-on:click="increase({{ $product->id }}, '{{ addslashes($product->name) }}', '{{ addslashes($product->generic_name) }}', {{ $product->stock }}, {{ json_encode($product->packagings) }}, selectedPkgId)" class="cursor-pointer flex items-center justify-between p-3 rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#0a1331] hover:border-electric-blue dark:hover:border-electric-blue transition-all hover:shadow-sm active:scale-[0.99] {{ $product->stock <= 0 ? 'opacity-60 grayscale pointer-events-none' : '' }}">
                     {{-- Left: Details --}}
                     <div class="flex items-center gap-3 overflow-hidden">
-                        <div class="size-10 rounded-lg bg-neutral-100 dark:bg-white/5 flex items-center justify-center shrink-0">
-                            <x-ui.icon name="cube" class="size-5 text-neutral-400" />
+                        <div class="size-18 rounded-lg bg-neutral-100 dark:bg-white/5 flex items-center justify-center shrink-0">
+                            <x-ui.icon name="cube" class="size-12 text-neutral-400" />
                         </div>
                         <div class="truncate">
                             <div class="flex items-center flex-row gap-1 leading-tight min-w-0">
-                                <h3 class="text-sm font-bold text-neutral-900 dark:text-white truncate group-hover:text-electric-blue transition-colors">{{ $product->name }}</h3>
-                                - <p class="text-xs text-neutral-500 dark:text-neutral-400 truncate">{{ $product->generic_name }}</p>
+                                <h3 class="text-lg font-bold text-neutral-900 dark:text-white truncate group-hover:text-electric-blue transition-colors">{{ $product->name }}</h3>
+                                - <p class="text-sm text-neutral-500 dark:text-neutral-400 truncate">{{ $product->generic_name }}</p>
                             </div>
 
                             <div class="flex items-center gap-2 mt-1">
                                 {{-- PACKAGING SELECTOR --}}
                                 @if(count($product->packagings) > 1)
-                                <select x-model="selectedPkgId" @click.stop class="text-[10px] py-0.5 px-1.5 rounded border border-black/10 dark:border-white/10 bg-neutral-50 dark:bg-[#060A23] font-medium text-neutral-600 dark:text-neutral-300 focus:ring-0 focus:border-electric-blue">
+                                <select x-model="selectedPkgId" @click.stop class=" w-40 text-sm py-0.5 px-1.5 rounded border border-black/10 dark:border-white/10 bg-neutral-50 dark:bg-[#060A23] font-medium text-neutral-600 dark:text-neutral-300 focus:ring-0 focus:border-electric-blue">
                                     @foreach($product->packagings as $pkg)
                                     <option value="{{ $pkg['id'] }}">{{ $pkg['unit'] }} (₱{{ number_format($pkg['price'], 2) }})</option>
                                     @endforeach
                                 </select>
                                 @else
-                                <span class="text-[10px] font-bold text-neutral-500 bg-neutral-100 dark:bg-white/10 px-1.5 rounded py-0.5">{{ $product->packagings[0]['unit'] ?? 'Unit' }}</span>
+                                <span class="text-sm font-bold text-neutral-500 bg-neutral-100 dark:bg-white/10 px-1.5 rounded py-0.5">{{ $product->packagings[0]['unit'] ?? 'Unit' }}</span>
                                 @endif
 
-                                @if($product->stock <= 0) <span class="text-[10px] font-bold text-red-500 uppercase tracking-wider">Out of Stock</span>
-                                    @else
-                                    <span class="text-[10px] text-neutral-500 dark:text-neutral-400 font-mono">{{ $product->stock }} max base</span>
-                                    @endif
+                                {{-- STOCK INDICATOR --}}
+                                @if($product->stock <= 0)
+                                    <span class="px-1.5 py-0.5 rounded text-sm font-bold bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400 border border-red-200 dark:border-red-500/20 uppercase tracking-wider">
+                                        Out of Stock
+                                    </span>
+                                @else
+                                    <span class="px-1.5 py-0.5 rounded text-sm font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">
+                                        {{ $product->stock }} In Stock
+                                    </span>
+                                @endif
+
+                                {{-- PRESCRIPTION (Rx) INDICATOR --}}
+                                @if($product->required_prescription)
+                                    <span class="px-1.5 py-0.5 rounded text-sm font-bold bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400 border border-purple-200 dark:border-purple-500/20 flex items-center gap-0.5" title="Prescription Required">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-3">
+                                            <path fill-rule="evenodd" d="M10 2c-1.716 0-3.408.106-5.07.31C3.806 2.45 3 3.414 3 4.517V17.25a.75.75 0 0 0 1.075.676L10 15.082l5.925 2.844A.75.75 0 0 0 17 17.25V4.517c0-1.103-.806-2.068-1.93-2.207A41.403 41.403 0 0 0 10 2ZM7.75 8a.75.75 0 0 0 0 1.5h1.5v1.5a.75.75 0 0 0 1.5 0v-1.5h1.5a.75.75 0 0 0 0-1.5h-1.5v-1.5a.75.75 0 0 0-1.5 0v1.5h-1.5Z" clip-rule="evenodd" />
+                                        </svg>
+                                        Rx Req.
+                                    </span>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -86,7 +102,7 @@
                     <div class="flex items-center gap-4 shrink-0 pl-2">
                         <template x-if="getItemQuantity('{{ $product->id }}_' + selectedPkgId) > 0">
                             <div class="flex items-center gap-2 px-2 py-1 bg-electric-blue/10 border border-electric-blue/20 rounded-md">
-                                <span class="text-xs font-bold text-electric-blue" x-text="'In Cart: ' + getItemQuantity('{{ $product->id }}_' + selectedPkgId)"></span>
+                                <span class="text-sm font-bold text-electric-blue" x-text="'In Cart: ' + getItemQuantity('{{ $product->id }}_' + selectedPkgId)"></span>
                             </div>
                         </template>
                     </div>
@@ -340,66 +356,152 @@
             </div>
         </form>
     </x-ui.modal>
+
     {{-- ========================================== --}}
-    {{-- CHECKOUT MODAL                  --}}
+    {{--            CHECKOUT MODAL                  --}}
     {{-- ========================================== --}}
-    <x-ui.modal id="checkout-modal" width="md" heading="Process Payment">
-        <div class="space-y-4">
+    <x-ui.modal id="checkout-modal" width="4xl" heading="Process Payment">
 
-            {{-- Big Total --}}
-            <div class="bg-neutral-100 dark:bg-[#060A23] p-4 rounded-xl text-center border border-black/5 dark:border-white/5">
-                <p class="text-sm text-neutral-500 dark:text-neutral-400 font-bold tracking-widest uppercase mb-1">Amount Due</p>
-                <h2 class="text-4xl font-black text-electric-blue" x-text="'₱' + total.toFixed(2)"></h2>
-            </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-            {{-- Payment Method Selection --}}
-            <x-ui.field required>
-                <x-ui.label>Payment Method</x-ui.label>
-                <select x-model="checkoutState.payment_method_id" class="w-full rounded-md border-gray-300 dark:border-white/10 dark:bg-[#0a1331] shadow-sm text-sm focus:ring-electric-blue focus:border-electric-blue">
-                    <option value="">-- Select Payment Method --</option>
-                    <template x-for="method in paymentMethods" :key="method.id">
-                        <option :value="method.id" x-text="method.name"></option>
-                    </template>
-                </select>
-            </x-ui.field>
+            {{-- ========================================== --}}
+            {{-- LEFT COLUMN: Order Details & Notes         --}}
+            {{-- ========================================== --}}
+            <div class="flex flex-col h-full space-y-4">
 
-            {{-- Conditional Reference Number --}}
-            <div x-show="requiresReference" x-cloak x-collapse>
-                <x-ui.field required>
-                    <x-ui.label>Reference Number</x-ui.label>
-                    <x-ui.input x-model="checkoutState.reference_number" placeholder="e.g. 100012345678" />
+                {{-- Order Summary Preview --}}
+                <div class="flex flex-col flex-1 min-h-0">
+                    <p class="text-sm font-bold text-neutral-700 dark:text-neutral-300 mb-2">Order Summary</p>
+                    <div class="overflow-y-auto border border-black/10 dark:border-white/10 rounded-lg bg-white dark:bg-black/20 custom-scrollbar p-2 max-h-[40vh] md:max-h-[300px]">
+                        <table class="w-full text-sm">
+                            <tbody class="divide-y divide-black/5 dark:divide-white/5">
+                                <template x-for="item in cart" :key="item.cartId">
+                                    <tr>
+                                        <td class="py-2 pr-2 font-medium text-neutral-900 dark:text-white leading-tight">
+                                            <span x-text="item.name"></span>
+                                            <div class="text-[10px] text-neutral-500" x-text="item.generic_name"></div>
+                                        </td>
+                                        <td class="py-2 px-2 text-neutral-500 dark:text-neutral-400 text-center whitespace-nowrap">
+                                            <span x-text="item.quantity + ' ' + item.unit"></span>
+                                        </td>
+                                        <td class="py-2 pl-2 text-right font-mono font-bold text-neutral-900 dark:text-white whitespace-nowrap">
+                                            <span x-text="'₱' + (item.price * item.quantity).toFixed(2)"></span>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {{-- Remarks --}}
+                <x-ui.field>
+                    <x-ui.label>Remarks / Notes (Optional)</x-ui.label>
+                    <x-ui.textarea x-model="checkoutState.remarks" rows="2" placeholder="Add any transaction notes here..."></x-ui.textarea>
                 </x-ui.field>
             </div>
 
-            {{-- Amount Received --}}
-            <x-ui.field required>
-                <div class="flex justify-between items-center mb-1">
-                    <x-ui.label class="mb-0">Amount Received</x-ui.label>
-                    <button @click="setExactAmount" type="button" class="text-xs font-bold text-electric-blue hover:underline bg-electric-blue/10 px-2 py-0.5 rounded">
-                        Exact Amount
-                    </button>
+            {{-- ========================================== --}}
+            {{-- RIGHT COLUMN: Payment & Calculations       --}}
+            {{-- ========================================== --}}
+            <div class="flex flex-col space-y-4">
+
+                {{-- Big Total --}}
+                <div class="bg-neutral-100 dark:bg-[#060A23] p-4 rounded-xl text-center border border-black/5 dark:border-white/5">
+                    <p class="text-sm text-neutral-500 dark:text-neutral-400 font-bold tracking-widest uppercase mb-1">Amount Due</p>
+
+                    {{-- Display when NO discount is applied --}}
+                    <div x-show="discountAmount === 0">
+                        <h2 class="text-4xl font-black text-electric-blue font-mono" x-text="'₱' + total.toFixed(2)"></h2>
+                    </div>
+
+                    {{-- Display when a DISCOUNT IS applied --}}
+                    <div x-show="discountAmount > 0" x-cloak class="flex flex-col items-center">
+                        <span class="text-lg font-bold text-neutral-400 dark:text-neutral-500 line-through decoration-red-500/50 decoration-2 font-mono" x-text="'₱' + netSales.toFixed(2)"></span>
+                        <h2 class="text-4xl font-black text-electric-blue leading-tight font-mono" x-text="'₱' + total.toFixed(2)"></h2>
+                        <div class="mt-1 text-[11px] font-bold text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 px-3 py-0.5 rounded-full inline-block">
+                            Includes <span x-text="(discountPercentage * 100).toFixed(0) + '%'"></span> off (Saved ₱<span x-text="discountAmount.toFixed(2)"></span>)
+                        </div>
+                    </div>
                 </div>
-                <x-ui.input type="number" step="0.01" x-model="checkoutState.amount_received" placeholder="₱0.00" class="font-mono text-lg" />
-            </x-ui.field>
 
-            {{-- Change Display --}}
-            <div class="flex justify-between items-center pt-2">
-                <span class="text-lg font-bold text-neutral-700 dark:text-neutral-300">Change:</span>
-                <span class="text-2xl font-black text-green-600 dark:text-green-400 font-mono" x-text="'₱' + change.toFixed(2)"></span>
+                {{-- Inputs Grid to save space --}}
+                <div class="grid grid-cols-2 gap-4">
+
+                    {{-- Discount Selection (Walk-in Only) --}}
+                    <div x-show="customerMode === 'walk_in'" x-cloak class="col-span-2">
+                        <x-ui.field>
+                            <x-ui.label>Apply Walk-in Discount</x-ui.label>
+                            <select x-model="walkInDiscountTypeId" class="w-full rounded-md border-gray-300 dark:border-white/10 dark:bg-[#0a1331] shadow-xs text-sm focus:ring-electric-blue focus:border-electric-blue">
+                                <option value="">-- No Discount --</option>
+                                <template x-for="type in customerTypes" :key="type.id">
+                                    <option :value="type.id" x-text="type.name + (type.discount_percentage > 0 ? ' (' + type.discount_percentage + '%)' : '')"></option>
+                                </template>
+                            </select>
+                        </x-ui.field>
+                    </div>
+
+                    {{-- Payment Method --}}
+                    <div class="col-span-2">
+                        <x-ui.field required>
+                            <x-ui.label>Payment Method</x-ui.label>
+                            <select x-model="checkoutState.payment_method_id" class="w-full rounded-md border-gray-300 dark:border-white/10 dark:bg-[#0a1331] shadow-xs text-sm focus:ring-electric-blue focus:border-electric-blue">
+                                <option value="">-- Select Method --</option>
+                                <template x-for="method in paymentMethods" :key="method.id">
+                                    <option :value="method.id" x-text="method.name"></option>
+                                </template>
+                            </select>
+                        </x-ui.field>
+                    </div>
+
+                    {{-- Conditional Reference Number --}}
+                    <div class="col-span-2" x-show="requiresReference" x-cloak>
+                        <x-ui.field required>
+                            <x-ui.label>Ref Number</x-ui.label>
+                            <x-ui.input x-model="checkoutState.reference_number" placeholder="e.g. 10001234" />
+                        </x-ui.field>
+                    </div>
+
+                    {{-- Amount Received --}}
+                    <div class="col-span-2">
+                        <x-ui.field required>
+                            <div class="flex justify-between items-center mb-1 mt-1">
+                                <x-ui.label class="mb-0">Received</x-ui.label>
+                                <button @click="setExactAmount" type="button" class="text-[10px] font-bold text-electric-blue hover:underline bg-electric-blue/10 px-1.5 py-0.5 rounded">
+                                    EXACT
+                                </button>
+                            </div>
+                            <x-ui.input type="number" step="0.01" x-model="checkoutState.amount_received" placeholder="₱0.00" class="font-mono text-lg font-bold" />
+                        </x-ui.field>
+                    </div>
+
+                    {{-- Dedicated Change Box --}}
+                    <div class="col-span-2 flex flex-col justify-end">
+                        <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/50 rounded-lg p-2 flex flex-col items-center justify-center h-[58px]">
+                            <span class="text-[10px] font-bold text-green-700 dark:text-green-400 uppercase tracking-wider leading-none">Change</span>
+                            <span class="text-xl font-black text-green-600 dark:text-green-400 font-mono leading-none mt-1" x-text="'₱' + change.toFixed(2)"></span>
+                        </div>
+                    </div>
+
+                </div>
             </div>
+        </div>
 
-            {{-- Remarks --}}
-            <x-ui.field>
-                <x-ui.label>Remarks / Notes (Optional)</x-ui.label>
-                <x-ui.textarea x-model="checkoutState.remarks" rows="2" placeholder="Add any transaction notes here..."></x-ui.textarea>
-            </x-ui.field>
-
-            <div class="pt-4 flex justify-end gap-3 mt-4 border-t border-black/10 dark:border-white/10">
-                <x-ui.button type="button" variant="outline" x-on:click="$dispatch('close-modal', { id: 'checkout-modal' })">Cancel</x-ui.button>
-                <x-ui.button color="primary" icon="check" @click="submitToBackend($wire)" x-bind:disabled="checkoutState.amount_received < total || !checkoutState.payment_method_id || (requiresReference && !checkoutState.reference_number)">
-                    Confirm Payment
-                </x-ui.button>
-            </div>
+        {{-- Footer Actions --}}
+        <div class="pt-4 flex justify-end gap-3 mt-4 border-t border-black/10 dark:border-white/10">
+            <x-ui.button type="button" variant="outline" x-on:click="$dispatch('close-modal', { id: 'checkout-modal' })">Cancel</x-ui.button>
+            <x-ui.button
+                color="primary"
+                icon="check"
+                @click="submitToBackend($wire)"
+                x-bind:disabled="Number(checkoutState.amount_received) < Number(total.toFixed(2)) || !checkoutState.payment_method_id || (requiresReference && !checkoutState.reference_number)"
+                wire:loading.attr="disabled"
+                wire:target="submitOrder"
+                class="px-6"
+            >
+                <span wire:loading.remove wire:target="submitOrder">Confirm Payment</span>
+                <span wire:loading wire:target="submitOrder">Processing...</span>
+            </x-ui.button>
         </div>
     </x-ui.modal>
 </div>

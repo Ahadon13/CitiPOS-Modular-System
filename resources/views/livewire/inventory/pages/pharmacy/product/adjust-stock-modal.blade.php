@@ -66,31 +66,11 @@
                 @endif
 
                 {{-- COMMON FIELDS --}}
-                <div class="grid grid-cols-2 gap-4">
-                    <x-ui.field required>
-                        <x-ui.label>Quantity <span class="text-xs font-normal">(in {{ $adjust_product['base_unit'] ?? 'pcs' }})</span></x-ui.label>
-                        <x-ui.input type="number" step="any" min="0.01" wire:model="quantity" />
-                        <x-ui.error name="quantity" />
-                    </x-ui.field>
-
-                    <x-ui.field required>
-                        <x-ui.label>Reason for Adjustment</x-ui.label>
-                        <select wire:model="reason" class="w-full h-10 px-3 rounded-md border border-neutral-200 bg-white text-sm dark:border-white/10 dark:bg-white/5 dark:text-white focus:border-blue-500 focus:ring-blue-500">
-                            <option value="">Select reason...</option>
-                            @if($adjustment_type === 'deduct')
-                            <option value="Damaged Item">Damaged Item</option>
-                            <option value="Expired">Expired</option>
-                            <option value="Lost / Missing">Lost / Missing</option>
-                            <option value="Internal Use">Internal Use</option>
-                            @else
-                            <option value="Found Missing Stock">Found Missing Stock</option>
-                            <option value="Initial Inventory">Initial Inventory Count</option>
-                            <option value="Unrecorded Delivery">Unrecorded Delivery</option>
-                            @endif
-                        </select>
-                        <x-ui.error name="reason" />
-                    </x-ui.field>
-                </div>
+                <x-ui.field required>
+                    <x-ui.label>Quantity <span class="text-xs font-normal">(in {{ $adjust_product['base_unit'] ?? 'pcs' }})</span></x-ui.label>
+                    <x-ui.input type="number" step="any" min="0.01" wire:model="quantity" />
+                    <x-ui.error name="quantity" />
+                </x-ui.field>
             </div>
 
             {{-- Actions --}}

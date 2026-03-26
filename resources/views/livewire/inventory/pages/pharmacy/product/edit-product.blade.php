@@ -86,6 +86,18 @@
                     </x-ui.field>
 
                     <x-ui.field required>
+                        <x-ui.label>Dosage</x-ui.label>
+                        <x-ui.input wire:model="form.dosage" placeholder="e.g. 500mg" />
+                        <x-ui.error name="form.dosage" />
+                    </x-ui.field>
+
+                    <x-ui.field>
+                        <x-ui.label>Form</x-ui.label>
+                        <x-ui.input wire:model="form.form" placeholder="e.g. Tablet" />
+                        <x-ui.error name="form.form" />
+                    </x-ui.field>
+
+                    <x-ui.field required>
                         <x-ui.label>Supplier</x-ui.label>
                         <x-ui-select.styled
                             invalidate
@@ -105,9 +117,34 @@
                         <x-ui.error name="form.supplier_id" />
                     </x-ui.field>
 
-                    <x-ui.field required>
+                    {{-- Product Code --}}
+                    <x-ui.field required x-data="{
+                        generateCode() {
+                                // Generates a string like 'PRD-X7B9A2'
+                                let randomStr = Math.random().toString(36).substring(2, 8).toUpperCase();
+                                $wire.set('form.product_code', 'PRD-' + randomStr);
+                            }
+                        }">
                         <x-ui.label>Product Code</x-ui.label>
-                        <x-ui.input wire:model="form.product_code" placeholder="e.g. PRD-001" />
+                        <div class="flex items-start gap-2">
+                            <div class="flex-1">
+                                <x-ui.input
+                                    wire:model="form.product_code"
+                                    placeholder="e.g. PRD-001"
+                                />
+                            </div>
+                            <x-ui.button
+                                type="button"
+                                variant="outline"
+                                icon="arrow-path"
+                                x-on:click="generateCode()"
+                                class="shrink-0"
+                                size="sm"
+                                title="Generate Random Code"
+                            >
+                                Generate
+                            </x-ui.button>
+                        </div>
                         <x-ui.error name="form.product_code" />
                     </x-ui.field>
                 </div>

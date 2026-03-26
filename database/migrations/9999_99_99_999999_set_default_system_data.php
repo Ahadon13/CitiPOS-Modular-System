@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Enums\Product\Unit;
 use App\Models\CustomerType;
+use App\Models\PaymentMethod;
 use App\Models\ProductCategory;
 use Illuminate\Database\Migrations\Migration;
 
@@ -54,5 +55,9 @@ return new class extends Migration
                 'abbreviation' => $unit->value,
             ]);
         }
+
+        // Create Default Payment Methods
+        PaymentMethod::create(['name' => 'Cash']);
+        PaymentMethod::create(['name' => 'GCASH']);
     }
 };

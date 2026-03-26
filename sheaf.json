@@ -55,7 +55,7 @@
             "installationTime": 1769264816
         },
         "navbar": {
-            "installationTime": 1769264823
+            "installationTime": 1774179465
         },
         "badge": {
             "installationTime": 1769264830
@@ -92,6 +92,9 @@
         },
         "kbd": {
             "installationTime": 1773842258
+        },
+        "tooltip": {
+            "installationTime": 1774196546
         }
     },
     "project_hash": "ad7ee217-4849-429d-8163-35b0a22473c6"

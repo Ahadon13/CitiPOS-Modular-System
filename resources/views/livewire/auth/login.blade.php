@@ -1,4 +1,4 @@
-<div class="p-8 sm:p-10 shadow-2xl shadow-primary-900/5 dark:shadow-none border border-neutral-300/60 dark:border-white/10 bg-white/80 dark:bg-[#0a1331]/90 backdrop-blur-xl rounded-4xl">
+<div class="p-5 md:p-8 lg:p-10 shadow-2xl shadow-primary-900/5 dark:shadow-none border border-neutral-300/60 dark:border-white/10 bg-white/80 dark:bg-[#0a1331]/90 backdrop-blur-xl rounded-2xl md:rounded-4xl">
 
     <div class="mb-8 space-y-2">
         <h2 class="text-3xl font-bold text-[#0a1331] dark:text-white">Sign in</h2>
@@ -51,12 +51,12 @@
                 Sign In
             </x-ui.button>
         </div>
-
+{{--
         <div class="pt-6 border-t border-neutral-100 dark:border-white/10 text-center">
             <p class="text-sm text-neutral-600 dark:text-neutral-400">
                 Don't have an account?
                 <a href="#" class="font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 transition-colors">Create one now</a>
             </p>
-        </div>
+        </div> --}}
     </form>
 </div>

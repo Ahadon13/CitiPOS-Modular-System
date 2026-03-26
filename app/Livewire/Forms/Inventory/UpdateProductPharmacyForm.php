@@ -18,6 +18,8 @@ final class UpdateProductPharmacyForm extends Form
     public string $generic_name = '';
     public ?int $supplier_id = null;
     public ?int $category_id = null;
+    public string $dosage = '';
+    public ?string $form = null;
     public string $product_code = '';
     public ?string $description = '';
     public bool $requires_prescription = false;
@@ -35,6 +37,8 @@ final class UpdateProductPharmacyForm extends Form
 
         $this->brand_name = $product->brand_name;
         $this->generic_name = $product->generic_name;
+        $this->dosage = $product->dosage;
+        $this->form = $product->form;
         $this->supplier_id = $product->supplier_id;
         $this->product_code = $product->product_code;
         $this->category_id = $product->category_id;
@@ -66,6 +70,10 @@ final class UpdateProductPharmacyForm extends Form
             'product_code' => ['required', 'string', Rule::unique('products', 'product_code')->ignore($this->product->id)],
             'base_unit_id' => 'required|exists:units,id',
             'reorder_level' => 'required|numeric|min:0',
+            'dosage' => ['required', 'string', 'max:255'],
+            'form' => ['nullable', 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:1000'],
+            'requires_prescription' => 'boolean',
 
             // Packagings validations
             'packagings' => 'required|array|min:1',
@@ -75,6 +83,12 @@ final class UpdateProductPharmacyForm extends Form
         ], [
             'brand_name.required' => 'The brand name is required.',
             'generic_name.required' => 'The generic name is required.',
+            'brand_name.max' => 'The brand name is too long (maximum 255 characters).',
+            'generic_name.max' => 'The generic name is too long (maximum 255 characters).',
+            'description.max' => 'The description is too long (maximum 1000 characters).',
+            'dosage.required' => 'The dosage is required.',
+            'dosage.max' => 'The dosage is too long (maximum 255 characters).',
+            'form.max' => 'The form is too long (maximum 255 characters).',
             'supplier_id.required' => 'The supplier is required.',
             'supplier_id.exists' => 'The selected supplier does not exist.',
             'category_id.required' => 'The product category is required.',
@@ -107,6 +121,8 @@ final class UpdateProductPharmacyForm extends Form
                 'supplier_id' => $this->supplier_id,
                 'category_id' => $this->category_id,
                 'product_code' => $this->product_code,
+                'dosage' => $this->dosage,
+                'form' => $this->form,
                 'attributes' => array_merge($this->product->attributes ?? [], ['description' => $this->description]),
                 'requires_prescription' => $this->requires_prescription,
                 'reorder_level' => $this->reorder_level,

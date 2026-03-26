@@ -9,6 +9,7 @@
     <x-ui.navlist.item size="sm" label="Products" icon="cube" href="{{ route('inventory.pharmacy.products') }}" active="inventory.pharmacy.products.*" />
     <x-ui.navlist.item size="sm" label="Stocks" icon="archive-box" href="{{ route('inventory.pharmacy.stocks') }}" active="inventory.pharmacy.stocks.*" />
     <x-ui.navlist.item size="sm" label="Purchases" icon="truck" href="{{ route('inventory.pharmacy.purchases') }}" active="inventory.pharmacy.purchases.*" />
-    <x-ui.navlist.item size="sm" label="Reports" icon="chart-pie" href="#" active="inventory.pharmacy.reports.*" />
+    <x-ui.navlist.item size="sm" label="Expenses" icon="currency-dollar" href="{{ route('inventory.pharmacy.expenses') }}" active="inventory.pharmacy.expenses.*" />
+    <x-ui.navlist.item size="sm" label="Reports" icon="chart-pie" href="{{ route('inventory.pharmacy.reports') }}" active="inventory.pharmacy.reports.*" />
     <x-ui.navlist.item size="sm" label="Customers" icon="users" href="{{ route('inventory.pharmacy.customers') }}" active="inventory.pharmacy.customers.*" />
 </x-ui.navlist>

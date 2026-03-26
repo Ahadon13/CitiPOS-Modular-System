@@ -21,7 +21,7 @@ return new class extends Migration
             $table->foreignId('product_id')->constrained();
             $table->string('batch_number')->nullable();
             $table->date('expiration_date')->nullable();
-            $table->decimal('quantity_on_hand', 10, 4)->default(0);
+            $table->decimal('quantity_on_hand', 20, 4)->default(0);
             $table->bigInteger('cost_per_unit')->default(0);
             $table->timestamps();
         });

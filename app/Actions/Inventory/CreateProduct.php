@@ -27,6 +27,8 @@ final class CreateProduct
                 'name' => $productData->name,
                 'brand_name' => $productData->brand_name,
                 'generic_name' => $productData->generic_name,
+                'dosage' => $productData->dosage,
+                'form' => $productData->form,
                 'requires_prescription' => $productData->requires_prescription,
                 'reorder_level' => $productData->reorder_level,
                 'attributes' => $productData->attributes,

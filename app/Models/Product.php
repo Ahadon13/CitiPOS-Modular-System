@@ -40,6 +40,8 @@ final class Product extends Model
         'name',
         'brand_name',
         'generic_name',
+        'dosage',
+        'form',
         'reorder_level',
         'requires_prescription',
         'is_active',
@@ -60,7 +62,9 @@ final class Product extends Model
                 ->orWhere('products.brand_name', 'like', "%{$term}%")
                 ->orWhere('products.generic_name', 'like', "%{$term}%")
                 ->orWhere('products.product_code', 'like', "%{$term}%")
-              // Search Related Category Name
+                ->orWhere('products.dosage', 'like', "%{$term}%")
+                ->orWhere('products.form', 'like', "%{$term}%")
+                // Search Related Category Name (in ProductCategory)
                 ->orWhereHas('category', function ($subQ) use ($term) {
                     $subQ->where('name', 'like', "%{$term}%");
                 })

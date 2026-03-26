@@ -78,7 +78,7 @@ final class AdjustStockModal extends Component
 
         $rules = [
             'adjustment_type' => 'required|in:add,deduct',
-            'quantity' => 'required|numeric|min:0.01',
+            'quantity' => 'required|numeric|min:0.01|max:999999',
         ];
 
         if ($this->adjustment_type === 'deduct') {
@@ -91,7 +91,7 @@ final class AdjustStockModal extends Component
         $this->validate($rules);
 
         try {
-            $adjustAction->execute(
+            if(!$adjustAction->execute(
                 branchId: $this->currentBranchId, // Replace with your current branch ID trait
                 productId: $this->adjust_product['id'],
                 type: $this->adjustment_type,
@@ -99,7 +99,10 @@ final class AdjustStockModal extends Component
                 batchId: $this->selected_batch_id,
                 batchNumber: $this->new_batch_number,
                 expiryDate: $this->new_expiry_date,
-            );
+            )){
+                $this->toastError('Stock adjustment failed. Please try again.');
+                return;
+            }
 
             $this->toastSuccess("Stock adjusted successfully for {$this->adjust_product['brand_name']}");
 

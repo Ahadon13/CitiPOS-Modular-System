@@ -154,6 +154,8 @@
                         <thead>
                             <tr class="border-b border-black/10 dark:border-white/10 dark:bg-[#0a1331] bg-neutral-100/10 text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                                 <th class="px-6 py-4">Name</th>
+                                <th class="px-6 py-4">Dosage</th>
+                                <th class="px-6 py-4">Form</th>
                                 <th class="px-6 py-4">Barcode</th>
                                 <th class="px-6 py-4">Product Code</th>
                                 <th class="px-6 py-4">Product Category</th>
@@ -184,7 +186,12 @@
                                         <span>{{ $product->generic_name }}</span>
                                     </div>
                                 </td>
-
+                                <td class="px-6 py-4">
+                                    <span class="text-neutral-900 dark:text-white font-medium">{{ $product->dosage ?? '-' }}</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="text-neutral-900 dark:text-white font-medium">{{ $product->form ?? '-' }}</span>
+                                </td>
                                 <td class="px-6 py-4 font-mono text-neutral-600 dark:text-neutral-400">
                                     {{ $basePkg->barcode ?: 'N/A' }}
                                 </td>

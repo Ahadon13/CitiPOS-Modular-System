@@ -32,7 +32,7 @@ final class InventoryRoleController extends Controller
 
             // Admin / SuperAdmin -> Main Dashboard (Overview)
             Role::SuperAdmin->value,
-            Role::Admin->value => redirect()->route('inventory.dashboard'),
+            Role::Admin->value => redirect()->route('admin.hub'),
 
             // Fallback for anyone else (e.g. Regular User)
             default => abort(403, 'Unauthorized access to Inventory module.'),

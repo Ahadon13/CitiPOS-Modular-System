@@ -20,7 +20,7 @@ final class TransactionsExport implements FromQuery, WithHeadings, WithMapping, 
 
     public function __construct(
         private readonly int $branchId,
-        private readonly string $dateFilter,
+        private readonly array $dateRange,
         private readonly ?int $paymentMethodFilter,
         private readonly string $search,
         private readonly ?string $exactDate = null
@@ -33,23 +33,16 @@ final class TransactionsExport implements FromQuery, WithHeadings, WithMapping, 
             ->withCount('saleItems')
             ->where('branch_id', $this->branchId);
 
-        // Apply Date Filters (Mirroring Livewire component)
+        // Apply Date Filters
         if ($this->exactDate) {
+            // Triggered by the "Daily Report" button
             $query->whereDate('created_at', $this->exactDate);
         } else {
-            // Apply Standard Date Filters (Mirroring Livewire component)
-            $query->when($this->dateFilter === 'today', function ($q) {
-                $q->whereDate('created_at', today());
-            })
-            ->when($this->dateFilter === 'yesterday', function ($q) {
-                $q->whereDate('created_at', today()->subDay());
-            })
-            ->when($this->dateFilter === '7days', function ($q) {
-                $q->where('created_at', '>=', today()->subDays(7));
-            })
-            ->when($this->dateFilter === '30days', function ($q) {
-                $q->where('created_at', '>=', today()->subDays(30));
-            });
+            // Triggered by the new Export Modal (Uses the TallStackUI Date Range)
+            $startDate = Carbon::parse($this->dateRange[0])->startOfDay();
+            $endDate = Carbon::parse($this->dateRange[1])->endOfDay();
+
+            $query->whereBetween('created_at', [$startDate, $endDate]);
         }
 
         // Apply Payment Method Filter
@@ -61,7 +54,8 @@ final class TransactionsExport implements FromQuery, WithHeadings, WithMapping, 
         if (!empty($this->search)) {
             $searchTerm = '%' . trim($this->search) . '%';
             $query->where(function ($q) use ($searchTerm) {
-                $q->where('reference_no', 'like', $searchTerm)
+                // Ensure this matches your actual DB column! (Often payment_reference or reference_no)
+                $q->where('payment_reference', 'like', $searchTerm)
                   ->orWhereHas('user', function ($subQ) use ($searchTerm) {
                       $subQ->where('name', 'like', $searchTerm);
                   })
@@ -87,8 +81,8 @@ final class TransactionsExport implements FromQuery, WithHeadings, WithMapping, 
             'Payment Method',
             'Subtotal (PHP)',
             'Discount (PHP)',
-            'Tax (PHP)',
             'Grand Total (PHP)',
+            'Change (PHP)',
             'Status',
         ];
     }
@@ -98,15 +92,14 @@ final class TransactionsExport implements FromQuery, WithHeadings, WithMapping, 
      */
     public function map($transaction): array
     {
-        // Assuming your amounts are stored in cents, divide by 100 for Excel.
-        // If they are already decimals, remove the `/ 100` calculation.
+        // Convert cents to dollars/pesos for Excel output
         $subtotal = $transaction->getRawOriginal('subtotal') / 100;
         $discount = $transaction->getRawOriginal('discount_amount') / 100;
-        $tax = $transaction->getRawOriginal('tax_amount') / 100;
         $grandTotal = $transaction->getRawOriginal('grand_total') / 100;
+        $change = $transaction->getRawOriginal('change_amount') / 100;
 
         return [
-            $transaction->reference_no,
+            $transaction->payment_reference ?? 'N/A', // Updated to match standard schema naming
             $transaction->created_at->format('M d, Y'),
             $transaction->created_at->format('h:i A'),
             $transaction->user->name ?? 'Unknown',
@@ -115,8 +108,8 @@ final class TransactionsExport implements FromQuery, WithHeadings, WithMapping, 
             $transaction->paymentMethod->name ?? 'Unspecified',
             number_format((float) $subtotal, 2, '.', ''),
             number_format((float) $discount, 2, '.', ''),
-            number_format((float) $tax, 2, '.', ''),
             number_format((float) $grandTotal, 2, '.', ''),
+            number_format((float) $change, 2, '.', ''),
             $transaction->status->label() ?? 'Unknown',
         ];
     }

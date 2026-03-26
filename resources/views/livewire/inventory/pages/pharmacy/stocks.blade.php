@@ -114,7 +114,7 @@
 
             <div class="flex items-center justify-end gap-3 w-full md:w-auto">
                 {{-- Product Dropdown Filter --}}
-                <div class="w-full sm:w-64">
+                <div class="w-full sm:w-70">
                     <x-ui-select.styled
                         invalidate
                         wire:model.live="selectedProduct"
@@ -148,6 +148,7 @@
                         <thead>
                             <tr class="border-b border-black/10 dark:border-white/10 dark:bg-[#0a1331] bg-neutral-100/10 text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                                 <th class="px-6 py-4">Product Name</th>
+                                <th class="px-6 py-4">Dosage</th>
                                 <th class="px-6 py-4">Batch Number</th>
                                 <th class="px-6 py-4 text-center">Available Qty</th>
                                 <th class="px-6 py-4 text-center">Expiration Date</th>
@@ -159,15 +160,23 @@
                         <tbody class="divide-y divide-black/10 dark:divide-white/10 bg-neutral-50 dark:bg-[#060A23]">
                             @forelse ($this->inventoryBatches as $batch)
                                 @php
-                                    $isExpired = \Carbon\Carbon::parse($batch->expiration_date)->isPast();
-                                    $isExpiringSoon = !$isExpired && \Carbon\Carbon::parse($batch->expiration_date)->diffInDays(now()) <= 90;
+                                // 1. Parse the date EXACTLY ONCE to save memory/processing speed
+                                $expirationDate = \Carbon\Carbon::parse($batch->expiration_date)->endOfDay();
+
+                                // 2. Is it entirely in the past? (endOfDay ensures it doesn't flag as expired at 8 AM on the exact day it expires)
+                                $isExpired = $expirationDate->isPast();
+
+                                // 3. Is it NOT expired, but the date is less than or equal to exactly 3 months from right now?
+                                $isExpiringSoon = !$isExpired && $expirationDate->lte(now()->addMonths(3));
                                 @endphp
                                 <tr class="hover:bg-white/5 transition-colors group {{ $batch->quantity_on_hand <= 0 ? 'opacity-50' : '' }}">
                                     <td class="px-6 py-4">
                                         <span class="font-bold text-neutral-900 dark:text-white block">{{ $batch->product->brand_name }}</span>
                                         <span class="text-xs text-neutral-500">{{ $batch->product->generic_name }}</span>
                                     </td>
-
+                                    <td class="px-6 py-4 text-neutral-700 dark:text-neutral-400">
+                                        {{ $batch->product->dosage ?? '-'}}
+                                    </td>
                                     <td class="px-6 py-4">
                                         <span class="font-mono inline-flex items-center rounded-md bg-neutral-100 dark:bg-white/5 px-2 py-1 text-xs font-medium text-neutral-700 dark:text-neutral-300 ring-1 ring-inset ring-neutral-500/20">
                                             {{ $batch->batch_number }}
@@ -281,7 +290,7 @@
                     </x-ui.field>
 
                     <x-ui.field required>
-                        <x-ui.label>Unit Cost</x-ui.label>
+                        <x-ui.label>Base Unit Cost ({{ $form->batch?->product->baseUnit->abbreviation }})</x-ui.label>
                         <x-ui.input type="number" step="any" wire:model="form.cost" />
                         <x-ui.error name="form.cost" />
                     </x-ui.field>

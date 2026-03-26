@@ -25,6 +25,8 @@ return new class extends Migration
             $table->string('name')->nullable();
             $table->string('brand_name')->nullable();
             $table->string('generic_name')->nullable();
+            $table->string('dosage')->nullable(); // e.g., "500mg"
+            $table->string('form')->nullable();     // e.g., "Tablet"
             $table->boolean('requires_prescription')->default(false);
             $table->boolean('is_active')->default(true);
             $table->decimal('reorder_level', 10, 4)->default(20);

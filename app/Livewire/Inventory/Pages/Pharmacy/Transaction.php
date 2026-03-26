@@ -3,6 +3,7 @@
 namespace App\Livewire\Inventory\Pages\Pharmacy;
 
 use App\Exports\TransactionsExport;
+use App\Exports\DemandProductsExport;
 use App\Livewire\Concerns\HasToast;
 use App\Models\Sale;
 use App\Models\PaymentMethod;
@@ -26,6 +27,8 @@ class Transaction extends Component
     public string $dateFilter = 'today';
     public $paymentMethodFilter = null;
     public string $dailyReportDate = '';
+    public array $exportDateRange = [];
+    public string $exportTarget = '';
 
     /**
      * Get active payment methods formatted for the Select component
@@ -75,7 +78,7 @@ class Transaction extends Component
         if (!empty($this->search)) {
             $searchTerm = '%' . trim($this->search) . '%';
             $query->where(function ($q) use ($searchTerm) {
-                $q->where('reference_no', 'like', $searchTerm)
+                $q->where('payment_reference', 'like', $searchTerm)
                   ->orWhereHas('user', function ($subQ) use ($searchTerm) {
                       $subQ->where('name', 'like', $searchTerm);
                   })
@@ -98,10 +101,10 @@ class Transaction extends Component
         $query = clone $this->baseQuery;
 
         $totalCount = $query->count();
-        $completedCount = (clone $query)->where('status', 'completed')->count();
+        $completedCount = (clone $query)->where('status', \App\Enums\Sale\Status::Completed)->count();
 
         // 2. Cast the sum to an integer to be safe
-        $totalRevenueCents = (int) (clone $query)->where('status', 'completed')->sum('grand_total');
+        $totalRevenueCents = (int) (clone $query)->where('status', \App\Enums\Sale\Status::Completed)->sum('grand_total');
 
         // 3. Calculate the average in raw cents
         $averageValueCents = $completedCount > 0 ? (int) round($totalRevenueCents / $completedCount) : 0;
@@ -116,6 +119,26 @@ class Transaction extends Component
     }
 
     /**
+     * Fetch top demand products based on the currently filtered transactions
+     */
+    #[Computed]
+    public function topDemandProducts()
+    {
+        // Reuse baseQuery to automatically apply date, payment method, and search filters
+        $saleQuery = (clone $this->baseQuery)
+            ->where('status', \App\Enums\Sale\Status::Completed)
+            ->select('id');
+
+        return \App\Models\SaleItem::selectRaw('product_id, SUM(quantity) as total_sold, SUM(subtotal) as total_revenue')
+            ->whereIn('sale_id', $saleQuery)
+            ->with(['product.baseUnit', 'product.productCategory'])
+            ->groupBy('product_id')
+            ->orderByDesc('total_sold')
+            ->limit(4)
+            ->get();
+    }
+
+    /**
      * Fetches the actual rows for the table
      */
     #[Computed]
@@ -124,29 +147,98 @@ class Transaction extends Component
         $query = clone $this->baseQuery;
 
         return $query
+            ->with([
+                'user',
+                'customer.customerType',
+                'paymentMethod',
+                'saleItems.product',
+                'saleItems.unit'
+            ])
             ->withCount('saleItems')    // Automatically counts the items in the transaction
             ->orderBy($this->sort['column'] ?? 'created_at', $this->sort['direction'] ?? 'desc')
             ->paginate($this->perPage);
     }
 
-    public function exportTransactions()
+    /**
+     * Opens the modal and sets which export we are preparing for.
+     */
+    public function openExportModal(string $target): void
     {
-        try {
-            $fileName = 'Transactions_Report_' . now()->format('Y_m_d_His') . '.xlsx';
+        $this->exportTarget = $target;
 
-            return Excel::download(
-                new TransactionsExport(
-                    $this->currentBranchId,
-                    $this->dateFilter,
-                    $this->paymentMethodFilter,
-                    $this->search ?? ''
-                ),
-                $fileName
-            );
+        // Pre-fill the date picker with the last 30 days
+        $this->exportDateRange = [
+            now()->subDays(30)->format('Y-m-d'),
+            now()->format('Y-m-d')
+        ];
+
+        $this->dispatch('open-modal', id: 'export-range-modal');
+    }
+
+    /**
+     * Processes the export after the user selects a date range.
+     */
+    public function processExport()
+    {
+        $this->validate([
+            'exportDateRange' => 'required|array|size:2',
+            'exportDateRange.0' => 'required|date',
+            'exportDateRange.1' => 'required|date|after_or_equal:exportDateRange.0',
+        ]);
+
+        $startDate = $this->exportDateRange[0];
+        $endDate = $this->exportDateRange[1];
+
+        // Close the modal immediately to give UX feedback
+        $this->dispatch('close-modal', id: 'export-range-modal');
+
+        try {
+            if ($this->exportTarget === 'transactions') {
+                $fileName = 'Transactions_Report_' . $startDate . '_to_' . $endDate . '.xlsx';
+                return Excel::download(
+                    new TransactionsExport(
+                        branchId: $this->currentBranchId,
+                        dateRange: [$startDate, $endDate],
+                        paymentMethodFilter: $this->paymentMethodFilter,
+                        search: $this->search ?? ''
+                    ),
+                    $fileName
+                );
+            }
+
+            if ($this->exportTarget === 'demand') {
+                $fileName = 'Top_Demand_Products_' . $startDate . '_to_' . $endDate . '.xlsx';
+                return Excel::download(
+                    new DemandProductsExport(
+                        branchId: $this->currentBranchId,
+                        dateRange: [$startDate, $endDate]
+                    ),
+                    $fileName
+                );
+            }
         } catch (\Exception $e) {
             $this->toastError('Failed to generate export: ' . $e->getMessage());
         }
     }
+
+    // public function exportTransactions()
+    // {
+    //     try {
+    //         $fileName = 'Transactions_Report_' . now()->format('Y_m_d_His') . '.xlsx';
+
+    //         return Excel::download(
+    //             new TransactionsExport(
+    //                 $this->currentBranchId,
+    //                 $this->dateFilter,
+    //                 $this->paymentMethodFilter,
+    //                 $this->search ?? ''
+    //             ),
+    //             $fileName
+    //         );
+    //     } catch (\Exception $e) {
+    //         $this->toastError('Failed to generate export: ' . $e->getMessage());
+    //     }
+    // }
 
     public function openDailyReportModal(): void
     {
