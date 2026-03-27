@@ -118,7 +118,7 @@ Route::group([
             'prefix' => 'pharmacy',
             'as' => 'pharmacy.',
             'middleware' => [
-                'role:'.Role::Pharmacist->value,
+                'role:'.Role::Pharmacist->value . '|' . Role::SuperAdmin->value . '|' . Role::Admin->value,
             ],
         ], function () {
             // DASHBOARD ROUTE
@@ -151,7 +151,7 @@ Route::group([
             'prefix' => 'grocery',
             'as' => 'grocery.',
             'middleware' => [
-                'role:'.Role::GroceryCashier->value,
+                'role:'.Role::GroceryCashier->value . '|' . Role::SuperAdmin->value . '|' . Role::Admin->value,
             ],
         ], function () {
            //
@@ -172,7 +172,7 @@ Route::group([
             'prefix' => 'pharmacy',
             'as' => 'pharmacy.',
             'middleware' => [
-                'role:'.Role::Pharmacist->value,
+                'role:'.Role::Pharmacist->value . '|' . Role::SuperAdmin->value . '|' . Role::Admin->value,
             ],
         ], function () {
             // PROCESS SALE

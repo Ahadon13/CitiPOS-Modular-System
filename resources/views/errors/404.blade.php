@@ -10,7 +10,7 @@
     </h1>
 
     {{-- Floating Card --}}
-    <div class="-mt-12 bg-white dark:bg-[#0a1331] border border-black/10 dark:border-white/10 p-8 rounded-2xl shadow-xl z-10 w-full backdrop-blur-md">
+    <div class=" bg-white dark:bg-[#0a1331] border border-black/10 dark:border-white/10 p-8 rounded-2xl z-10 w-full backdrop-blur-md">
         <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />

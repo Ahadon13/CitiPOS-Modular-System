@@ -15,6 +15,7 @@
                 <x-ui.navbar.item size="sm" icon="document-text" label="Transactions" href="/team" active="admin.transactions.*" />
                 <x-ui.navbar.item size="sm" icon="users" label="Users" href="/projects" active="admin.users.*" />
                 <x-ui.navbar.item size="sm" icon="chart-pie" label="Reports" href="/projects" active="admin.reports.*" />
+                <x-ui.navbar.item size="sm" icon="cog-6-tooth" label="Settings" href="/projects" active="admin.settings.*" />
             </x-ui.navbar>
 
             <div class="ml-auto flex items-center mr-1.5">
