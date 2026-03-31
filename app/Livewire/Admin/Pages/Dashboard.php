@@ -4,6 +4,7 @@ namespace App\Livewire\Admin\Pages;
 
 use App\Models\Branch;
 use App\Models\Product;
+use App\Models\Purchase;
 use App\Models\ProductCategory;
 use App\Models\Sale;
 use App\Models\SaleItem;
@@ -14,22 +15,42 @@ use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithPagination;
 use Money\Money;
 
 #[Layout('components.layouts.admin', ['title' => 'Dashboard'])]
 class Dashboard extends Component
 {
-    use HasAuth, HasDataTable;
+    use HasAuth, HasDataTable, WithPagination;
 
     // Filters
     public ?int $branchId = null;   // Null = All Branches
     public ?int $categoryId = null; // Null = All Modules (Pharmacy, Grocery, etc.)
+    public ?array $view_purchase = null;
     public string $dateRange = 'today';
 
     #[Computed]
     public function branches()
     {
         return Branch::orderBy('name')->get();
+    }
+    #[Computed]
+    public function paginatedBranches()
+    {
+        return Branch::orderBy('name', 'asc')
+            ->paginate(5, ['*'], 'branches_page'); // Unique pagination name
+    }
+
+    #[Computed]
+    public function paginatedPurchases()
+    {
+        [$startDate, $endDate] = $this->getDateRange();
+
+        return Purchase::with(['branch', 'supplier', 'user', 'purchaseItems.product', 'purchaseItems.unit']) // Load branch relationship
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->when($this->branchId, fn($q) => $q->where('branch_id', $this->branchId))
+            ->latest() // Order by latest
+            ->paginate(5, ['*'], 'po_page'); // Unique pagination name
     }
 
     #[Computed]
@@ -136,17 +157,17 @@ class Dashboard extends Component
 
         return SaleItem::join('sales', 'sale_items.sale_id', '=', 'sales.id')
             ->join('products', 'sale_items.product_id', '=', 'products.id')
-            ->join('product_categories', 'products.product_category_id', '=', 'product_categories.id')
+            ->join('categories', 'products.category_id', '=', 'categories.id')
             ->whereBetween('sales.created_at', [$startDate, $endDate])
             ->when($this->branchId, fn($q) => $q->where('sales.branch_id', $this->branchId))
             ->when($this->categoryId, fn($q) => $q->where('products.product_category_id', $this->categoryId))
             ->select(
                 'products.brand_name',
-                'product_categories.name as category_name',
+                'categories.name as category_name',
                 DB::raw('SUM(sale_items.quantity) as total_sold'),
                 DB::raw('SUM(sale_items.subtotal) as total_revenue')
             )
-            ->groupBy('products.id', 'products.brand_name', 'product_categories.name')
+            ->groupBy('products.id', 'products.brand_name', 'categories.name')
             ->orderByDesc('total_revenue')
             ->take(5)
             ->get();

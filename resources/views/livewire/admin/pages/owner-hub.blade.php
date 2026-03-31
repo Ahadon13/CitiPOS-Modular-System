@@ -7,7 +7,7 @@
         {{-- ========================================== --}}
         {{-- HEADER SECTION                             --}}
         {{-- ========================================== --}}
-        <div class="flex justify-between items-start mb-8">
+        <div class="flex justify-between items-center mb-8">
             <div class="flex gap-4 items-center">
                 {{-- Logo Placeholder --}}
                 <div class="size-14 bg-white dark:bg-white/10 dark:border-blue-100/10 rounded-md shadow-sm border border-blue-100 flex items-center justify-center shrink-0">
@@ -91,7 +91,7 @@
                             <p class="text-[10px] font-bold text-neutral-400 dark:text-neutral-400 uppercase tracking-widest mt-1.5">orders</p>
                         </div>
 
-                        <x-ui.button wire:click="enterBranch({{ $branch->id }})" iconAfter="chevron-right" wire:loading.attr="disabled" class="bg-blue-500 hover:bg-blue-600 text-white border-0 shadow-md shadow-blue-500/20 px-5">
+                        <x-ui.button href="{{ route('admin.branches.view', $branch->id) }}" iconAfter="chevron-right" wire:loading.attr="disabled" class="bg-blue-500 hover:bg-blue-600 text-white border-0 shadow-md shadow-blue-500/20 px-5">
                             Enter
                         </x-ui.button>
                     </div>
@@ -121,7 +121,7 @@
         {{-- FOOTER                                     --}}
         {{-- ========================================== --}}
         <div class="mt-16 text-center text-xs text-neutral-400 font-medium">
-            CitiPOS &middot; Point of Sale System for Philippine Businesses
+            CitiPOS &middot; Point of Sale System and Inventory Management
         </div>
 
     </div>

@@ -102,7 +102,7 @@
                     <template x-for="item in items" :key="item.id">
                         <tr class="hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors">
                             <td class="px-4 py-3">
-                                <p class="font-bold text-neutral-900 dark:text-white" x-text="item.product?.brand_name"></p>
+                                <p class="font-bold text-neutral-900 dark:text-white" x-text="item.product?.brand_name + ' (' + item.product?.dosage + ')'"></p>
                                 <p class="text-xs text-neutral-500" x-text="item.product?.generic_name"></p>
                             </td>
                             <td class="px-4 py-3 text-center font-medium text-neutral-700 dark:text-neutral-300" x-text="item.unit?.name"></td>

@@ -57,7 +57,7 @@ final class RecordPurchase extends Component
                 return [
                     'purchase_item_id' => $item->id,
                     'product_id'       => $item->product_id,
-                    'product_name'     => $item->product->brand_name . ' (' . $item->product->generic_name . ')',
+                    'product_name'     => $item->product->brand_name . ' (' . $item->product->dosage . ')' . ' - ' . $item->product->generic_name,
                     'unit_id'          => $item->unit_id,
                     'quantity'         => (float) $item->quantity_ordered,
                     'cost'             => (int) $item->getRawOriginal('cost_per_unit') / 100,
@@ -128,7 +128,7 @@ final class RecordPurchase extends Component
         return Product::orderBy('brand_name')->whereHas('productCategory', function ($query) {
             $query->where('name', CategoryType::Pharmacy->label());
         })->get()
-            ->map(fn($p) => ['value' => $p->id, 'label' => $p->brand_name . ' (' . $p->generic_name . ')'])
+            ->map(fn($p) => ['value' => $p->id, 'label' => $p->brand_name . ' (' . $p->dosage . ')' . ' - ' . $p->generic_name])
             ->toArray();
     }
 

@@ -9,7 +9,7 @@
             <p class="text-sm text-neutral-500 dark:text-neutral-400">Monitor your entire business ecosystem</p>
         </div>
 
-        <div class="flex flex-wrap items-center gap-3">
+        <div class="flex flex-wrap items-center justify-end gap-3">
             {{-- Branch Selector --}}
             <x-ui.field class="mb-0 w-full sm:w-60">
                 <select wire:model.live="branchId" class="w-full text-sm rounded-lg border-neutral-300 dark:border-neutral-700 dark:bg-card text-neutral-700 dark:text-neutral-200 focus:ring-blue-500">
@@ -49,7 +49,7 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 
         {{-- 1. Revenue --}}
-        <x-ui.card hoverless class="border-l-4 border-l-blue-500!">
+        <x-ui.card hoverless size="full" class="border-l-4 border-l-blue-500!">
             <div class="flex items-center gap-4">
                 <div class="p-3 bg-blue-100 dark:bg-blue-500/20 rounded-xl">
                     <x-ui.icon name="banknotes" class="size-6 text-blue-600 dark:text-blue-400" />
@@ -64,7 +64,7 @@
         </x-ui.card>
 
         {{-- 2. Gross Profit (NEW) --}}
-        <x-ui.card hoverless class="border-l-4 border-l-emerald-500!">
+        <x-ui.card hoverless size="full" class="border-l-4 border-l-emerald-500!">
             <div class="flex items-center gap-4">
                 <div class="p-3 bg-emerald-100 dark:bg-emerald-500/20 rounded-xl">
                     <x-ui.icon name="arrow-trending-up" class="size-6 text-emerald-600 dark:text-emerald-400" />
@@ -79,7 +79,7 @@
         </x-ui.card>
 
         {{-- 3. Profit Margin % (NEW) --}}
-        <x-ui.card hoverless class="border-l-4 border-l-cyan-500!">
+        <x-ui.card hoverless size="full" class="border-l-4 border-l-cyan-500!">
             <div class="flex items-center gap-4">
                 <div class="p-3 bg-cyan-100 dark:bg-cyan-500/20 rounded-xl">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6 text-cyan-600 dark:text-cyan-400">
@@ -97,7 +97,7 @@
         </x-ui.card>
 
         {{-- 4. Total Orders --}}
-        <x-ui.card hoverless class="border-l-4 border-l-indigo-500!">
+        <x-ui.card hoverless size="full" class="border-l-4 border-l-indigo-500!">
             <div class="flex items-center gap-4">
                 <div class="p-3 bg-indigo-100 dark:bg-indigo-500/20 rounded-xl">
                     <x-ui.icon name="shopping-bag" class="size-6 text-indigo-600 dark:text-indigo-400" />
@@ -112,7 +112,7 @@
         </x-ui.card>
 
         {{-- 5. Active Catalog --}}
-        <x-ui.card hoverless class="border-l-4 border-l-purple-500!">
+        <x-ui.card hoverless size="full" class="border-l-4 border-l-purple-500!">
             <div class="flex items-center gap-4">
                 <div class="p-3 bg-purple-100 dark:bg-purple-500/20 rounded-xl">
                     <x-ui.icon name="cube" class="size-6 text-purple-600 dark:text-purple-400" />
@@ -127,7 +127,7 @@
         </x-ui.card>
 
         {{-- 6. Low Stock Alerts --}}
-        <x-ui.card hoverless class="border-l-4 border-l-rose-500!">
+        <x-ui.card hoverless size="full" class="border-l-4 border-l-rose-500!">
             <div class="flex items-center gap-4">
                 <div class="p-3 bg-rose-100 dark:bg-rose-500/20 rounded-xl">
                     <x-ui.icon name="exclamation-triangle" class="size-6 text-rose-600 dark:text-rose-400" />
@@ -201,7 +201,7 @@
         <div class="space-y-4">
             <h2 class="text-lg font-bold text-neutral-900 dark:text-white">Top Sellers</h2>
 
-            <x-ui.card hoverless class="p-0 overflow-hidden">
+            <x-ui.card hoverless size="full" class="p-0 overflow-hidden">
                 <div class="divide-y divide-black/5 dark:divide-white/5">
                     @forelse($this->topSellingProducts as $index => $product)
                     <div class="p-4 flex items-center justify-between hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors">
@@ -237,4 +237,144 @@
         </div>
 
     </div>
+
+    {{-- ========================================== --}}
+    {{-- PAGINATED TABLES: BRANCHES & PURCHASES     --}}
+    {{-- ========================================== --}}
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        {{-- Branches Table --}}
+        <div class="space-y-4 flex flex-col">
+            <div class="flex items-center justify-between">
+                <h2 class="text-lg font-bold text-neutral-900 dark:text-white">Active Branches</h2>
+                <x-ui.button size="sm" variant="soft" href="{{ route('admin.branches') }}" wire:navigate>
+                    View All
+                </x-ui.button>
+            </div>
+
+            <x-ui.card size="full" hoverless class="p-0 overflow-hidden flex-1 flex flex-col">
+                <div class="overflow-x-auto custom-scrollbar flex-1">
+                    <table class="w-full text-left text-sm whitespace-nowrap">
+                        <thead class="bg-neutral-50 dark:bg-[#0a1331] border-b border-black/10 dark:border-white/10 text-xs uppercase text-neutral-500">
+                            <tr>
+                                <th class="px-4 py-3">Branch Name</th>
+                                <th class="px-4 py-3">Status</th>
+                                <th class="px-4 py-3 text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-black/5 dark:divide-white/5 dark:bg-[#060A23]">
+                            @forelse($this->paginatedBranches as $branch)
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="px-4 py-3">
+                                    <span class="font-bold text-neutral-900 dark:text-white block">{{ $branch->name }}</span>
+                                    <span class="text-xs text-neutral-500 truncate max-w-50 block" title="{{ $branch->address }}">{{ $branch->address ?? 'No address' }}</span>
+                                </td>
+                                <td class="px-4 py-3">
+                                    @if($branch->is_active)
+                                    <span class="px-2 py-1 rounded text-[10px] font-bold bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400 uppercase tracking-wider">Active</span>
+                                    @else
+                                    <span class="px-2 py-1 rounded text-[10px] font-bold bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 uppercase tracking-wider">Inactive</span>
+                                    @endif
+                                </td>
+                                <td class="px-4 py-3 text-right">
+                                    <x-ui.button size="xs" variant="ghost" icon="arrow-right-end-on-rectangle" href="{{ route('admin.branches.view', $branch->id) }}" wire:navigate>
+                                        Manage
+                                    </x-ui.button>
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="3" class="p-6 text-center text-neutral-500">No branches found.</td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+                <div class="border-t border-black/10 dark:border-white/10 px-4 pb-3 flex justify-center bg-white dark:bg-card shrink-0">
+                    <x-ui.pagination
+                        wire:model.live="perPage"
+                        :per-page-options="$perPageOptions"
+                        :data="$this->paginatedBranches"
+                    />
+                </div>
+            </x-ui.card>
+        </div>
+
+        {{-- Purchase Orders Table --}}
+        <div class="space-y-4 flex flex-col">
+            <h2 class="text-lg font-bold text-neutral-900 dark:text-white">Recent Purchase Orders</h2>
+
+            <x-ui.card size="full" hoverless class="p-0 overflow-hidden flex-1 flex flex-col">
+                <div class="overflow-x-auto custom-scrollbar flex-1">
+                    <table class="w-full text-left text-sm whitespace-nowrap">
+                        <thead class="bg-neutral-50 dark:bg-[#0a1331] border-b border-black/10 dark:border-white/10 text-xs uppercase text-neutral-500">
+                            <tr>
+                                <th class="px-4 py-3">PO Number</th>
+                                <th class="px-4 py-3">Branch</th>
+                                <th class="px-4 py-3">Status</th>
+                                <th class="px-4 py-3 text-right">Cost</th>
+                                <th class="px-4 py-3 text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-black/5 dark:divide-white/5 dark:bg-[#060A23]">
+                            @forelse($this->paginatedPurchases as $po)
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="px-4 py-3 font-mono text-purple-600 dark:text-purple-400 font-medium">
+                                    {{ $po->reference_no ?? 'N/A' }}
+                                    <span class="block text-[10px] text-neutral-500">{{ $po->created_at->format('M d, Y') }}</span>
+                                </td>
+                                <td class="px-4 py-3 text-neutral-900 dark:text-white">
+                                    {{ $po->branch->name ?? 'Unknown' }}
+                                </td>
+                                <td class="px-4 py-3">
+                                    <span class="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider
+                                        {{ $po->status === 'completed' ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400' : 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400' }}">
+                                        {{ $po->status }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3 text-right font-bold text-neutral-900 dark:text-white">
+                                    @money($po->total_cost)
+                                </td>
+                                <td class="px-4 py-3 text-right">
+                                    <x-ui.button
+                                        size="xs"
+                                        variant="outline"
+                                        icon="eye"
+                                        x-on:click="await $wire.set('view_purchase', {{ $po }}, false); $dispatch('open-modal', { id: 'view-purchase' });"
+                                    >
+                                        View
+                                    </x-ui.button>
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="5" class="p-8">
+                                    <x-ui.empty>
+                                        <x-ui.empty.media class="bg-neutral-100 dark:bg-white/5 rounded-full size-12 flex items-center justify-center">
+                                            <x-ui.icon name="truck" class="size-6 text-neutral-400" />
+                                        </x-ui.empty.media>
+                                        <x-ui.empty.contents>
+                                            <x-ui.heading>No Restocks Found</x-ui.heading>
+                                            <x-ui.text>There are no purchase orders matching this filter.</x-ui.text>
+                                        </x-ui.empty.contents>
+                                    </x-ui.empty>
+                                </td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+                <div class="border-t border-black/10 dark:border-white/10 px-4 pb-3 flex justify-center bg-white dark:bg-card shrink-0">
+                    <x-ui.pagination
+                        wire:model.live="perPage"
+                        :per-page-options="$perPageOptions"
+                        :data="$this->paginatedPurchases"
+                    />
+                </div>
+            </x-ui.card>
+        </div>
+
+    </div>
+    {{-- View/Print Modal --}}
+    <livewire:inventory.pages.pharmacy.purchase.view-purchase-modal wire:model="view_purchase" />
 </div>

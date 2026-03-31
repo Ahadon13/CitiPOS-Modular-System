@@ -30,6 +30,6 @@ final class Login extends Component
         session()->regenerate();
 
         // 5. Redirect
-        $this->redirect(route('inventory.index', absolute: false), navigate: true);
+        $this->redirect(route('inventory.index', absolute: false));
     }
 }

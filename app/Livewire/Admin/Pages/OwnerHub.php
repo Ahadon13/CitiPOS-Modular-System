@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Pages;
 
+use App\Actions\Common\SwitchBranch;
 use App\Models\Branch; // Adjust to your actual Branch model
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
@@ -23,18 +24,6 @@ class OwnerHub extends Component
     }
 
     /**
-     * Sets the active branch session and redirects to the POS/Dashboard.
-     */
-    public function enterBranch(int $branchId)
-    {
-        // 1. Set the active branch in the session
-        session()->put('active_branch_id', $branchId);
-
-        // 2. Redirect to the main dashboard or POS
-        return redirect()->route('dashboard');
-    }
-
-    /**
      * Standard logout method.
      */
     public function logout()
@@ -44,10 +33,5 @@ class OwnerHub extends Component
         session()->regenerateToken();
 
         return redirect()->route('login');
-    }
-
-    public function render()
-    {
-        return view('livewire.admin.pages.owner-hub');
     }
 }

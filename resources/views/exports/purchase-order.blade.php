@@ -32,7 +32,7 @@
     <tbody>
         @foreach($purchase->purchaseItems as $item)
             <tr>
-                <td style="border: 1px solid #000;">{{ $item->product->brand_name }} ({{ $item->product->generic_name }})</td>
+                <td style="border: 1px solid #000;">{{ $item->product->brand_name }} ({{ $item->product->dosage }}) - {{ $item->product->generic_name }}</td>
                 <td style="border: 1px solid #000; text-align: center;">{{ $item->unit->name }}</td>
                 <td style="border: 1px solid #000; text-align: right;">{{ number_format($item->quantity_ordered, 2) }}</td>
                 <td style="border: 1px solid #000; text-align: right;">{{ number_format($item->getRawOriginal('cost_per_unit') / 100, 2) }}</td>

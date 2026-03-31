@@ -19,21 +19,25 @@ final class HomeRouteController extends Controller
     public function __invoke(Request $request): RedirectResponse
     {
         $user = $request->user();
-        // Not authenticated -> redirect home
+        // 1. Safety Check: If not logged in, send to login
         if (! $user) {
-            return redirect('/');
+            return redirect()->route('login');
         }
 
-        // Authenticated -> route by role
-        if ($user->hasRole([Role::Admin->value, Role::SuperAdmin->value])) {
-            return to_route('dashboard');
-        }
+        // 2. Redirect based on Role Enum
+        // We assume your User model casts 'role' to the Role Enum
+        return match ($user->role) {
 
-        if ($user->hasRole([Role::GroceryCashier->value, Role::Pharmacist->value])) {
-            return to_route('select-work');
-        }
+            // Specific Roles -> Specific Dashboards
+            Role::Pharmacist->value => redirect()->route('inventory.pharmacy.dashboard'),
+            Role::GroceryCashier->value => redirect()->route('inventory.grocery.dashboard'),
 
-        // Authenticated but no matching role -> redirect home (or handle differently)
-        return redirect('/');
+            // Admin / SuperAdmin -> Main Dashboard (Overview)
+            Role::SuperAdmin->value,
+            Role::Admin->value => redirect()->route('admin.hub'),
+
+            // Fallback for anyone else (e.g. Regular User)
+            default => redirect()->route('login'),
+        };
     }
 }

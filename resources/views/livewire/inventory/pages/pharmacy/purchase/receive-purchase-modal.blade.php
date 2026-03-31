@@ -24,7 +24,7 @@
                 return {
                     purchase_item_id: item.id,
                     product_id: item.product_id,
-                    product_name: item.product ? (item.product.brand_name + ' (' + item.product.generic_name + ')') : 'Unknown',
+                    product_name: item.product ? (item.product.brand_name + ' (' + item.product.dosage + ')' + ' - ' + item.product.generic_name) : 'Unknown',
                     actual_unit_id: item.unit_id,
                     actual_quantity: parseFloat(item.quantity_ordered),
                     actual_cost: cost,

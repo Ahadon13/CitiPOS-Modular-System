@@ -53,6 +53,7 @@ Route::group([
     'as' => 'auth.',
 ], function () {
     Route::get('login', Login::class)
+        ->middleware('throttle:5,1') // Limit to 5 attempts per minute
         ->name('login');
 });
 

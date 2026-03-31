@@ -4,9 +4,9 @@
 
 <x-layouts.base>
 
-    <x-layouts.partials.header />
+    {{-- <x-layouts.partials.header /> --}}
 
     {{ $slot }}
 
-    <x-layouts.partials.footer />
+    {{-- <x-layouts.partials.footer /> --}}
 </x-layouts.base>

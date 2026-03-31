@@ -2,6 +2,10 @@
     'inventory' => false
 ])
 <x-ui.navlist>
+    @hasanyrole(['super-admin', 'admin'])
+    <x-ui.navlist.item size="sm" label="Admin Panel" icon="arrow-left" class="bg-[--alpha(var(--color-primary)_/70%)] !text-white [&_[data-slot=icon]]:!text-white hover:!bg-[--alpha(var(--color-primary)_/20%)] hover:!text-white [&_[data-slot=icon]]:hover:!text-white" href="{{ route('admin.dashboard') }}" />
+
+    @endhasanyrole
     <x-ui.navlist.item size="sm" label="POS" icon="shopping-cart" href="{{ route('pos.pharmacy.process-sale') }}" />
     <x-ui.separator />
     <x-ui.navlist.item size="sm" label="Dashboard" icon="rectangle-group" href="{{ route('inventory.pharmacy.dashboard') }}" />
