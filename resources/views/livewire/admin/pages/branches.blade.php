@@ -72,7 +72,7 @@
                     </div>
 
                     <div class="pt-2 flex items-center text-sm font-semibold text-blue-600 dark:text-blue-400">
-                        <span>View Inventory Dashboard</span>
+                        <span>View Branch</span>
                         <x-ui.icon name="arrow-right" class="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
                     </div>
                 </div>
@@ -87,7 +87,7 @@
                         <x-ui.text class="text-lg">No branches found.</x-ui.text>
                         <x-ui.text class="text-sm text-neutral-500 dark:text-neutral-400 mt-2">Start by adding a new branch to manage its inventory and sales.</x-ui.text>
                         <div class="mt-4">
-                            <x-ui.button size="sm" icon="plus">
+                            <x-ui.button size="sm" icon="plus" x-on:click="$dispatch('open-modal', { id: 'manage-branch' })">
                                 Add Branch
                             </x-ui.button>
                         </div>

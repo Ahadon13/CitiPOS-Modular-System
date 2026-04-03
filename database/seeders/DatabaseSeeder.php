@@ -31,7 +31,7 @@ final class DatabaseSeeder extends Seeder
 
         $admin = User::create([
             'name' => 'Super Admin',
-            'username' => 'admin',
+            'username' => 'super-admin',
             'password' => Hash::make('password'),
             'branch_id' => null, // HQ
         ]);
@@ -46,6 +46,24 @@ final class DatabaseSeeder extends Seeder
         ]);
 
         $cashier->assignRole(\App\Enums\Role::Pharmacist->value);
+
+        $admin = User::create([
+            'name' => 'Admin User',
+            'username' => 'admin',
+            'password' => Hash::make('password'),
+            'branch_id' => null, // HQ
+        ]);
+
+        $admin->assignRole(\App\Enums\Role::Admin->value);
+
+        $distributor = User::create([
+            'name' => 'Distributor User',
+            'username' => 'distributor',
+            'password' => Hash::make('password'),
+            'branch_id' => null, // HQ
+        ]);
+
+        $distributor->assignRole(\App\Enums\Role::Distributor->value);
 
         // 3. Create Settings (Categories & Units)
         $unitPiece = Unit::create(['name' => 'Piece', 'abbreviation' => 'pc', 'allow_decimal' => false]);

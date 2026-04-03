@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Models\Product;
+use App\Traits\ChecksIfInUse;
 use Illuminate\Database\Eloquent\Model;
 
 final class ProductCategory extends Model
 {
+    use ChecksIfInUse;
     /**
      * The attributes that are mass assignable.
      *

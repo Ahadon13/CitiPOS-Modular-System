@@ -17,11 +17,26 @@
             <x-app.logo class="ml-1.5" />
 
             <x-ui.navbar class="flex-1 justify-center hidden lg:flex">
+                @can('admin-dashboard')
                 <x-ui.navbar.item size="sm" icon="rectangle-group" label="Dashboard" href="{{ route('admin.dashboard') }}" active="admin.dashboard.*" />
+                @endcan
+
+                @can('manage-branches')
                 <x-ui.navbar.item size="sm" icon="building-office-2" label="Branches" href="{{ route('admin.branches') }}" active="admin.branches.*" />
-                <x-ui.navbar.item size="sm" icon="users" label="Users" href="/projects" active="admin.users.*" />
-                <x-ui.navbar.item size="sm" icon="chart-pie" label="Reports" href="/projects" active="admin.reports.*" />
-                <x-ui.navbar.item size="sm" icon="cog-6-tooth" label="Settings" href="/projects" active="admin.settings.*" />
+                @endcan
+
+                @can('manage-users')
+                <x-ui.navbar.item size="sm" icon="users" label="Users" href="{{ route('admin.users') }}" active="admin.users.*" />
+                @endcan
+
+                @can('admin-reports')
+                <x-ui.navbar.item size="sm" icon="chart-pie" label="Reports" href="{{ route('admin.reports') }}" active="admin.reports.*" />
+                @endcan
+
+                {{-- Fallback for Settings since it lacks a specific permission --}}
+                @hasanyrole(['super-admin', 'admin'])
+                <x-ui.navbar.item size="sm" icon="cog-6-tooth" label="Settings" href="{{ route('admin.settings') }}" active="admin.settings.*" />
+                @endhasanyrole
             </x-ui.navbar>
 
             <div class="ml-auto flex items-center mr-1.5">
@@ -54,15 +69,29 @@
                     {{-- Navigation Links --}}
                     <div class="flex flex-col flex-1 overflow-y-auto custom-scrollbar">
                         <x-ui.navlist>
+                            @can('admin-dashboard')
                             <x-ui.navlist.item size="sm" icon="rectangle-group" label="Dashboard" href="{{ route('admin.dashboard') }}" active="admin.dashboard.*" />
+                            @endcan
+
+                            @can('manage-branches')
                             <x-ui.navlist.item size="sm" icon="building-office-2" label="Branches" href="{{ route('admin.branches') }}" active="admin.branches.*" />
-                            <x-ui.navlist.item size="sm" icon="users" label="Users" href="/projects" active="admin.users.*" />
-                            <x-ui.navlist.item size="sm" icon="chart-pie" label="Reports" href="/projects" active="admin.reports.*" />
+                            @endcan
+
+                            @can('manage-users')
+                            <x-ui.navlist.item size="sm" icon="users" label="Users" href="{{ route('admin.users') }}" active="admin.users.*" />
+                            @endcan
+
+                            @can('admin-reports')
+                            <x-ui.navlist.item size="sm" icon="chart-pie" label="Reports" href="{{ route('admin.reports') }}" active="admin.reports.*" />
+                            @endcan
                         </x-ui.navlist>
 
                         <x-ui.navlist class="mt-auto">
                             <x-ui.separator />
-                            <x-ui.navlist.item size="sm" icon="cog-6-tooth" label="Settings" href="/projects" active="admin.settings.*" />
+                            {{-- Fallback for Settings since it lacks a specific permission --}}
+                            @hasanyrole(['super-admin', 'admin'])
+                            <x-ui.navlist.item size="sm" icon="cog-6-tooth" label="Settings" href="{{ route('admin.settings') }}" active="admin.settings.*" />
+                            @endhasanyrole
                             <form method="POST" action="{{ route('logout') }}" x-data>
                                 @csrf
                                 <x-ui.navlist.item size="sm" label="Logout" icon="arrow-right-start-on-rectangle" href="#" @click.prevent="$root.submit()" />
