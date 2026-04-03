@@ -73,7 +73,7 @@ final class Stocks extends Component
     #[Computed]
     public function totalProductsCount(): int
     {
-        $query = Product::query();
+        $query = Product::query()->where('branch_id', $this->currentBranchId);
         $this->applyPharmacyScope($query, 'productCategory');
         return $query->count();
     }
@@ -83,7 +83,7 @@ final class Stocks extends Component
     #[Computed]
     public function availableProducts()
     {
-        $query = Product::query()->orderBy('brand_name');
+        $query = Product::query()->where('branch_id', $this->currentBranchId)->orderBy('brand_name');
         $this->applyPharmacyScope($query, 'productCategory');
 
         return $query->get()->map(function ($product) {

@@ -293,7 +293,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="10" class="px-6 py-24 text-center">
+                                <td colspan="11" class="px-6 py-24 text-center">
                                     <x-ui.empty>
                                         <x-ui.empty.media class="flex items-center justify-center w-12 h-12 rounded-full bg-neutral-100 dark:bg-card">
                                             <x-ui.icon name="cube" class="size-6" />

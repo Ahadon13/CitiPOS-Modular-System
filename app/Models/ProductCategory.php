@@ -23,6 +23,11 @@ final class ProductCategory extends Model
         return $this->hasMany(Product::class);
     }
 
+    public function branches()
+    {
+        return $this->hasMany(Branch::class);
+    }
+
     /**
      * Get the attributes that should be cast.
      *

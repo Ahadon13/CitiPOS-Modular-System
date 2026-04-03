@@ -100,56 +100,11 @@
     </div>
 
     {{-- Bottom Data Grids --}}
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-        {{-- Top Pharmacists --}}
-        <div class="lg:col-span-2 space-y-4">
-            <h2 class="text-lg font-bold text-neutral-900 dark:text-white">Top Performing Staff</h2>
-            <x-ui.card hoverless size="full" class="p-0 overflow-hidden">
-                <div class="overflow-x-auto custom-scrollbar">
-                    <table class="w-full text-left text-sm whitespace-nowrap">
-                        <thead class="bg-neutral-50 dark:bg-[#0a1331] border-b border-black/10 dark:border-white/10 text-xs uppercase text-neutral-500">
-                            <tr>
-                                <th class="px-6 py-4">Rank</th>
-                                <th class="px-6 py-4">Staff Name</th>
-                                <th class="px-6 py-4 text-center">Transactions Processed</th>
-                                <th class="px-6 py-4 text-right">Revenue Generated</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-black/5 dark:divide-white/5 bg-neutral-50 dark:bg-[#060A23]">
-                            @forelse($this->topPharmacists as $index => $staff)
-                            <tr class="hover:bg-white/5 transition-colors group">
-                                <td class="px-6 py-4">
-                                    <div class="size-8 rounded-lg flex items-center justify-center font-black text-sm {{ $index === 0 ? 'bg-amber-100 text-amber-600' : ($index === 1 ? 'bg-slate-200 text-slate-600' : ($index === 2 ? 'bg-orange-100 text-orange-700' : 'bg-neutral-100 dark:bg-white/10 text-neutral-500')) }}">
-                                        #{{ $index + 1 }}
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 font-bold text-neutral-900 dark:text-white">
-                                    {{ $staff->name }}
-                                    <span class="block text-xs font-normal text-neutral-500">{{ $staff->role }}</span>
-                                </td>
-                                <td class="px-6 py-4 text-center font-medium text-neutral-600 dark:text-neutral-400">
-                                    {{ number_format($staff->total_transactions) }} orders
-                                </td>
-                                <td class="px-6 py-4 text-right font-bold text-emerald-600 dark:text-emerald-400">
-                                    @money(\Money\Money::PHP((int) $staff->total_revenue))
-                                </td>
-                            </tr>
-                            @empty
-                            <tr>
-                                <td colspan="4" class="p-8 text-center text-neutral-500">No sales data available for this period.</td>
-                            </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </x-ui.card>
-        </div>
-
+    <div class="grid grid-cols-1 gap-6">
         {{-- Inventory Snapshot --}}
         <div class="space-y-4">
             <h2 class="text-lg font-bold text-neutral-900 dark:text-white">Current Inventory Snapshot</h2>
-            <x-ui.card hoverless class="bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-900/20 dark:to-[#0a1331] border-indigo-100 dark:border-indigo-900/30">
+            <x-ui.card hoverless size="full" class="bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-900/20 dark:to-[#0a1331] border-indigo-100 dark:border-indigo-900/30">
                 <div class="flex items-center gap-4 mb-4">
                     <div class="p-3 bg-indigo-100 dark:bg-indigo-500/20 rounded-xl">
                         <x-ui.icon name="archive-box" class="size-6 text-indigo-600 dark:text-indigo-400" />

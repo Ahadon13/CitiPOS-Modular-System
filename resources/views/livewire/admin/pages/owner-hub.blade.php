@@ -54,7 +54,7 @@
                 <p class="text-sm text-neutral-500 dark:text-neutral-400">{{ count($this->branches) }} branch{{ count($this->branches) !== 1 ? 'es' : '' }}</p>
             </div>
 
-            <x-ui.button size="sm" icon="plus">
+            <x-ui.button size="sm" icon="plus" x-on:click="$dispatch('open-modal', { id: 'manage-branch' })">
                 Add
             </x-ui.button>
         </div>
@@ -125,4 +125,8 @@
         </div>
 
     </div>
+
+    {{-- Manage Branch Modal --}}
+    <livewire:admin.common.manage-branch-modal />
+
 </div>

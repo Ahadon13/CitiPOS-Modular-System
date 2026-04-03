@@ -7,13 +7,14 @@ namespace App\Models;
 use App\Models\User;
 use App\Models\InventoryBatch;
 use App\Models\Sale;
+use App\Traits\ChecksIfInUse;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 final class Branch extends Model
 {
-    use HasFactory;
+    use HasFactory, ChecksIfInUse;
 
     /**
      * The attributes that are mass assignable.
@@ -21,10 +22,16 @@ final class Branch extends Model
      * @var array
      */
     protected $fillable = [
+        'product_category_id',
         'name',
         'address',
         'is_active',
     ];
+
+    public function productCategory()
+    {
+        return $this->belongsTo(ProductCategory::class);
+    }
 
     public function users(): HasMany
     {
@@ -36,9 +43,19 @@ final class Branch extends Model
         return $this->hasMany(InventoryBatch::class);
     }
 
+    public function products(): HasMany
+    {
+        return $this->hasMany(Product::class);
+    }
+
     public function sales(): HasMany
     {
         return $this->hasMany(Sale::class);
+    }
+
+    public function purchases(): HasMany
+    {
+        return $this->hasMany(Purchase::class);
     }
 
     /**
@@ -50,6 +67,7 @@ final class Branch extends Model
     {
         return [
             'id' => 'integer',
+            'product_category_id' => 'integer',
             'is_active' => 'boolean',
         ];
     }

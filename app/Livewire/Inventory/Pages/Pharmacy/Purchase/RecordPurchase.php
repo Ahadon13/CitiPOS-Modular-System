@@ -12,6 +12,7 @@ use App\Models\Purchase;
 use App\Models\Supplier;
 use App\Models\Unit;
 use App\Traits\HasAuth;
+use Illuminate\Testing\Fluent\Concerns\Has;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -125,7 +126,7 @@ final class RecordPurchase extends Component
     #[Computed]
     public function products(): array
     {
-        return Product::orderBy('brand_name')->whereHas('productCategory', function ($query) {
+        return Product::where('branch_id', $this->currentBranchId)->orderBy('brand_name')->whereHas('productCategory', function ($query) {
             $query->where('name', CategoryType::Pharmacy->label());
         })->get()
             ->map(fn($p) => ['value' => $p->id, 'label' => $p->brand_name . ' (' . $p->dosage . ')' . ' - ' . $p->generic_name])

@@ -8,7 +8,7 @@
             <x-ui.button variant="outline" icon="arrow-path" wire:click="$refresh">
                 Refresh
             </x-ui.button>
-            <x-ui.button variant="outline" icon="document-text" wire:click="openDailyReportModal">
+            <x-ui.button variant="outline" icon="document-text" wire:loading.attr="disabled" wire:click="openDailyReportModal">
                 Daily Report
             </x-ui.button>
         </div>
@@ -41,7 +41,7 @@
     <div class="w-full space-y-4 flex flex-col">
         <div class="flex items-center gap-5 w-full justify-between">
             <h2 class="text-lg font-bold text-neutral-900 dark:text-white">Top Demand Products</h2>
-            <x-ui.button size="sm" variant="outline" icon="arrow-down-tray" wire:click="openExportModal('demand')">
+            <x-ui.button size="sm" variant="outline" icon="arrow-down-tray" wire:loading.attr="disabled" wire:click="openExportModal('demand')">
                 Export in Excel
             </x-ui.button>
         </div>
@@ -188,6 +188,7 @@
                     size="sm"
                     variant="outline"
                     icon="arrow-down-tray"
+                    wire:loading.attr="disabled"
                     wire:click="openExportModal('transactions')"
                 >
                     Export in Excel

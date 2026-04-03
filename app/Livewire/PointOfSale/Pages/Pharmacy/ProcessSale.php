@@ -80,6 +80,7 @@ final class ProcessSale extends Component
         $query = Product::query()
             ->isPharmacy() // Only Pharmacy products
             ->where('is_active', true)
+            ->where('branch_id', $this->currentBranchId)
             ->with(['productPackagings.unit', 'baseUnit']); // Eager load baseUnit to prevent N+1
 
         if ($this->activeCategory !== null) {

@@ -34,6 +34,7 @@ final class Product extends Model
     protected $fillable = [
         'supplier_id',
         'category_id',
+        'branch_id',
         'product_category_id',
         'base_unit_id',
         'product_code',
@@ -68,7 +69,7 @@ final class Product extends Model
                 ->orWhereHas('category', function ($subQ) use ($term) {
                     $subQ->where('name', 'like', "%{$term}%");
                 })
-              // Search Related Barcodes (in ProductPackaging)
+                // Search Related Barcodes (in ProductPackaging)
                 ->orWhereHas('productPackagings', function ($subQ) use ($term) {
                     $subQ->where('barcode', 'like', "%{$term}%");
                 });
@@ -97,6 +98,11 @@ final class Product extends Model
     public function supplier(): BelongsTo
     {
         return $this->belongsTo(Supplier::class);
+    }
+
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
     }
 
     public function category(): BelongsTo
@@ -178,6 +184,7 @@ final class Product extends Model
             'id' => 'integer',
             'supplier_id' => 'integer',
             'category_id' => 'integer',
+            'branch_id' => 'integer',
             'product_category_id' => 'integer',
             'base_unit_id' => 'integer',
             'requires_prescription' => 'boolean',

@@ -169,35 +169,6 @@ class Reports extends Component
     }
 
     // ==========================================
-    // 4. TOP PHARMACISTS / CASHIERS
-    // ==========================================
-    #[Computed]
-    public function topPharmacists()
-    {
-        [$start, $end] = $this->getDates();
-
-        return User::where('branch_id', $this->currentBranchId)
-            ->whereHas('sales', function ($q) use ($start, $end) {
-                $q->where('branch_id', $this->currentBranchId)
-                  ->where('status', \App\Enums\Sale\Status::Completed)
-                  ->whereBetween('created_at', [$start, $end]);
-            })
-            ->withCount(['sales as total_transactions' => function ($q) use ($start, $end) {
-                $q->where('branch_id', $this->currentBranchId)
-                  ->where('status', \App\Enums\Sale\Status::Completed)
-                  ->whereBetween('created_at', [$start, $end]);
-            }])
-            ->withSum(['sales as total_revenue' => function ($q) use ($start, $end) {
-                $q->where('branch_id', $this->currentBranchId)
-                  ->where('status', \App\Enums\Sale\Status::Completed)
-                  ->whereBetween('created_at', [$start, $end]);
-            }], 'grand_total')
-            ->orderByDesc('total_revenue')
-            ->take(5)
-            ->get();
-    }
-
-    // ==========================================
     // 5. INVENTORY SNAPSHOT
     // ==========================================
     #[Computed]

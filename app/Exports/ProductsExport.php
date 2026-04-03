@@ -30,6 +30,7 @@ final class ProductsExport implements FromQuery, WithHeadings, WithMapping, Shou
     {
         $query = Product::query()
             ->select('products.*')
+            ->where('branch_id', $this->branchId)
             ->with(['baseUnit', 'supplier', 'category', 'productPackagings', 'productCategory']);
 
         // 1. Join for Category Filtering

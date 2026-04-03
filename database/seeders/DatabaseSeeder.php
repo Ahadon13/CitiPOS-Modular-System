@@ -19,9 +19,12 @@ final class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+         // These replace your old Enums
+        $catPharmacy = ProductCategory::where('name', 'Pharmacy')->first();
+        $catMotor = ProductCategory::where('name', 'Motor Parts')->first();
         // 1. Create Branches
-        $mainBranch = Branch::create(['name' => 'Main Branch - Tagum', 'address' => 'Tagum City']);
-        $downtownBranch = Branch::create(['name' => 'Downtown Branch', 'address' => 'Downtown']);
+        $mainBranch = Branch::create(['product_category_id' => $catPharmacy->id, 'name' => 'Main Branch - Tagum', 'address' => 'Tagum City']);
+        $downtownBranch = Branch::create(['product_category_id' => $catPharmacy->id, 'name' => 'Downtown Branch', 'address' => 'Tagum City']);
 
         // 2. Create Users
         // 2. Create Users
@@ -45,10 +48,6 @@ final class DatabaseSeeder extends Seeder
         $cashier->assignRole(\App\Enums\Role::Pharmacist->value);
 
         // 3. Create Settings (Categories & Units)
-        // These replace your old Enums
-        $catPharmacy = ProductCategory::where('name', 'Pharmacy')->first();
-        $catMotor = ProductCategory::where('name', 'Motor Parts')->first();
-
         $unitPiece = Unit::create(['name' => 'Piece', 'abbreviation' => 'pc', 'allow_decimal' => false]);
         $unitBox = Unit::create(['name' => 'Box', 'abbreviation' => 'box', 'allow_decimal' => false]);
         $unitSet = Unit::create(['name' => 'Set', 'abbreviation' => 'set', 'allow_decimal' => false]);
@@ -64,6 +63,7 @@ final class DatabaseSeeder extends Seeder
         // ==========================================
         $biogesic = Product::create([
             'supplier_id' => $unilab->id,
+            'branch_id' => $mainBranch->id,
             'product_category_id' => $catPharmacy->id, // Linked to ProductCategory
             'base_unit_id' => $unitPiece->id,  // We count stock in "Pieces"
             'product_code' => 'BIO-500MG-001', // Unique product code for easy reference
@@ -100,6 +100,7 @@ final class DatabaseSeeder extends Seeder
         // ==========================================
         $brakePad = Product::create([
             'supplier_id' => $yamaha->id,
+            'branch_id' => $mainBranch->id,
             'product_category_id' => $catMotor->id,
             'base_unit_id' => $unitSet->id, // We count stock in "Sets"
             'product_code' => 'YP-BRAKE-001', // Unique product code for easy reference

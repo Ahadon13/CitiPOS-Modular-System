@@ -258,6 +258,7 @@ class Transaction extends Component
 
         try {
             $parsedDate = Carbon::parse($this->dailyReportDate);
+            $dateString = $parsedDate->format('Y-m-d');
             $fileName = 'Daily_Report_' . $parsedDate->format('Y_m_d') . '.xlsx';
 
             // Close the modal immediately so the user knows it worked
@@ -266,7 +267,7 @@ class Transaction extends Component
             return Excel::download(
                 new TransactionsExport(
                     branchId: $this->currentBranchId,
-                    dateFilter: '', // Ignored because we provide exactDate
+                    dateRange: [$dateString, $dateString],
                     paymentMethodFilter: null, // Include all payment methods for a complete daily report
                     search: '', // Clear search so the whole day exports
                     exactDate: $parsedDate->format('Y-m-d') // Pass the exact date!

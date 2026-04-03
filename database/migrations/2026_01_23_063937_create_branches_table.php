@@ -15,6 +15,7 @@ return new class extends Migration
     {
         Schema::create('branches', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('product_category_id')->constrained('product_categories');
             $table->string('name');
             $table->text('address')->nullable();
             $table->boolean('is_active')->default(true);

@@ -8,6 +8,7 @@ enum Role: string
 {
     case SuperAdmin = 'super-admin';
     case Admin = 'admin';
+    case Distributor = 'distributor';
     case MotorShopCashier = 'motor-shop-cashier';
     case GroceryCashier = 'grocery-cashier';
     case Pharmacist = 'pharmacist';
@@ -30,6 +31,8 @@ enum Role: string
         return match ($this) {
             self::SuperAdmin => 'Super Admin',
             self::Admin => 'Admin',
+            self::Distributor => 'Distributor',
+            self::GroceryCashier => 'Grocery Cashier',
             self::MotorShopCashier => 'Motor Shop Cashier',
             self::Pharmacist => 'Pharmacist',
         };

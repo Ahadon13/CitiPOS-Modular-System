@@ -118,6 +118,7 @@ class ProductsImport implements ToCollection, WithHeadingRow, WithChunkReading, 
                     $productsToInsert[$code] = [
                         'supplier_id' => $this->suppliersMap[$supplierKey],
                         'category_id' => $this->categoriesMap[$categoryKey],
+                        'branch_id' => $this->branchId,
                         'product_category_id' => $this->pharmacyCategoryId,
                         'base_unit_id' => $this->unitsMap[strtolower(trim((string)$row['unit']))],
                         'product_code' => $code,

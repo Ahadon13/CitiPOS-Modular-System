@@ -20,6 +20,7 @@ final class CreateProduct
             $product = Product::create([
                 'supplier_id' => $productData->supplier_id,
                 'category_id' =>  $productData->category_id,
+                'branch_id' => $batchData->branch_id,
                 // remember that the category is actually the "product_category_id" in the products table, which references the "categories" table
                 'product_category_id' => $productData->product_category_id,
                 'base_unit_id' => $productData->base_unit_id,

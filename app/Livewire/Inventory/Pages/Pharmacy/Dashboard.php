@@ -31,7 +31,7 @@ final class Dashboard extends Component
     #[Computed]
     public function totalProducts(): int
     {
-        $query = Product::query();
+        $query = Product::query()->where('branch_id', $this->currentBranchId);
 
         // STRICT: Only count Pharmacy products
         $this->applyPharmacyScope($query, 'productCategory');
@@ -93,7 +93,7 @@ final class Dashboard extends Component
     #[Computed]
     public function lowStockCount(): int
     {
-        $query = Product::query()
+        $query = Product::query()->where('branch_id', $this->currentBranchId)
             // 1. Calculate Stock
             ->withSum(['inventoryBatches as total_stock' => function ($query) {
                 $query->where('branch_id', $this->currentBranchId);
@@ -158,6 +158,7 @@ final class Dashboard extends Component
     public function lowStockProducts()
     {
         $query = Product::query()
+            ->where('branch_id', $this->currentBranchId)
             ->with(['productCategory', 'baseUnit'])
             ->with(['productPackagings' => function ($q) {
                 $q->orderBy('conversion_factor', 'asc');

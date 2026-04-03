@@ -63,6 +63,7 @@ final class Product extends Component
     {
         $query = ProductModel::query()
             ->select('products.*') // Select main table columns
+            ->where('products.branch_id', $this->currentBranchId)
             ->with(['baseUnit', 'productPackagings']); // Basic eager loading
 
         // 1. OPTIMIZATION: Use JOIN instead of whereHas for Category (Faster)
@@ -124,6 +125,7 @@ final class Product extends Component
 
         // 2. Base Product Query
         $productQuery = ProductModel::query()
+            ->where('branch_id', $branchId)
             ->whereIn('product_category_id', $categoryIds);
 
         // 3. Calculate Metrics
