@@ -1,6 +1,6 @@
 <div class="max-w-7xl mx-auto space-y-6 p-5">
-    <div class="flex items-center justify-between gap-6">
-        <div>
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-6">
+        <div class="flex flex-col justify-start w-full">
             <h1 class="text-2xl font-bold text-neutral-900 dark:text-white">Branches</h1>
             <p class="text-sm text-neutral-500 dark:text-neutral-400">Manage locations and monitor performance</p>
         </div>
@@ -24,7 +24,7 @@
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         @forelse($this->branches as $branch)
-            <x-ui.card hoverless href="{{ route('admin.branches.view', ['branch' => $branch]) }}" class="group relative overflow-hidden p-6 transition-all hover:shadow-lg hover:-translate-y-1">
+            <x-ui.card hoverless size="full" href="{{ route('admin.branches.view', ['branch' => $branch]) }}" class="group relative overflow-hidden p-6 transition-all hover:shadow-lg hover:-translate-y-1">
 
                 <div class="absolute top-0 right-0 -mr-16 -mt-16 h-32 w-32 rounded-full bg-blue-50/50 dark:bg-blue-900/10 transition-transform group-hover:scale-150"></div>
 

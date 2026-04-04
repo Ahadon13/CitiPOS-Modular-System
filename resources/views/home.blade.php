@@ -7,12 +7,10 @@
     <header class="sticky top-0 z-50 bg-[#050609]/90 backdrop-blur-sm border-b border-dashed border-neutral-600/30">
         <div class="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
             {{-- Logo with Electric Blue accent --}}
-            <a href="/" class="flex items-center gap-2 group">
-                <div class="p-2.5 rounded-xl bg-neutral-900 border border-neutral-600/30 group-hover:border-blue-500/50 transition-colors">
-                    <x-ui.icon name="cube" class="size-6 text-blue-400" />
-                </div>
+            <div class="flex items-center gap-2">
+                <x-ui.brand href="/" logoClass="size-12!" logo="{{ asset('favicon.svg') }}" />
                 <span class="text-2xl font-black text-white">Citi<span class="text-blue-400">POS</span></span>
-            </a>
+            </div>
 
             <div class="flex items-center gap-3">
                 {{-- Electric Blue CTA button --}}

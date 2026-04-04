@@ -16,7 +16,7 @@
 
     {{-- Users Table --}}
     <x-ui.card hoverless size="full" class="p-0">
-        <div class="px-6 py-5 border-b border-black/10 dark:border-white/10 flex items-center justify-between">
+        <div class="px-3 sm:px-6 py-5 border-b border-black/10 dark:border-white/10 flex items-center justify-between gap-3">
             <div class="w-full md:w-72">
                 <x-ui.input wire:model.live.debounce.300ms="search" leftIcon="magnifying-glass" clearable placeholder="Search name or username..." class="w-full" />
             </div>

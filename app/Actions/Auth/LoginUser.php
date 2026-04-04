@@ -21,7 +21,7 @@ final class LoginUser
             /** @var User|null $user */
             $user = User::firstWhere('username', $data->username);
 
-            if (! $user) {
+            if (! $user|| $user->username !== $data->username) {
                 return 'user-not-found';
             }
 

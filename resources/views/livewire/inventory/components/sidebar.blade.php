@@ -1,6 +1,6 @@
 <x-ui.sidebar>
     <x-slot:brand>
-        <x-ui.brand name="CitiPOS" href="/" logo="{{ asset('favicon.png') }}" />
+        <x-ui.brand name="CitiPOS" href="/" logoClass="size-9!" logo="{{ asset('favicon.svg') }}" />
     </x-slot:brand>
 
     <x-pharmacy-sidebar-item />

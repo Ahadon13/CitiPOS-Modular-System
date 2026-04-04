@@ -10,9 +10,7 @@
         <div class="flex justify-between items-center mb-8">
             <div class="flex gap-4 items-center">
                 {{-- Logo Placeholder --}}
-                <div class="size-14 bg-white dark:bg-white/10 dark:border-blue-100/10 rounded-md shadow-sm border border-blue-100 flex items-center justify-center shrink-0">
-                    <x-ui.brand href="/" logo="{{ asset('favicon.png') }}" />
-                </div>
+                <x-ui.brand href="/" logoClass="size-14!" logo="{{ asset('favicon.svg') }}" />
                 <div>
                     <h1 class="text-2xl font-bold text-neutral-900 dark:text-white tracking-tight">
                         Welcome back, {{ auth()->user()->name ?? 'User' }}!
@@ -32,7 +30,7 @@
             <x-ui.card size="full" hoverless class="bg-white/60 hover:bg-white/90 transition-all duration-200 border-blue-100 shadow-[0_4px_20px_-4px_rgba(225,29,72,0.05)] backdrop-blur-sm">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-4">
-                        <div class="size-12 bg-blue-50 dark:bg-blue-50/10 text-blue-500 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform">
+                        <div class="size-12 bg-blue-50 dark:bg-blue-50/10 text-blue-500 rounded-xl shrink-0 flex items-center justify-center group-hover:scale-105 transition-transform">
                             <x-ui.icon name="squares-2x2" class="size-6" />
                         </div>
                         <div>

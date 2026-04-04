@@ -15,11 +15,15 @@ final class NativeAppServiceProvider implements ProvidesPhpIni
      */
     public function boot(): void
     {
-        Window::open()
-            ->route('auth.login')
-            ->title(config('app.name', 'Laravel + NativePHP'))
+        Window::open('pos_main')
+            // 1. Change this to your live website URL
+            ->url('https://citi-pos.store/login')
+            // 2. Keep your POS settings
+            ->title('CitiPOS')
+            ->backgroundColor('#171717')
             ->hideMenu()
-            ->kiosk();
+            ->kiosk()
+            ->focusable(true);
     }
 
     /**
