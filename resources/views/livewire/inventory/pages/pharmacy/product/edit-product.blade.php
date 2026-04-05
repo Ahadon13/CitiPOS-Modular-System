@@ -46,7 +46,7 @@
     }">
 
     <x-ui.breadcrumbs>
-        <x-ui.breadcrumbs.item href="{{ route('inventory.pharmacy.products') }}" wire:navigate>
+        <x-ui.breadcrumbs.item href="{{ route('inventory.pharmacy.products') }}">
             Products
         </x-ui.breadcrumbs.item>
         <x-ui.breadcrumbs.item active>
@@ -60,7 +60,7 @@
             <h1 class="text-2xl font-bold text-neutral-900 dark:text-white">Edit Product</h1>
             <p class="text-neutral-500 dark:text-neutral-400">Update master data and packaging prices.</p>
         </div>
-         <x-ui.button variant="outline" icon="arrow-left" color="neutral" href="{{ route('inventory.pharmacy.products') }}" wire:navigate>
+         <x-ui.button variant="outline" icon="arrow-left" color="neutral" href="{{ route('inventory.pharmacy.products') }}">
              Back to list
          </x-ui.button>
     </div>
@@ -292,7 +292,7 @@
         </div>
 
         <div class="col-span-1 lg:col-span-3 gap-3 flex justify-end">
-            <x-ui.button variant="danger" href="{{ route('inventory.pharmacy.products') }}" wire:navigate>
+            <x-ui.button variant="danger" href="{{ route('inventory.pharmacy.products') }}">
                 Cancel
             </x-ui.button>
             <x-ui.button type="submit" size="md" icon="check" wire:loading.attr="disabled" wire:target="save">

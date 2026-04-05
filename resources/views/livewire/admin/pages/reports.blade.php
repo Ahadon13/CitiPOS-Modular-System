@@ -149,7 +149,7 @@
                     This represents the total capital currently tied up in physical stock across the selected filters, based on supplier cost.
                 </div>
                 <div class="mt-4 pt-4 border-t border-indigo-100 dark:border-indigo-900/30">
-                    <x-ui.button variant="outline" class="w-full justify-center" href="{{ route('admin.branches') }}" wire:navigate>
+                    <x-ui.button variant="outline" class="w-full justify-center" href="{{ route('admin.branches') }}">
                         Manage Branches &rarr;
                     </x-ui.button>
                 </div>

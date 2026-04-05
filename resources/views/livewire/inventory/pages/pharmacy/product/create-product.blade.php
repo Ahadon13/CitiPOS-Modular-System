@@ -1,6 +1,6 @@
 <div class="max-w-7xl mx-auto space-y-6" x-data="{ packagings: @entangle('form.packagings') }">
     <x-ui.breadcrumbs>
-        <x-ui.breadcrumbs.item href="{{ route('inventory.pharmacy.products') }}" wire:navigate>
+        <x-ui.breadcrumbs.item href="{{ route('inventory.pharmacy.products') }}">
             Products
         </x-ui.breadcrumbs.item>
         <x-ui.breadcrumbs.item active>
@@ -14,7 +14,7 @@
             <h1 class="text-2xl font-bold text-neutral-900 dark:text-white">Create New Product</h1>
             <p class="text-neutral-500 dark:text-neutral-400">Add a new medicine or pharmacy item.</p>
         </div>
-         <x-ui.button variant="outline" icon="arrow-left" color="neutral" href="{{ route('inventory.pharmacy.products') }}" wire:navigate>
+         <x-ui.button variant="outline" icon="arrow-left" color="neutral" href="{{ route('inventory.pharmacy.products') }}">
              Back to list
          </x-ui.button>
     </div>
@@ -418,7 +418,7 @@
 
         {{-- Form Actions --}}
         <div class="col-span-1 lg:col-span-3 pt-6 border-t border-neutral-200 dark:border-white/10 flex items-center justify-end gap-3">
-            <x-ui.button variant="danger" href="{{ route('inventory.pharmacy.products') }}" wire:navigate>
+            <x-ui.button variant="danger" href="{{ route('inventory.pharmacy.products') }}">
                 Cancel
             </x-ui.button>
             <x-ui.button type="submit" size="md" icon="check" color="primary">

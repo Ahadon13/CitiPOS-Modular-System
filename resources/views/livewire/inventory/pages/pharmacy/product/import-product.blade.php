@@ -1,6 +1,6 @@
 <div class="max-w-7xl mx-auto space-y-6">
     <x-ui.breadcrumbs>
-        <x-ui.breadcrumbs.item href="{{ route('inventory.pharmacy.products') }}" wire:navigate>
+        <x-ui.breadcrumbs.item href="{{ route('inventory.pharmacy.products') }}">
             Products
         </x-ui.breadcrumbs.item>
         <x-ui.breadcrumbs.item active>
@@ -14,7 +14,7 @@
             <h1 class="text-2xl font-bold text-neutral-900 dark:text-white">Import Products</h1>
             <p class="text-neutral-500 dark:text-neutral-400">Import products from a .CSV, .XLS, or .XLSX file.</p>
         </div>
-        <x-ui.button variant="outline" icon="arrow-left" color="neutral" href="{{ route('inventory.pharmacy.products') }}" wire:navigate>
+        <x-ui.button variant="outline" icon="arrow-left" color="neutral" href="{{ route('inventory.pharmacy.products') }}">
             Back to list
         </x-ui.button>
     </div>

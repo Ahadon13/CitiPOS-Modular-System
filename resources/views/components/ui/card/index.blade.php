@@ -40,7 +40,7 @@
         @break
 
     @case('a')
-        <a wire:navigate.hover href="{{ $href }}" {{ $attributes->class(Arr::toCssClasses($classes)) }}>
+        <a.hover href="{{ $href }}" {{ $attributes->class(Arr::toCssClasses($classes)) }}>
             {{ $slot }}
         </a>
         @break

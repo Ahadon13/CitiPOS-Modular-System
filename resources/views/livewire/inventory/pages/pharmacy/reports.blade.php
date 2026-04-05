@@ -120,7 +120,7 @@
                     This represents the total capital currently tied up in physical stock inside the pharmacy, based on supplier cost.
                 </div>
                 <div class="mt-4 pt-4 border-t border-indigo-100 dark:border-indigo-900/30">
-                    <x-ui.button variant="outline" class="w-full justify-center" href="{{ route('inventory.pharmacy.stocks') }}" wire:navigate>
+                    <x-ui.button variant="outline" class="w-full justify-center" href="{{ route('inventory.pharmacy.stocks') }}">
                         View Stock Ledger &rarr;
                     </x-ui.button>
                 </div>

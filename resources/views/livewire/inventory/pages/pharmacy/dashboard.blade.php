@@ -10,7 +10,7 @@
                 @endif
             </p>
         </div>
-        <x-ui.button href="{{ route('inventory.pharmacy.stocks') }}" icon="arrow-right" wire:navigate>
+        <x-ui.button href="{{ route('inventory.pharmacy.stocks') }}" icon="arrow-right">
             Add Stock
         </x-ui.button>
     </div>

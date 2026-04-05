@@ -9,10 +9,10 @@
             <x-ui.button variant="outline" icon="truck"  x-on:click="$dispatch('open-modal', { id: 'create-supplier' })">
                 Suppliers
             </x-ui.button>
-            <x-ui.button variant="outline" icon="inbox-arrow-down" href="{{ route('inventory.pharmacy.purchases.record') }}" wire:navigate>
+            <x-ui.button variant="outline" icon="inbox-arrow-down" href="{{ route('inventory.pharmacy.purchases.record') }}">
                 Record Receiving
             </x-ui.button>
-            <x-ui.button icon="plus" href="{{ route('inventory.pharmacy.purchases.create') }}" wire:navigate>
+            <x-ui.button icon="plus" href="{{ route('inventory.pharmacy.purchases.create') }}">
                 New Purchase Order
             </x-ui.button>
         </div>

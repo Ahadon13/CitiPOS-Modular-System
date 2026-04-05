@@ -8,7 +8,7 @@
 }">
 
     <x-ui.breadcrumbs>
-        <x-ui.breadcrumbs.item href="{{ route('inventory.pharmacy.purchases') }}" wire:navigate>Purchases</x-ui.breadcrumbs.item>
+        <x-ui.breadcrumbs.item href="{{ route('inventory.pharmacy.purchases') }}">Purchases</x-ui.breadcrumbs.item>
         <x-ui.breadcrumbs.item active>Record Received Purchase</x-ui.breadcrumbs.item>
     </x-ui.breadcrumbs>
 
@@ -17,7 +17,7 @@
             <h1 class="text-2xl font-bold text-neutral-900 dark:text-white">Record Delivery</h1>
             <p class="text-neutral-500 dark:text-neutral-400">Log physical deliveries into your inventory.</p>
         </div>
-        <x-ui.button variant="outline" icon="arrow-left" color="neutral" href="{{ route('inventory.pharmacy.purchases') }}" wire:navigate>
+        <x-ui.button variant="outline" icon="arrow-left" color="neutral" href="{{ route('inventory.pharmacy.purchases') }}">
              Back to Orders
          </x-ui.button>
     </div>
@@ -198,7 +198,7 @@
         </x-ui.card>
 
         <div class="flex justify-end gap-3">
-            <x-ui.button variant="danger" wire:loading.attr="disabled" href="#" wire:navigate>Cancel</x-ui.button>
+            <x-ui.button variant="danger" wire:loading.attr="disabled" href="#">Cancel</x-ui.button>
             <x-ui.button type="submit" wire:loading.attr="disabled" size="md" icon="check-circle">Confirm & Add to Inventory</x-ui.button>
         </div>
     </form>

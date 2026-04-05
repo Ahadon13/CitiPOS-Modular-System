@@ -2,7 +2,7 @@
 
     {{-- Breadcrumbs --}}
     <x-ui.breadcrumbs>
-        <x-ui.breadcrumbs.item href="{{ route('admin.branches') }}" wire:navigate>
+        <x-ui.breadcrumbs.item href="{{ route('admin.branches') }}">
             Branches
         </x-ui.breadcrumbs.item>
         <x-ui.breadcrumbs.item active>

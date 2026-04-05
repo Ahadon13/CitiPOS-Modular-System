@@ -9,7 +9,7 @@
             <x-ui.button href="{{ route('inventory.pharmacy.products.import') }}" icon="arrow-down-tray">
                 Import Products
             </x-ui.button>
-            <x-ui.button href="{{ route('inventory.pharmacy.products.create') }}" icon="plus" wire:navigate>
+            <x-ui.button href="{{ route('inventory.pharmacy.products.create') }}" icon="plus">
                 Add Product
             </x-ui.button>
         </div>
@@ -286,7 +286,7 @@
                                 <td class="px-6 py-4 text-right">
                                     <div class="flex items-center justify-center gap-2">
                                         <x-ui.button size="xs" icon="shopping-cart" variant="outline" color="emerald" title="Adjust stock" x-on:click="$dispatch('open-adjust-stock-modal', { id: {{ $product->id }} })" />
-                                        <x-ui.button size="xs" icon="pencil-square" variant="outline" color="blue" href="{{ route('inventory.pharmacy.products.edit', ['product' => $product]) }}" wire:navigate title="Edit Product" />
+                                        <x-ui.button size="xs" icon="pencil-square" variant="outline" color="blue" href="{{ route('inventory.pharmacy.products.edit', ['product' => $product]) }}" title="Edit Product" />
                                         <x-ui.button size="xs" :icon="$product->is_active ? 'eye-slash' : 'eye'" variant="outline" title="Toggle Status" :color="$product->is_active ? 'orange' : 'indigo'" wire:click="toggleStatus({{ $product }})" wire:custom-confirm="Are you sure you want to {{ $product->is_active ? 'disable' : 'enable' }} {{ $product->brand_name }}?" />
                                     </div>
                                 </td>
@@ -309,7 +309,7 @@
                                                 <x-ui.button size="sm" href="{{ route('inventory.pharmacy.products.import') }}" icon="arrow-down-tray">
                                                     Import Products
                                                 </x-ui.button>
-                                                <x-ui.button size="sm" href="{{ route('inventory.pharmacy.products.create') }}" icon="plus" wire:navigate>
+                                                <x-ui.button size="sm" href="{{ route('inventory.pharmacy.products.create') }}" icon="plus">
                                                     Add Product
                                                 </x-ui.button>
                                             </div>

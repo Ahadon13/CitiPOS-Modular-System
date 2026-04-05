@@ -279,7 +279,7 @@
         <div class="space-y-4 flex flex-col">
             <div class="flex items-center justify-between">
                 <h2 class="text-lg font-bold text-neutral-900 dark:text-white">Active Branches</h2>
-                <a class="text-blue-500 text-xs" href="{{ route('admin.branches') }}" wire:navigate>
+                <a class="text-blue-500 text-xs" href="{{ route('admin.branches') }}">
                     View All
                 </a>
             </div>
@@ -309,7 +309,7 @@
                                     @endif
                                 </td>
                                 <td class="px-4 py-3 text-right">
-                                    <x-ui.button size="xs" variant="ghost" icon="arrow-right-end-on-rectangle" href="{{ route('admin.branches.view', $branch->id) }}" wire:navigate>
+                                    <x-ui.button size="xs" variant="ghost" icon="arrow-right-end-on-rectangle" href="{{ route('admin.branches.view', $branch->id) }}">
                                         Manage
                                     </x-ui.button>
                                 </td>

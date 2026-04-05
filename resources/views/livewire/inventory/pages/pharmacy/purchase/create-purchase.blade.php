@@ -15,7 +15,7 @@
         }
     }">
     <x-ui.breadcrumbs>
-        <x-ui.breadcrumbs.item href="{{ route('inventory.pharmacy.purchases') }}" wire:navigate>
+        <x-ui.breadcrumbs.item href="{{ route('inventory.pharmacy.purchases') }}">
             Purchases
         </x-ui.breadcrumbs.item>
         <x-ui.breadcrumbs.item active>
@@ -29,7 +29,7 @@
             <h1 class="text-2xl font-bold text-neutral-900 dark:text-white">New Purchase Order</h1>
             <p class="text-neutral-500 dark:text-neutral-400">Create an order request for your suppliers.</p>
         </div>
-         <x-ui.button variant="outline" icon="arrow-left" color="neutral" href="{{ route('inventory.pharmacy.purchases') }}" wire:navigate>
+         <x-ui.button variant="outline" icon="arrow-left" color="neutral" href="{{ route('inventory.pharmacy.purchases') }}">
              Back to Orders
          </x-ui.button>
     </div>
@@ -181,7 +181,7 @@
 
         {{-- Actions --}}
         <div class="flex justify-end gap-3">
-            <x-ui.button variant="danger" href="#" wire:navigate>
+            <x-ui.button variant="danger" href="#">
                 Cancel
             </x-ui.button>
             <x-ui.button type="submit" size="md" icon="paper-airplane">

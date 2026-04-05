@@ -9,7 +9,7 @@
     </a>
     <a class="inline-flex items-center"
        href="{{ route('home') }}"
-       wire:navigate>
+      >
         <h1 class='text-primary-brand text-lg font-bold leading-8'>CitiPOS</h1>
     </a>
 </div>
