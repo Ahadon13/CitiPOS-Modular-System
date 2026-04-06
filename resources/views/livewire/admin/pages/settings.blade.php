@@ -53,6 +53,14 @@
                 <span class="font-bold text-sm text-neutral-900 dark:text-white">Payment Methods</span>
             </button>
 
+            {{-- Desktop App Uploader --}}
+            <button type="button" x-on:click="$dispatch('open-modal', { id: 'upload-app' })" class="flex flex-col items-center justify-center gap-2 p-5 rounded-lg border border-neutral-200 dark:border-white/10 hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group">
+                <div class="p-3 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full group-hover:scale-110 transition-transform">
+                    <x-ui.icon name="cloud-arrow-up" class="size-6" />
+                </div>
+                <span class="font-bold text-sm text-neutral-900 dark:text-white">Desktop App</span>
+            </button>
+
         </div>
     </x-ui.card>
 
@@ -121,4 +129,5 @@
     <livewire:inventory.pages.pharmacy.common.create-unit-modal />
     <livewire:inventory.pages.pharmacy.common.create-payment-method-modal />
     {{-- <livewire:admin.common.manage-product-category-modal /> --}}
+    <livewire:admin.common.upload-app-modal />
 </div>
