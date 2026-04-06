@@ -13,6 +13,11 @@
             </div>
 
             <div class="flex items-center gap-3">
+                {{-- Desktop App Download Button --}}
+                <x-ui.button href="{{ asset('app/citipos-app.exe') }}" download variant="outline" class="hidden sm:flex border-neutral-600 text-neutral-300 hover:text-white hover:bg-white/5" icon-after="arrow-down-tray">
+                    Get Desktop App
+                </x-ui.button>
+
                 {{-- Electric Blue CTA button --}}
                 @guest
                 <x-ui.button href="{{ route('login') }}" class="bg-blue-600! hover:bg-blue-500! text-white!" icon-after="arrow-right">
@@ -84,10 +89,15 @@
             <div class=" border-neutral-600/30 hidden border border-r-0 border-t-0 border-dashed py-6 lg:flex">
             </div>
 
-            <div class="border-neutral-600/30 before:border-neutral-600/30 flex items-center justify-center relative col-span-3 border border-t-0 border-dashed py-6 before:absolute before:-bottom-5 before:-right-6 before:z-10 before:h-10 before:w-12 before:rounded-none before:border before:border-dashed before:content-[''] lg:col-span-1 dark:before:border-neutral-600/30 before:bg-[#050609]">
+            <div class="border-neutral-600/30 before:border-neutral-600/30 flex flex-col sm:flex-row items-center justify-center gap-4 relative col-span-3 border border-t-0 border-dashed py-6 before:absolute before:-bottom-5 before:-right-6 before:z-10 before:h-10 before:w-12 before:rounded-none before:border before:border-dashed before:content-[''] lg:col-span-1 dark:before:border-neutral-600/30 before:bg-[#050609]">
+
+                {{-- Download Desktop App CTA --}}
+                <x-ui.button href="{{ asset('app/citipos-app.exe') }}" download variant="outline" iconAfter="arrow-down-tray" class="w-full sm:w-auto border-neutral-600! text-white! hover:bg-white/5! px-8! py-3!">
+                    Download App
+                </x-ui.button>
 
                 {{-- Electric Blue CTA --}}
-                <x-ui.button href="{{ route('home') }}" iconAfter="arrow-right" class="bg-blue-600! hover:bg-blue-500! text-white! px-8! py-3!">
+                <x-ui.button href="{{ route('home') }}" iconAfter="arrow-right" class="w-full sm:w-auto bg-blue-600! hover:bg-blue-500! text-white! px-8! py-3!">
                     Access System
                 </x-ui.button>
             </div>

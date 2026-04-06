@@ -32,6 +32,9 @@ final class NativeAppServiceProvider implements ProvidesPhpIni
     public function phpIni(): array
     {
         return [
+            'memory_limit' => '512M',
+            'post_max_size' => '128M',
+            'upload_max_filesize' => '128M',
         ];
     }
 }
