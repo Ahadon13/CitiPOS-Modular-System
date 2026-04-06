@@ -19,7 +19,7 @@ class UploadAppModal extends Component
         return [
             // Max 250MB (256000 KB). Adjust this if your app is larger!
             // Note: You may also need to increase `upload_max_filesize` and `post_max_size` in your server's php.ini
-            'app_installer' => 'required|file|max:256000',
+            'app_installer' => 'required|file|max:500000',
         ];
     }
 

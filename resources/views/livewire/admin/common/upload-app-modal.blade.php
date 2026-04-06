@@ -43,7 +43,7 @@
                                 <input id="file-upload" wire:model="app_installer" type="file" accept=".exe" class="sr-only">
                             </label>
                         </div>
-                        <p class="text-xs leading-5 text-neutral-500">Only .exe up to 250MB</p>
+                        <p class="text-xs leading-5 text-neutral-500">Only .exe up to 500MB</p>
 
                         {{-- Show selected file name --}}
                         @if ($app_installer)
