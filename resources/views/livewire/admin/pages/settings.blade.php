@@ -22,12 +22,12 @@
             </button>
 
             {{-- Product Categories --}}
-            <button type="button" x-on:click="$dispatch('open-modal', { id: 'manage-product-category' })" class="flex flex-col items-center justify-center gap-2 p-5 rounded-lg border border-neutral-200 dark:border-white/10 hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group">
+            {{-- <button type="button" x-on:click="$dispatch('open-modal', { id: 'manage-product-category' })" class="flex flex-col items-center justify-center gap-2 p-5 rounded-lg border border-neutral-200 dark:border-white/10 hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group">
                 <div class="p-3 bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-full group-hover:scale-110 transition-transform">
                     <x-ui.icon name="rectangle-stack" class="size-6" />
                 </div>
                 <span class="font-bold text-sm text-neutral-900 dark:text-white">Categories</span>
-            </button>
+            </button> --}}
 
             {{-- Measurement Units --}}
             <button type="button" x-on:click="$dispatch('open-modal', { id: 'create-unit' })" class="flex flex-col items-center justify-center gap-2 p-5 rounded-lg border border-neutral-200 dark:border-white/10 hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group">
