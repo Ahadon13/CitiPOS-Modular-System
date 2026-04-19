@@ -33,11 +33,11 @@
                     <x-ui.error name="form.password" />
                 </x-ui.field>
 
-                <div class="flex justify-end">
+                {{-- <div class="flex justify-end">
                     <a href="#" class="text-sm font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 transition-colors">
                         Forgot password?
                     </a>
-                </div>
+                </div> --}}
             </div>
         </div>
 
