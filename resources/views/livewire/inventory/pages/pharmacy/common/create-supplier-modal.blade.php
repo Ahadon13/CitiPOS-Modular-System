@@ -35,7 +35,7 @@
         </div>
 
         <div class="flex justify-end pt-2">
-            <x-ui.button type="submit" size="sm" wire:loading.attr="disabled" wire:target="save" icon="check-circle">
+            <x-ui.button type="submit" size="sm" class="w-full sm:w-auto justify-center" wire:loading.attr="disabled" wire:target="save" icon="check-circle">
                 {{ $supplier_id ? 'Update Supplier' : 'Save Supplier' }}
             </x-ui.button>
         </div>
@@ -57,8 +57,8 @@
             </div>
         </div>
 
-        <div class="max-h-[40vh] overflow-y-auto border border-black/10 dark:border-white/10 rounded-lg custom-scrollbar">
-            <table class="w-full text-left text-sm">
+        <div class="max-h-[40vh] overflow-auto border border-black/10 dark:border-white/10 rounded-lg custom-scrollbar">
+            <table class="w-full text-left text-sm whitespace-nowrap">
                 <thead class="sticky top-0 bg-neutral-100 dark:bg-[#0a1331] text-xs uppercase text-neutral-500 z-10 border-b border-black/10 dark:border-white/10">
                     <tr>
                         <th class="px-4 py-3">Supplier Name</th>
@@ -110,8 +110,8 @@
     </div>
 
     {{-- Modal Footer --}}
-    <div class="pt-4 flex items-center justify-end gap-3 border-t border-black/10 dark:border-white/10 mt-6">
-        <x-ui.button variant="outline" color="neutral" type="button" x-on:click="$dispatch('close-modal', { id: 'create-supplier' })">
+    <div class="pt-4 flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3 border-t border-black/10 dark:border-white/10 mt-6">
+        <x-ui.button variant="outline" color="neutral" type="button" class="w-full sm:w-auto justify-center" x-on:click="$dispatch('close-modal', { id: 'create-supplier' })">
             Close
         </x-ui.button>
     </div>

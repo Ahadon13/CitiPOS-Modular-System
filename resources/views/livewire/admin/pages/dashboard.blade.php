@@ -1,17 +1,17 @@
-<div class="max-w-7xl mx-auto space-y-6 p-5">
+<div class="max-w-7xl mx-auto space-y-4 sm:space-y-6 px-3 py-4 sm:p-5">
 
     {{-- ========================================== --}}
     {{-- HEADER & DYNAMIC FILTERS                   --}}
     {{-- ========================================== --}}
-    <x-ui.card size="full" hoverless class="flex justify-between gap-6">
-        <div>
-            <h1 class="text-2xl font-bold text-neutral-900 dark:text-white">Overview</h1>
+    <x-ui.card size="full" hoverless class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 sm:gap-6">
+        <div class="min-w-0">
+            <h1 class="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-white">Overview</h1>
             <p class="text-sm text-neutral-500 dark:text-neutral-400">Monitor your entire business ecosystem</p>
         </div>
 
-        <div class="flex flex-wrap items-center justify-end gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-3 lg:flex lg:flex-wrap lg:items-center lg:justify-end gap-3 w-full lg:w-auto">
             {{-- Branch Selector --}}
-            <x-ui.field class="mb-0 w-full sm:w-60">
+            <x-ui.field class="mb-0 w-full lg:w-60">
                 <select wire:model.live="branchId" class="w-full text-sm rounded-lg border-neutral-300 dark:border-neutral-700 dark:bg-card text-neutral-700 dark:text-neutral-200 focus:ring-blue-500">
                     <option value="">All Branches</option>
                     @foreach($this->branches as $branch)
@@ -21,7 +21,7 @@
             </x-ui.field>
 
             {{-- Module/Category Selector (The Magic Multi-Functional Filter) --}}
-            <x-ui.field class="mb-0 w-full sm:w-60">
+            <x-ui.field class="mb-0 w-full lg:w-60">
                 <select wire:model.live="categoryId" class="w-full text-sm rounded-lg border-neutral-300 dark:border-neutral-700 dark:bg-card text-neutral-700 dark:text-neutral-200 focus:ring-blue-500">
                     <option value="">All Modules</option>
                     @foreach($this->categories as $category)
@@ -31,7 +31,7 @@
             </x-ui.field>
 
             {{-- Date Range Selector --}}
-            <x-ui.field class="mb-0 w-full sm:w-60">
+            <x-ui.field class="mb-0 w-full lg:w-60">
                 <select wire:model.live="dateRange" class="w-full text-sm rounded-lg border-neutral-300 dark:border-neutral-700 dark:bg-card text-neutral-700 dark:text-neutral-200 focus:ring-blue-500">
                     <option value="all">All Time</option>
                     <option value="today">Today</option>
@@ -236,17 +236,17 @@
             <x-ui.card hoverless size="full" class="p-0 overflow-hidden">
                 <div class="divide-y divide-black/5 dark:divide-white/5">
                     @forelse($this->topSellingProducts as $index => $product)
-                    <div class="p-4 flex items-center justify-between hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors">
-                        <div class="flex items-center gap-3">
+                    <div class="p-4 flex items-center justify-between gap-3 hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors">
+                        <div class="flex items-center gap-3 min-w-0">
                             <div class="size-8 rounded-lg flex items-center justify-center font-black text-sm {{ $index === 0 ? 'bg-amber-100 text-amber-600' : ($index === 1 ? 'bg-slate-200 text-slate-600' : ($index === 2 ? 'bg-orange-100 text-orange-700' : 'bg-neutral-100 dark:bg-white/10 text-neutral-500')) }}">
                                 #{{ $index + 1 }}
                             </div>
-                            <div>
-                                <p class="text-sm font-bold text-neutral-900 dark:text-white leading-tight">{{ $product->brand_name }}</p>
+                            <div class="min-w-0">
+                                <p class="text-sm font-bold text-neutral-900 dark:text-white leading-tight truncate">{{ $product->brand_name }}</p>
                                 <p class="text-[10px] text-neutral-500 uppercase tracking-wider">{{ $product->category_name }}</p>
                             </div>
                         </div>
-                        <div class="text-right">
+                        <div class="text-right shrink-0">
                             <p class="text-sm font-bold text-neutral-900 dark:text-white">@money(\Money\Money::PHP((string) round((float) $product->total_revenue )))</p>
                             <p class="text-[10px] text-neutral-500">{{ number_format($product->total_sold) }} sold</p>
                         </div>

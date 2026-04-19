@@ -1,4 +1,4 @@
-<div class="max-w-7xl mx-auto space-y-6 p-5">
+<div class="max-w-7xl mx-auto space-y-4 sm:space-y-6 px-3 py-4 sm:p-5">
     @php
         $isPharmacyBranch = $this->isPharmacyBranch;
         $isMotorShopBranch = $this->isMotorShopBranch;
@@ -18,9 +18,9 @@
     <x-ui.card hoverless size="full" class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6">
 
         {{-- Left Side: Title & Address --}}
-        <div class="w-full sm:w-auto">
-            <div class="flex items-center gap-3 mb-1">
-                <h1 class="text-2xl font-bold text-neutral-900 dark:text-white">{{ $branch->name }}</h1>
+        <div class="w-full sm:w-auto min-w-0">
+            <div class="flex flex-wrap items-center gap-3 mb-1">
+                <h1 class="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-white break-words">{{ $branch->name }}</h1>
                 @if($branch->is_active)
                 <span class="px-2 py-1 rounded text-[10px] font-bold bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400 uppercase tracking-wider shrink-0">Active</span>
                 @else
@@ -83,7 +83,7 @@
                         </div>
                     </div>
                 </div>
-                <x-ui.button size="sm" variant="outline" color="red" wire:click="$set('expiredOnly', true)">
+                <x-ui.button size="sm" variant="outline" color="red" class="w-full md:w-auto justify-center" wire:click="$set('expiredOnly', true)">
                     Show Expired
                 </x-ui.button>
             </div>
@@ -151,9 +151,9 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {{-- Recent Sales --}}
         <div class="space-y-4 flex flex-col">
-            <div class="flex items-center justify-between">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <h2 class="text-lg font-bold text-neutral-900 dark:text-white">Recent Sales</h2>
-                <x-ui.button size="sm" variant="outline" icon="arrow-down-tray" wire:click="exportSales" wire:loading.attr="disabled" wire:target="exportSales">
+                <x-ui.button size="sm" variant="outline" icon="arrow-down-tray" class="w-full sm:w-auto justify-center" wire:click="exportSales" wire:loading.attr="disabled" wire:target="exportSales">
                     Export
                 </x-ui.button>
             </div>
@@ -215,9 +215,9 @@
 
         {{-- Recent Purchase Orders --}}
         <div class="space-y-4 flex flex-col">
-            <div class="flex items-center justify-between">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <h2 class="text-lg font-bold text-neutral-900 dark:text-white">Purchase Orders</h2>
-                <x-ui.button size="sm" variant="outline" icon="arrow-down-tray" wire:click="exportPurchases" wire:loading.attr="disabled" wire:target="exportPurchases">
+                <x-ui.button size="sm" variant="outline" icon="arrow-down-tray" class="w-full sm:w-auto justify-center" wire:click="exportPurchases" wire:loading.attr="disabled" wire:target="exportPurchases">
                     Export
                 </x-ui.button>
             </div>
@@ -285,7 +285,7 @@
         {{-- ========================================== --}}
         {{-- BRANCH INVENTORY & PRODUCTS MODULE         --}}
         {{-- ========================================== --}}
-        <div class="col-span-2 space-y-4">
+        <div class="lg:col-span-2 space-y-4">
 
             <div>
                 <h2 class="text-xl font-bold text-neutral-900 dark:text-white">Branch Inventory & Catalog</h2>
@@ -294,15 +294,15 @@
 
             {{-- Products Table & Filters --}}
             <x-ui.card hoverless size="full" class="p-0">
-                <div class="px-6 py-5 border-b border-black/10 dark:border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="px-3 sm:px-6 py-4 sm:py-5 border-b border-black/10 dark:border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div class="w-full md:w-72">
                         <x-ui.input wire:model.live.debounce.300ms="search" leftIcon="magnifying-glass" clearable placeholder="Search name, SKU, brand..." class="w-full" />
                     </div>
 
-                    <div class="flex flex-wrap items-center gap-3">
+                    <div class="grid grid-cols-1 sm:flex sm:flex-wrap sm:items-center gap-3 w-full md:w-auto">
                         <x-ui.dropdown checkbox checkboxVariant>
                             <x-slot:button>
-                                <x-ui.button icon="funnel" variant="soft" size="sm">Filters</x-ui.button>
+                                <x-ui.button icon="funnel" variant="soft" size="sm" class="w-full sm:w-auto justify-center">Filters</x-ui.button>
                             </x-slot:button>
                             <x-slot:menu>
                                 <x-ui.dropdown.item wire:model.live="lowStockOnly">Low Stock</x-ui.dropdown.item>
@@ -317,11 +317,11 @@
                             </x-slot:menu>
                         </x-ui.dropdown>
 
-                        <div class="w-48">
+                        <div class="w-full sm:w-48">
                             <x-ui-select.styled invalidate wire:model.live="productCategories" :options="$this->categories" class="w-full" searchable multiple placeholder="Select categories..." />
                         </div>
 
-                        <x-ui.button size="sm" variant="outline" icon="arrow-down-tray" wire:click="exportProducts" wire:loading.attr="disabled" wire:target="exportProducts">
+                        <x-ui.button size="sm" variant="outline" icon="arrow-down-tray" class="w-full sm:w-auto justify-center" wire:click="exportProducts" wire:loading.attr="disabled" wire:target="exportProducts">
                             Export in Excel
                         </x-ui.button>
                     </div>
@@ -452,7 +452,7 @@
 
     {{-- Branch Inventory Movement Ledger --}}
     <x-ui.card hoverless size="full" class="overflow-hidden p-0 border-emerald-500/30">
-        <div class="px-6 py-5 border-b border-black/10 dark:border-white/10 bg-emerald-50/30 dark:bg-emerald-900/10">
+        <div class="px-3 sm:px-6 py-4 sm:py-5 border-b border-black/10 dark:border-white/10 bg-emerald-50/30 dark:bg-emerald-900/10">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <x-ui.heading level="h3" size="sm" class="text-emerald-700 dark:text-emerald-400 flex items-center gap-2">

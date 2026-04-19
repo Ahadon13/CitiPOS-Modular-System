@@ -47,7 +47,7 @@
             })
         "
     >
-        <div class="grid grid-cols-2 md:grid-cols-3 gap-6 bg-neutral-50 dark:bg-white/5 p-5 rounded-lg border border-black/10 dark:border-white/10">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 bg-neutral-50 dark:bg-white/5 p-4 sm:p-5 rounded-lg border border-black/10 dark:border-white/10">
             <div class="space-y-4">
                 <div>
                     <p class="text-xs text-neutral-500 uppercase tracking-wide">PO Number</p>
@@ -93,8 +93,8 @@
             </div>
         </div>
 
-        <div class="max-h-[50vh] overflow-y-auto border border-black/10 dark:border-white/10 rounded-lg custom-scrollbar">
-            <table class="w-full text-left text-sm">
+        <div class="max-h-[50vh] overflow-auto border border-black/10 dark:border-white/10 rounded-lg custom-scrollbar">
+            <table class="w-full text-left text-sm whitespace-nowrap">
                 <thead class="sticky top-0 bg-neutral-100 dark:bg-[#0a1331] text-xs uppercase text-neutral-500 dark:text-neutral-400 border-b border-black/10 dark:border-white/10 z-10">
                     <tr>
                         <th class="px-4 py-3">Product</th>
@@ -128,11 +128,11 @@
             </table>
         </div>
 
-        <div class="mt-6 flex items-center justify-end gap-3 pt-4 border-t border-black/10 dark:border-white/10">
-            <x-ui.button variant="outline" wire:loading.attr="disabled" wire:target="downloadExcel" color="neutral" type="button" x-on:click="closeModal()">
+        <div class="mt-6 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-3 pt-4 border-t border-black/10 dark:border-white/10">
+            <x-ui.button variant="outline" class="w-full sm:w-auto justify-center" wire:loading.attr="disabled" wire:target="downloadExcel" color="neutral" type="button" x-on:click="closeModal()">
                 Close
             </x-ui.button>
-            <x-ui.button type="submit" wire:loading.attr="disabled" wire:target="downloadExcel" icon="arrow-down-tray" wire:click="downloadExcel">
+            <x-ui.button type="submit" class="w-full sm:w-auto justify-center" wire:loading.attr="disabled" wire:target="downloadExcel" icon="arrow-down-tray" wire:click="downloadExcel">
                 Download / Print
             </x-ui.button>
         </div>

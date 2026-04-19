@@ -1,14 +1,14 @@
-<div class="max-w-7xl mx-auto space-y-6 p-5">
+<div class="max-w-7xl mx-auto space-y-4 sm:space-y-6 px-3 py-4 sm:p-5">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-            <h1 class="text-2xl font-bold text-neutral-900 dark:text-white">User Management</h1>
+        <div class="min-w-0">
+            <h1 class="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-white">User Management</h1>
             <p class="text-sm text-neutral-500 dark:text-neutral-400">Manage system access, roles, and branch assignments.</p>
         </div>
-        <div class="flex items-center gap-3">
-            <x-ui.button size="sm" icon="plus" x-on:click="$dispatch('open-modal', { id: 'manage-user' })">
+        <div class="grid grid-cols-1 sm:flex sm:items-center gap-3 w-full sm:w-auto">
+            <x-ui.button size="sm" icon="plus" class="w-full sm:w-auto justify-center" x-on:click="$dispatch('open-modal', { id: 'manage-user' })">
                 Add New User
             </x-ui.button>
-            <x-ui.button size="sm" icon="plus" x-on:click="$dispatch('open-modal', { id: 'manage-role' })">
+            <x-ui.button size="sm" icon="plus" class="w-full sm:w-auto justify-center" x-on:click="$dispatch('open-modal', { id: 'manage-role' })">
                 Add New Role
             </x-ui.button>
         </div>
@@ -16,7 +16,7 @@
 
     {{-- Users Table --}}
     <x-ui.card hoverless size="full" class="p-0">
-        <div class="px-3 sm:px-6 py-5 border-b border-black/10 dark:border-white/10 flex items-center justify-between gap-3">
+        <div class="px-3 sm:px-6 py-4 sm:py-5 border-b border-black/10 dark:border-white/10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div class="w-full md:w-72">
                 <x-ui.input wire:model.live.debounce.300ms="search" leftIcon="magnifying-glass" clearable placeholder="Search name or username..." class="w-full" />
             </div>
@@ -193,11 +193,11 @@
                 </div>
             </x-ui.fieldset>
 
-            <div class="pt-4 flex items-center justify-end gap-3 border-t border-black/10 dark:border-white/10">
-                <x-ui.button variant="outline" color="neutral" type="button" wire:click="resetForm">
+            <div class="pt-4 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-3 border-t border-black/10 dark:border-white/10">
+                <x-ui.button variant="outline" color="neutral" type="button" class="w-full sm:w-auto justify-center" wire:click="resetForm">
                     Cancel
                 </x-ui.button>
-                <x-ui.button type="submit" wire:loading.attr="disabled" wire:target="save" icon="check-circle">
+                <x-ui.button type="submit" class="w-full sm:w-auto justify-center" wire:loading.attr="disabled" wire:target="save" icon="check-circle">
                     {{ $user_id ? 'Update User' : 'Create User' }}
                 </x-ui.button>
             </div>

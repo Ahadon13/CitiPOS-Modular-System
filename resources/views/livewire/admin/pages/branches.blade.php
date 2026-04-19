@@ -1,10 +1,10 @@
-<div class="max-w-7xl mx-auto space-y-6 p-5">
-    <div class="flex flex-col sm:flex-row items-center justify-between gap-6">
+<div class="max-w-7xl mx-auto space-y-4 sm:space-y-6 px-3 py-4 sm:p-5">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6">
         <div class="flex flex-col justify-start w-full">
-            <h1 class="text-2xl font-bold text-neutral-900 dark:text-white">Branches</h1>
+            <h1 class="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-white">Branches</h1>
             <p class="text-sm text-neutral-500 dark:text-neutral-400">Manage locations and monitor performance</p>
         </div>
-        <div class="flex items-center gap-3 w-full sm:w-auto">
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
             {{-- Category Filter Dropdown --}}
             <x-ui.field class="mb-0 w-full sm:w-48">
                 <select wire:model.live="categoryId" class="w-full text-sm rounded-lg border-neutral-300 dark:border-neutral-700 dark:bg-card text-neutral-700 dark:text-neutral-200 focus:ring-blue-500">
@@ -15,7 +15,7 @@
                 </select>
             </x-ui.field>
 
-            <x-ui.button size="sm" icon="plus" x-on:click="$dispatch('open-modal', { id: 'manage-branch' })">
+            <x-ui.button size="sm" icon="plus" class="w-full sm:w-auto justify-center" x-on:click="$dispatch('open-modal', { id: 'manage-branch' })">
                 Add Branch
             </x-ui.button>
         </div>
@@ -32,19 +32,19 @@
                 x-on:click="window.location.href = '{{ route('admin.branches.view', ['branch' => $branch]) }}'"
                 x-on:keydown.enter="window.location.href = '{{ route('admin.branches.view', ['branch' => $branch]) }}'"
                 x-on:keydown.space.prevent="window.location.href = '{{ route('admin.branches.view', ['branch' => $branch]) }}'"
-                class="group relative cursor-pointer overflow-hidden p-6 transition-all hover:shadow-lg hover:-translate-y-1"
+                class="group relative cursor-pointer overflow-hidden p-4 sm:p-6 transition-all hover:shadow-lg hover:-translate-y-1"
             >
 
                 <div class="absolute top-0 right-0 -mr-16 -mt-16 h-32 w-32 rounded-full bg-blue-50/50 dark:bg-blue-900/10 transition-transform group-hover:scale-150"></div>
 
                 <div class="relative space-y-4">
-                    <div class="flex items-start justify-between">
-                        <div class="flex items-center gap-3">
+                    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                        <div class="flex items-center gap-3 min-w-0">
                             <div class="p-2 bg-blue-50 dark:bg-blue-950/30 rounded-xl">
                                 <x-ui.icon name="building-storefront" class="size-7 text-blue-600 dark:text-blue-400" />
                             </div>
-                            <div>
-                                <h3 class="text-lg font-bold text-neutral-900 dark:text-white group-hover:text-blue-600 transition-colors">
+                            <div class="min-w-0">
+                                <h3 class="text-lg font-bold text-neutral-900 dark:text-white group-hover:text-blue-600 transition-colors break-words">
                                     {{ $branch->name }}
                                 </h3>
                                 <p class="text-sm text-neutral-500 dark:text-neutral-400 line-clamp-1">
@@ -52,7 +52,7 @@
                                 </p>
                             </div>
                         </div>
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 sm:justify-end shrink-0">
                             @if($branch->is_active)
                                 <x-ui.badge color="emerald" size="sm">
                                     Active

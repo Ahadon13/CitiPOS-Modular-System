@@ -1,8 +1,8 @@
-<div class="max-w-7xl mx-auto space-y-6 p-5">
+<div class="max-w-7xl mx-auto space-y-4 sm:space-y-6 px-3 py-4 sm:p-5">
 
     {{-- Header --}}
-    <div>
-        <h1 class="text-2xl font-bold text-neutral-900 dark:text-white">System Settings</h1>
+    <div class="min-w-0">
+        <h1 class="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-white">System Settings</h1>
         <p class="text-neutral-500 dark:text-neutral-400">Manage your account profile and global system configurations.</p>
     </div>
 
@@ -14,7 +14,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
 
             {{-- Suppliers --}}
-            <button type="button" x-on:click="$dispatch('open-modal', { id: 'create-supplier' })" class="flex flex-col items-center justify-center gap-2 p-5 rounded-lg border border-neutral-200 dark:border-white/10 hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group">
+            <button type="button" x-on:click="$dispatch('open-modal', { id: 'create-supplier' })" class="flex flex-col items-center justify-center gap-2 p-4 sm:p-5 rounded-lg border border-neutral-200 dark:border-white/10 hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group">
                 <div class="p-3 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full group-hover:scale-110 transition-transform">
                     <x-ui.icon name="truck" class="size-6" />
                 </div>
@@ -22,7 +22,7 @@
             </button>
 
             {{-- Product Categories --}}
-            <button type="button" x-on:click="$dispatch('open-modal', { id: 'manage-product-category' })" class="flex flex-col items-center justify-center gap-2 p-5 rounded-lg border border-neutral-200 dark:border-white/10 hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group">
+            <button type="button" x-on:click="$dispatch('open-modal', { id: 'manage-product-category' })" class="flex flex-col items-center justify-center gap-2 p-4 sm:p-5 rounded-lg border border-neutral-200 dark:border-white/10 hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group">
                 <div class="p-3 bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-full group-hover:scale-110 transition-transform">
                     <x-ui.icon name="rectangle-stack" class="size-6" />
                 </div>
@@ -30,7 +30,7 @@
             </button>
 
             {{-- Measurement Units --}}
-            <button type="button" x-on:click="$dispatch('open-modal', { id: 'create-unit' })" class="flex flex-col items-center justify-center gap-2 p-5 rounded-lg border border-neutral-200 dark:border-white/10 hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group">
+            <button type="button" x-on:click="$dispatch('open-modal', { id: 'create-unit' })" class="flex flex-col items-center justify-center gap-2 p-4 sm:p-5 rounded-lg border border-neutral-200 dark:border-white/10 hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group">
                 <div class="p-3 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-full group-hover:scale-110 transition-transform">
                     <x-ui.icon name="scale" class="size-6" />
                 </div>
@@ -38,7 +38,7 @@
             </button>
 
             {{-- Customer Types --}}
-            <button type="button" x-on:click="$dispatch('open-modal', { id: 'create-customer-type' })" class="flex flex-col items-center justify-center gap-2 p-5 rounded-lg border border-neutral-200 dark:border-white/10 hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group">
+            <button type="button" x-on:click="$dispatch('open-modal', { id: 'create-customer-type' })" class="flex flex-col items-center justify-center gap-2 p-4 sm:p-5 rounded-lg border border-neutral-200 dark:border-white/10 hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group">
                 <div class="p-3 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-full group-hover:scale-110 transition-transform">
                     <x-ui.icon name="tag" class="size-6" />
                 </div>
@@ -46,7 +46,7 @@
             </button>
 
             {{-- Payment Methods --}}
-            <button type="button" x-on:click="$dispatch('open-modal', { id: 'create-payment-method' })" class="flex flex-col items-center justify-center gap-2 p-5 rounded-lg border border-neutral-200 dark:border-white/10 hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group">
+            <button type="button" x-on:click="$dispatch('open-modal', { id: 'create-payment-method' })" class="flex flex-col items-center justify-center gap-2 p-4 sm:p-5 rounded-lg border border-neutral-200 dark:border-white/10 hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group">
                 <div class="p-3 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-full group-hover:scale-110 transition-transform">
                     <x-ui.icon name="credit-card" class="size-6" />
                 </div>
@@ -83,7 +83,7 @@
                 </x-ui.field>
 
                 <div class="flex justify-end pt-2 mt-auto">
-                    <x-ui.button type="submit" wire:loading.attr="disabled" wire:target="updateProfile">
+                    <x-ui.button type="submit" class="w-full sm:w-auto justify-center" wire:loading.attr="disabled" wire:target="updateProfile">
                         Save Profile
                     </x-ui.button>
                 </div>
@@ -115,7 +115,7 @@
                 </div>
 
                 <div class="flex justify-end pt-2 mt-auto">
-                    <x-ui.button type="submit" wire:loading.attr="disabled" wire:target="updatePassword">
+                    <x-ui.button type="submit" class="w-full sm:w-auto justify-center" wire:loading.attr="disabled" wire:target="updatePassword">
                         Update Password
                     </x-ui.button>
                 </div>

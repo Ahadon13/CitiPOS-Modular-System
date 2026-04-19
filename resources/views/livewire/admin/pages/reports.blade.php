@@ -1,16 +1,16 @@
-<div class="max-w-7xl mx-auto space-y-6 p-5">
+<div class="max-w-7xl mx-auto space-y-4 sm:space-y-6 px-3 py-4 sm:p-5">
 
     {{-- Header & Master Filters --}}
-    <div class="flex flex-col xl:flex-row xl:items-end justify-between gap-4 bg-white dark:bg-[#0a1331] p-5 rounded-2xl border border-black/5 dark:border-white/10 shadow-sm">
+    <div class="flex flex-col xl:flex-row xl:items-end justify-between gap-4 bg-white dark:bg-[#0a1331] p-4 sm:p-5 rounded-2xl border border-black/5 dark:border-white/10 shadow-sm">
         <div class="mb-2 xl:mb-0">
-            <h1 class="text-2xl font-bold text-neutral-900 dark:text-white">Business Reports</h1>
+            <h1 class="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-white">Business Reports</h1>
             <p class="text-sm text-neutral-500 dark:text-neutral-400">Analyze your financial health and team performance</p>
         </div>
 
-        <div class="flex flex-col sm:flex-row items-stretch sm:items-end gap-3 w-full xl:w-auto">
+        <div class="grid grid-cols-1 sm:grid-cols-3 xl:flex xl:items-end gap-3 w-full xl:w-auto">
 
             {{-- Branch Filter --}}
-            <div class="w-full sm:w-48">
+            <div class="w-full xl:w-48">
                 <x-ui.field class="mb-0">
                     <x-ui.label class="text-xs text-neutral-500">Location</x-ui.label>
                     <select wire:model.live="branchId" class="w-full text-sm rounded-lg border-neutral-300 dark:border-neutral-700 dark:bg-card text-neutral-700 dark:text-neutral-200 focus:ring-blue-500">
@@ -23,7 +23,7 @@
             </div>
 
             {{-- Module/Category Filter --}}
-            <div class="w-full sm:w-48">
+            <div class="w-full xl:w-48">
                 <x-ui.field class="mb-0">
                     <x-ui.label class="text-xs text-neutral-500">Module / Category</x-ui.label>
                     <select wire:model.live="categoryId" class="w-full text-sm rounded-lg border-neutral-300 dark:border-neutral-700 dark:bg-card text-neutral-700 dark:text-neutral-200 focus:ring-blue-500">
@@ -36,7 +36,7 @@
             </div>
 
             {{-- Date Filter --}}
-            <div class="w-full sm:w-64" wire:ignore>
+            <div class="w-full xl:w-64" wire:ignore>
                 <x-ui.field class="mb-0">
                     <x-ui.label class="text-xs text-neutral-500">Date Range</x-ui.label>
                     <x-ui-date range wire:model.live="dateRange" format="YYYY-MM-DD" placeholder="Last 30 Days (Default)" />
@@ -109,8 +109,8 @@
                 </x-ui.heading>
 
                 @if(count($this->expensePieData['labels']) > 0)
-                <div class="flex-1 flex items-center justify-center">
-                    <x-ui.chart.pie-chart :width="350" :labels="$this->expensePieData['labels']" :series="$this->expensePieData['series']" dispatch_name="update-pie-chart" :enable_tool_tip="true" />
+                <div class="flex-1 flex items-center justify-center overflow-hidden">
+                    <x-ui.chart.pie-chart :width="300" :labels="$this->expensePieData['labels']" :series="$this->expensePieData['series']" dispatch_name="update-pie-chart" :enable_tool_tip="true" />
                 </div>
                 @else
                 <div class="flex-1 flex items-center justify-center py-12">
@@ -161,7 +161,7 @@
             {{-- Table Header with Export Button --}}
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-4">
                 <h2 class="text-lg font-bold text-neutral-900 dark:text-white">Stock Movement Ledger (In & Out)</h2>
-                <x-ui.button wire:click="exportLedger" wire:loading.attr="disabled" icon="arrow-down-tray" variant="outline" size="sm">
+                <x-ui.button wire:click="exportLedger" wire:loading.attr="disabled" icon="arrow-down-tray" variant="outline" size="sm" class="w-full sm:w-auto justify-center">
                     <span wire:loading.remove wire:target="exportLedger">Export</span>
                     <span wire:loading wire:target="exportLedger">Generating...</span>
                 </x-ui.button>
@@ -170,7 +170,7 @@
             <x-ui.card hoverless size="full" class="p-0">
 
                 {{-- Table Filters --}}
-                <div class="px-6 py-5 border-b border-black/10 dark:border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div class="px-3 sm:px-6 py-4 sm:py-5 border-b border-black/10 dark:border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div class="w-full md:w-80">
                         <x-ui.input wire:model.live.debounce.300ms="search" leftIcon="magnifying-glass" clearable placeholder="Search products..." class="w-full" />
                     </div>

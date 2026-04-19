@@ -25,13 +25,13 @@
             </x-ui.field>
         </div>
 
-        <div class="flex items-center gap-6 mt-2">
+    <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 mt-2">
             <x-ui.checkbox wire:model="is_active" label="Active (Visible in POS)" />
             <x-ui.checkbox wire:model="requires_reference" label="Requires Reference Number" />
         </div>
 
         <div class="flex justify-end pt-2">
-            <x-ui.button type="submit" size="sm" wire:loading.attr="disabled" wire:target="save" icon="check-circle">
+            <x-ui.button type="submit" size="sm" class="w-full sm:w-auto justify-center" wire:loading.attr="disabled" wire:target="save" icon="check-circle">
                 {{ $payment_method_id ? 'Update Method' : 'Save Method' }}
             </x-ui.button>
         </div>
@@ -53,8 +53,8 @@
             </div>
         </div>
 
-        <div class="max-h-[40vh] overflow-y-auto border border-black/10 dark:border-white/10 rounded-lg custom-scrollbar">
-            <table class="w-full text-left text-sm">
+        <div class="max-h-[40vh] overflow-auto border border-black/10 dark:border-white/10 rounded-lg custom-scrollbar">
+            <table class="w-full text-left text-sm whitespace-nowrap">
                 <thead class="sticky top-0 bg-neutral-100 dark:bg-[#0a1331] text-xs uppercase text-neutral-500 z-10 border-b border-black/10 dark:border-white/10">
                     <tr>
                         <th class="px-4 py-3">Method Name</th>
@@ -118,8 +118,8 @@
     </div>
 
     {{-- Modal Footer --}}
-    <div class="pt-4 flex items-center justify-end gap-3 border-t border-black/10 dark:border-white/10 mt-6">
-        <x-ui.button variant="outline" color="neutral" type="button" x-on:click="$dispatch('close-modal', { id: 'create-payment-method' })">
+    <div class="pt-4 flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3 border-t border-black/10 dark:border-white/10 mt-6">
+        <x-ui.button variant="outline" color="neutral" type="button" class="w-full sm:w-auto justify-center" x-on:click="$dispatch('close-modal', { id: 'create-payment-method' })">
             Close
         </x-ui.button>
     </div>
