@@ -95,6 +95,10 @@ export default {
         shortcutName: '${productName}',
         uninstallDisplayName: '${productName}',
         createDesktopShortcut: 'always',
+
+        installerIcon: "../../public/icon.ico",
+        uninstallerIcon: "../../public/icon.ico",
+        installerHeaderIcon: "../../public/icon.ico",
     },
     protocols: {
         name: deepLinkProtocol,
@@ -151,7 +155,7 @@ export default {
             ]
         }
     ],
-    ...updaterEnabled 
-        ? { publish: updaterConfig } 
+    ...updaterEnabled
+        ? { publish: updaterConfig }
         : {}
 };

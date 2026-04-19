@@ -65,7 +65,7 @@ final class ProductsExport implements FromQuery, WithHeadings, WithMapping, Shou
         // 5. Filter by categories (if any)
         if (!empty($this->productCategories)) {
             $query->whereHas('category', function ($q) {
-                $q->whereIn('name', $this->productCategories);
+                $q->whereIn('id', $this->productCategories);
             });
         }
 
@@ -74,6 +74,37 @@ final class ProductsExport implements FromQuery, WithHeadings, WithMapping, Shou
 
     public function headings(): array
     {
+        if ($this->isMotorShopExport()) {
+            return [
+                'Product Code',
+                'Brand Name',
+                'Part Number',
+                'OEM Number',
+                'Vehicle Model',
+                'Engine Type',
+                'Year Range',
+                'Category',
+                'Supplier',
+                'Base Unit',
+                'Total Stock on Hand',
+                'Low Stock Alert Level',
+                'Status',
+            ];
+        }
+
+        if ($this->isGroceryExport()) {
+            return [
+                'Product Code',
+                'Brand Name',
+                'Category',
+                'Supplier',
+                'Base Unit',
+                'Total Stock on Hand',
+                'Low Stock Alert Level',
+                'Status',
+            ];
+        }
+
         return [
             'Product Code',
             'Brand Name',
@@ -104,6 +135,37 @@ final class ProductsExport implements FromQuery, WithHeadings, WithMapping, Shou
             $stockStatus = 'Low Stock';
         }
 
+        if ($this->isGroceryExport()) {
+            return [
+                $product->product_code,
+                $product->brand_name,
+                $product->category->name ?? 'Uncategorized',
+                $product->supplier->name ?? 'N/A',
+                $product->baseUnit->name ?? 'pcs',
+                $totalStock,
+                $product->reorder_level,
+                $product->is_active ? $stockStatus : 'Disabled',
+            ];
+        }
+
+        if ($this->isMotorShopExport()) {
+            return [
+                $product->product_code,
+                $product->brand_name,
+                data_get($product->attributes, 'part_number', 'N/A') ?: 'N/A',
+                data_get($product->attributes, 'oem_number', 'N/A') ?: 'N/A',
+                data_get($product->attributes, 'vehicle_model', 'N/A') ?: 'N/A',
+                data_get($product->attributes, 'engine_type', 'N/A') ?: 'N/A',
+                data_get($product->attributes, 'year_range', 'N/A') ?: 'N/A',
+                $product->category->name ?? 'Uncategorized',
+                $product->supplier->name ?? 'N/A',
+                $product->baseUnit->name ?? 'pcs',
+                $totalStock,
+                $product->reorder_level,
+                $product->is_active ? $stockStatus : 'Disabled',
+            ];
+        }
+
         return [
             $product->product_code,
             $product->brand_name,
@@ -131,5 +193,15 @@ final class ProductsExport implements FromQuery, WithHeadings, WithMapping, Shou
                 ]
             ],
         ];
+    }
+
+    private function isGroceryExport(): bool
+    {
+        return count($this->targetCategories) === 1 && $this->targetCategories[0] === 'grocery';
+    }
+
+    private function isMotorShopExport(): bool
+    {
+        return count($this->targetCategories) === 1 && $this->targetCategories[0] === 'motor-shop';
     }
 }

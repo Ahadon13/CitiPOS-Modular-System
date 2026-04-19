@@ -7,6 +7,8 @@ namespace App\Models;
 use App\Casts\MoneyCast;
 use App\Enums\Purchase\Status;
 use App\Models\Branch;
+use App\Models\User;
+use App\Models\InventoryTransaction;
 use App\Models\Supplier;
 use App\Models\PurchaseItem;
 use Illuminate\Database\Eloquent\Model;
@@ -46,6 +48,14 @@ final class Purchase extends Model
     public function purchaseItems()
     {
         return $this->hasMany(PurchaseItem::class);
+    }
+
+    /**
+     * Get all inventory movements triggered by receiving this purchase order.
+     */
+    public function inventoryTransactions()
+    {
+        return $this->morphMany(InventoryTransaction::class, 'reference');
     }
 
     /**

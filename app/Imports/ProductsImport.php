@@ -4,194 +4,314 @@ declare(strict_types=1);
 
 namespace App\Imports;
 
-use App\Models\Category;
 use App\Enums\Product\CategoryType;
+use App\Models\Category;
+use App\Models\Branch;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\Supplier;
 use App\Models\Unit;
-use Illuminate\Support\Collection;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
+use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 
 class ProductsImport implements ToCollection, WithHeadingRow, WithChunkReading, ShouldQueue
 {
     use SerializesModels;
+
     protected int $branchId;
     protected int $userId;
-    protected int $pharmacyCategoryId;
+    protected int $productCategoryId;
+    protected CategoryType $productCategoryType;
 
-    protected array $suppliersMap = [];
-    protected array $unitsMap = [];
-    protected array $categoriesMap = [];
-
-    public function __construct(int $branchId, int $userId)
+    public function __construct(int $branchId, int $userId, CategoryType $productCategoryType = CategoryType::Pharmacy)
     {
         $this->branchId = $branchId;
         $this->userId = $userId;
+        $this->productCategoryType = $productCategoryType;
     }
 
-    public function collection(Collection $rows)
+    public function collection(Collection $rows): void
     {
         try {
-            if ($rows->isEmpty()) return;
+            if ($rows->isEmpty()) {
+                return;
+            }
 
             $now = now()->toDateTimeString();
 
-            $this->pharmacyCategoryId = ProductCategory::where('name', CategoryType::Pharmacy->value)->first()->id;
+            $productCategory = ProductCategory::where('name', $this->productCategoryType->value)->first();
+            if (!$productCategory) {
+                throw new \RuntimeException($this->productCategoryType->label() . ' product category was not found.');
+            }
 
-            $this->suppliersMap = Supplier::pluck('id', 'name')
-                ->mapWithKeys(fn($id, $name) => [strtolower(trim($name)) => $id])
+            $this->productCategoryId = $productCategory->id;
+
+            $branchProductCategoryId = Branch::whereKey($this->branchId)->value('product_category_id');
+            if ((int) $branchProductCategoryId !== (int) $this->productCategoryId) {
+                throw new \RuntimeException("The selected branch is not assigned to the {$this->productCategoryType->label()} module.");
+            }
+
+            $suppliersMap = Supplier::select('id', 'name')
+                ->get()
+                ->mapWithKeys(fn ($row) => [strtolower(trim($row->name)) => $row->id])
                 ->toArray();
 
-            $this->categoriesMap = Category::pluck('id', 'name')
-                ->mapWithKeys(fn($id, $name) => [strtolower(trim($name)) => $id])
+            $categoriesMap = Category::select('id', 'name')
+                ->get()
+                ->mapWithKeys(fn ($row) => [strtolower(trim($row->name)) => $row->id])
                 ->toArray();
 
-            $this->unitsMap = Unit::all()->flatMap(function ($u) {
-                return [
-                    strtolower(trim($u->name)) => $u->id,
-                    strtolower(trim($u->abbreviation)) => $u->id,
-                ];
-            })->toArray();
+            $unitsMap = Unit::select('id', 'name', 'abbreviation')
+                ->get()
+                ->flatMap(function ($u) {
+                    $map = [];
+                    if ($u->name) {
+                        $map[strtolower(trim($u->name))] = $u->id;
+                    }
+                    if ($u->abbreviation) {
+                        $map[strtolower(trim($u->abbreviation))] = $u->id;
+                    }
+                    return $map;
+                })
+                ->toArray();
 
-            // 1. BULK SUPPLIER CREATION
-            $supplierNames = $rows->pluck('supplier')->map(fn($s) => trim((string)$s))->filter()->unique();
+            $validRows = [];
+
+            foreach ($rows as $row) {
+                $normalized = $this->normalizeRow($row);
+
+                $validator = Validator::make($normalized, [
+                    'product_code' => ['required', 'string', 'max:255'],
+                    'brand_name' => ['nullable', 'string', 'max:255'],
+                    'generic_name' => ['nullable', 'string', 'max:255'],
+                    'dosage' => ['nullable', 'string', 'max:255'],
+                    'form' => ['nullable', 'string', 'max:255'],
+                    'category' => ['nullable', 'string', 'max:255'],
+                    'supplier' => ['required', 'string', 'max:255'],
+                    'unit' => ['required', 'string'],
+                    'conversion' => ['required', 'numeric', 'min:1'],
+                    'cost_price' => ['nullable', 'numeric', 'min:0'],
+                    'selling_price' => ['required', 'numeric', 'min:1'],
+                    'quantity_on_hand' => ['nullable', 'numeric', 'min:0'],
+                    'reorder_level' => ['nullable', 'numeric', 'min:1'],
+                    'expiration_date' => ['nullable', 'date'],
+                    'barcode' => ['nullable', 'string', 'max:255'],
+                    'requires_prescription' => ['nullable', 'string'],
+                    'batch_number' => ['nullable', 'string', 'max:255'],
+                    'description' => ['nullable', 'string', 'max:1000'],
+                    'part_number' => ['nullable', 'string', 'max:255'],
+                    'vehicle_model' => ['nullable', 'string', 'max:255'],
+                    'engine_type' => ['nullable', 'string', 'max:255'],
+                    'year_range' => ['nullable', 'string', 'max:255'],
+                    'oem_number' => ['nullable', 'string', 'max:255'],
+                ]);
+
+                if ($validator->fails()) {
+                    Log::warning('Skipping invalid import row', [
+                        'product_code' => $normalized['product_code'] ?? null,
+                        'errors' => $validator->errors()->all(),
+                    ]);
+                    continue;
+                }
+
+                $unitKey = strtolower(trim((string) ($normalized['unit'] ?? '')));
+                if (!isset($unitsMap[$unitKey])) {
+                    Log::warning('Skipping row due to unknown unit', [
+                        'product_code' => $normalized['product_code'] ?? null,
+                        'unit' => $normalized['unit'] ?? null,
+                    ]);
+                    continue;
+                }
+
+                $validRows[] = $normalized;
+            }
+
+            if (empty($validRows)) {
+                return;
+            }
+
+            $supplierNames = collect($validRows)
+                ->pluck('supplier')
+                ->filter()
+                ->map(fn ($v) => trim((string) $v))
+                ->unique()
+                ->values();
+
             $newSuppliers = [];
-
             foreach ($supplierNames as $name) {
                 $key = strtolower($name);
-                if (!isset($this->suppliersMap[$key])) {
-                    $newSuppliers[] = ['name' => $name, 'created_at' => $now, 'updated_at' => $now];
-                    $this->suppliersMap[$key] = true; // Prevent duplicate inserts in this loop
+                if (!isset($suppliersMap[$key])) {
+                    $newSuppliers[] = [
+                        'name' => $name,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+                    $suppliersMap[$key] = true;
                 }
             }
 
             if (!empty($newSuppliers)) {
-                Supplier::insert($newSuppliers);
-                // Refresh supplier cache with the newly inserted IDs
-                $this->suppliersMap = Supplier::pluck('id', 'name')
-                    ->mapWithKeys(fn($id, $name) => [strtolower(trim($name)) => $id])
+                Supplier::insertOrIgnore($newSuppliers);
+
+                $suppliersMap = Supplier::select('id', 'name')
+                    ->get()
+                    ->mapWithKeys(fn ($row) => [strtolower(trim($row->name)) => $row->id])
                     ->toArray();
             }
 
-            // 2. BULK CATEGORY CREATION
-            $categoryNames = $rows->pluck('category')->map(fn($c) => trim((string)$c))->filter()->unique();
-            $newCategories = [];
+            $categoryNames = collect($validRows)
+                ->pluck('category')
+                ->filter()
+                ->map(fn ($v) => trim((string) $v))
+                ->unique()
+                ->values();
 
+            $newCategories = [];
             foreach ($categoryNames as $name) {
                 $key = strtolower($name);
-                if (!isset($this->categoriesMap[$key])) {
-                    $newCategories[] = ['name' => $name, 'created_at' => $now, 'updated_at' => $now];
-                    $this->categoriesMap[$key] = true;
+                if (!isset($categoriesMap[$key])) {
+                    $newCategories[] = [
+                        'name' => $name,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+                    $categoriesMap[$key] = true;
                 }
             }
 
             if (!empty($newCategories)) {
-                // FIX: Insert into the categories table, not product_categories
-                Category::insert($newCategories);
-                $this->categoriesMap = Category::pluck('id', 'name')
-                    ->mapWithKeys(fn($id, $name) => [strtolower(trim($name)) => $id])
+                Category::insertOrIgnore($newCategories);
+
+                $categoriesMap = Category::select('id', 'name')
+                    ->get()
+                    ->mapWithKeys(fn ($row) => [strtolower(trim($row->name)) => $row->id])
                     ->toArray();
             }
 
-            // 3. PREPARE BULK PRODUCTS
-            $productCodes = $rows->pluck('product_code')->filter()->unique()->toArray();
-            $existingProducts = Product::whereIn('product_code', $productCodes)->pluck('id', 'product_code')->toArray();
+            $productCodes = collect($validRows)
+                ->pluck('product_code')
+                ->filter()
+                ->unique()
+                ->values()
+                ->toArray();
+
+            $existingProductRows = Product::query()
+                ->whereIn('product_code', $productCodes)
+                ->get(['id', 'product_code', 'branch_id', 'product_category_id']);
+
+            $conflictingProducts = $existingProductRows
+                ->filter(fn (Product $product) => (int) $product->branch_id !== $this->branchId || (int) $product->product_category_id !== $this->productCategoryId)
+                ->pluck('product_code')
+                ->values();
+
+            if ($conflictingProducts->isNotEmpty()) {
+                throw new \RuntimeException(
+                    'These product codes already belong to another branch or module: ' . $conflictingProducts->implode(', ')
+                );
+            }
+
+            $existingProducts = $existingProductRows
+                ->pluck('id', 'product_code')
+                ->toArray();
 
             $productsToInsert = [];
+            $productBaseRows = collect($validRows)
+                ->groupBy(fn (array $row) => trim((string) $row['product_code']))
+                ->map(function (Collection $group) {
+                    return $group->first(fn (array $row) => (float) ($row['conversion'] ?? 1) === 1.0)
+                        ?? $group->first();
+                });
 
-            foreach ($rows as $row) {
+            foreach ($productBaseRows as $row) {
                 $code = trim((string) $row['product_code']);
-                $conversion = (float) ($row['conversion'] ?? 1);
 
-                // Only prepare base products that DO NOT exist yet
-                if ($conversion === 1.0 && !isset($existingProducts[$code]) && !isset($productsToInsert[$code])) {
-                    $supplierKey = strtolower(trim((string) $row['supplier']));
-                    $categoryKey = strtolower(trim((string) $row['category']));
+                if (!isset($existingProducts[$code]) && !isset($productsToInsert[$code])) {
+                    $supplierKey = strtolower(trim((string) ($row['supplier'] ?? '')));
+                    $categoryKey = strtolower(trim((string) ($row['category'] ?? '')));
+                    $unitKey = strtolower(trim((string) $row['unit']));
 
                     $productsToInsert[$code] = [
-                        'supplier_id' => $this->suppliersMap[$supplierKey],
-                        'category_id' => $this->categoriesMap[$categoryKey],
+                        'supplier_id' => $suppliersMap[$supplierKey] ?? null,
+                        'category_id' => $categoriesMap[$categoryKey] ?? null,
                         'branch_id' => $this->branchId,
-                        'product_category_id' => $this->pharmacyCategoryId,
-                        'base_unit_id' => $this->unitsMap[strtolower(trim((string)$row['unit']))],
+                        'product_category_id' => $this->productCategoryId,
+                        'base_unit_id' => $unitsMap[$unitKey],
                         'product_code' => $code,
+                        'name' => $row['brand_name'] ?? $code,
                         'brand_name' => $row['brand_name'] ?? null,
-                        'generic_name' => $row['generic_name'] ?? null,
-                        'dosage' => $row['dosage'] ?? null,
+                        'generic_name' => $this->productCategoryType === CategoryType::Pharmacy ? ($row['generic_name'] ?? null) : null,
+                        'dosage' => $this->productCategoryType === CategoryType::Pharmacy ? ($row['dosage'] ?? null) : 'N/A',
                         'form' => $row['form'] ?? null,
-                        'requires_prescription' => strtolower(trim((string) $row['requires_prescription'])) === 'yes',
+                        'requires_prescription' => $this->productCategoryType === CategoryType::Pharmacy && strtolower(trim((string) ($row['requires_prescription'] ?? ''))) === 'yes',
                         'reorder_level' => (float) ($row['reorder_level'] ?? 20),
-                        'attributes' => json_encode(['description' => $row['description'] ?? null]),
+                        'attributes' => json_encode([
+                            'description' => $row['description'] ?? null,
+                            'part_number' => $row['part_number'] ?? null,
+                            'vehicle_model' => $row['vehicle_model'] ?? null,
+                            'engine_type' => $row['engine_type'] ?? null,
+                            'year_range' => $row['year_range'] ?? null,
+                            'oem_number' => $row['oem_number'] ?? null,
+                        ]),
                         'created_at' => $now,
                         'updated_at' => $now,
                     ];
                 }
             }
-            log::info('Prepared ' . count($productsToInsert) . ' products for insertion.'); // Debug log
-            // Execute Product Bulk Insert
+
             if (!empty($productsToInsert)) {
-                Product::insert(array_values($productsToInsert));
-                // Re-fetch existing products so we have the IDs of the newly created ones
-                $existingProducts = Product::whereIn('product_code', $productCodes)->pluck('id', 'product_code')->toArray();
+                Product::insertOrIgnore(array_values($productsToInsert));
+
+                $existingProducts = Product::whereIn('product_code', $productCodes)
+                    ->where('branch_id', $this->branchId)
+                    ->where('product_category_id', $this->productCategoryId)
+                    ->pluck('id', 'product_code')
+                    ->toArray();
             }
 
-            // 3. PREPARE BULK PACKAGINGS AND BATCHES
             $packagingsToInsert = [];
             $batchesToInsert = [];
 
-            foreach ($rows as $row) {
+            foreach ($validRows as $row) {
                 $code = trim((string) $row['product_code']);
                 $productId = $existingProducts[$code] ?? null;
 
-                if (!$productId) continue;
+                if (!$productId) {
+                    continue;
+                }
 
+                $unitKey = strtolower(trim((string) $row['unit']));
+                $unitId = $unitsMap[$unitKey] ?? null;
                 $conversion = (float) ($row['conversion'] ?? 1);
-                $unitId = $this->unitsMap[strtolower(trim((string)$row['unit']))] ?? null;
 
-                // Prepare Packaging
                 $packagingsToInsert[] = [
                     'product_id' => $productId,
                     'unit_id' => $unitId,
                     'conversion_factor' => $conversion,
-                    'price' => (int) round((float) $row['selling_price'] * 100),
-                    'barcode' => $row['barcode'] ?: null,
+                    'price' => (int) round((float) ($row['selling_price'] ?? 0) * 100),
+                    'barcode' => !empty($row['barcode']) ? $row['barcode'] : null,
                     'created_at' => $now,
                     'updated_at' => $now,
                 ];
 
-                // If it's a base row, prepare the Inventory Batch (Restock Logic)
                 if ($conversion === 1.0) {
                     $qty = (float) ($row['quantity_on_hand'] ?? 0);
+
                     if ($qty > 0) {
-
-                        $expDate = null;
-                        if (!empty($row['expiration_date'])) {
-                            $rawDate = $row['expiration_date'];
-                            try {
-                                if (is_numeric($rawDate)) {
-                                    $expDate = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject((float) $rawDate)->format('Y-m-d');
-                                } elseif (is_string($rawDate)) {
-                                    $expDate = \Carbon\Carbon::parse($rawDate)->format('Y-m-d');
-                                }
-                            } catch (\Exception $e) {
-                                $expDate = null; // Safely fallback if parsing completely fails
-                            }
-                        }
-
                         $batchesToInsert[] = [
                             'product_id' => $productId,
                             'branch_id' => $this->branchId,
                             'quantity_on_hand' => $qty,
                             'cost_per_unit' => (int) round((float) ($row['cost_price'] ?? 0) * 100),
-                            'batch_number' => $row['batch_number'] ?: null,
-                            'expiration_date' => $expDate,
+                            'batch_number' => !empty($row['batch_number']) ? $row['batch_number'] : null,
+                            'expiration_date' => $row['expiration_date'] ?? null,
                             'created_at' => $now,
                             'updated_at' => $now,
                         ];
@@ -199,11 +319,10 @@ class ProductsImport implements ToCollection, WithHeadingRow, WithChunkReading, 
                 }
             }
 
-            // Execute Final Bulk Inserts
             if (!empty($packagingsToInsert)) {
-                // insertOrIgnore prevents database crashes if they accidentally upload the same packaging twice
                 DB::table('product_packagings')->insertOrIgnore($packagingsToInsert);
             }
+
             if (!empty($batchesToInsert)) {
                 DB::table('inventory_batches')->insert($batchesToInsert);
             }
@@ -214,13 +333,33 @@ class ProductsImport implements ToCollection, WithHeadingRow, WithChunkReading, 
                 'file' => $e->getFile(),
             ]);
 
-            throw $e; // rethrow so queue still marks as failed
+            throw $e;
         }
+    }
+
+    protected function normalizeRow($row): array
+    {
+        $row = is_array($row) ? $row : $row->toArray();
+
+        if (!empty($row['expiration_date'])) {
+            $rawDate = $row['expiration_date'];
+
+            try {
+                if (is_numeric($rawDate)) {
+                    $row['expiration_date'] = ExcelDate::excelToDateTimeObject((float) $rawDate)->format('Y-m-d');
+                } elseif (is_string($rawDate)) {
+                    $row['expiration_date'] = \Carbon\Carbon::parse($rawDate)->format('Y-m-d');
+                }
+            } catch (\Throwable $e) {
+                $row['expiration_date'] = null;
+            }
+        }
+
+        return $row;
     }
 
     public function chunkSize(): int
     {
-        // Increased chunk size because bulk inserts are incredibly memory-efficient
         return 1000;
     }
 }

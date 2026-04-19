@@ -1,0 +1,663 @@
+Table "activity_log" {
+  "id" bigint [pk, not null, increment]
+  "log_name" varchar(255)
+  "description" text [not null]
+  "subject_type" varchar(255)
+  "event" varchar(255)
+  "subject_id" bigint
+  "causer_type" varchar(255)
+  "causer_id" bigint
+  "properties" json
+  "batch_uuid" char(36)
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    (subject_type, subject_id) [name: "subject"]
+    (causer_type, causer_id) [name: "causer"]
+    log_name [name: "activity_log_log_name_index"]
+  }
+}
+
+Table "branches" {
+  "id" bigint [pk, not null, increment]
+  "product_category_id" bigint [not null]
+  "name" varchar(255) [not null]
+  "address" text
+  "is_active" tinyint(1) [not null, default: '1']
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    product_category_id [name: "branches_product_category_id_foreign"]
+  }
+}
+
+Table "cache" {
+  "key" varchar(255) [pk, not null]
+  "value" mediumtext [not null]
+  "expiration" int [not null]
+}
+
+Table "cache_locks" {
+  "key" varchar(255) [pk, not null]
+  "owner" varchar(255) [not null]
+  "expiration" int [not null]
+}
+
+Table "categories" {
+  "id" bigint [pk, not null, increment]
+  "name" varchar(255) [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+}
+
+Table "customer_types" {
+  "id" bigint [pk, not null, increment]
+  "name" varchar(255) [not null]
+  "discount_percentage" decimal(5,2) [not null, default: '0.00']
+  "created_at" timestamp
+  "updated_at" timestamp
+}
+
+Table "customers" {
+  "id" bigint [pk, not null, increment]
+  "customer_type_id" bigint [not null]
+  "name" varchar(255) [not null]
+  "id_card_number" varchar(255)
+  "booklet_number" varchar(255)
+  "contact_number" varchar(255)
+  "address" text
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    customer_type_id [name: "customers_customer_type_id_foreign"]
+  }
+}
+
+Table "expenses" {
+  "id" bigint [pk, not null, increment]
+  "branch_id" bigint [not null]
+  "user_id" bigint [not null]
+  "category" varchar(255) [not null]
+  "amount" bigint [not null]
+  "expense_date" date [not null]
+  "reference_no" varchar(255)
+  "description" text
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    branch_id [name: "expenses_branch_id_foreign"]
+    user_id [name: "expenses_user_id_foreign"]
+  }
+}
+
+Table "failed_jobs" {
+  "id" bigint [pk, not null, increment]
+  "uuid" varchar(255) [not null]
+  "connection" text [not null]
+  "queue" text [not null]
+  "payload" longtext [not null]
+  "exception" longtext [not null]
+  "failed_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    uuid [unique, name: "failed_jobs_uuid_unique"]
+  }
+}
+
+Table "inquiries" {
+  "id" bigint [pk, not null, increment]
+  "user_id" bigint [not null]
+  "type" varchar(255) [not null]
+  "inquirable_type" varchar(255) [not null]
+  "inquirable_id" bigint [not null]
+  "status" varchar(255) [not null, default: 'pending']
+  "remarks" text
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    user_id [name: "inquiries_user_id_foreign"]
+    (inquirable_type, inquirable_id) [name: "inquiries_inquirable_type_inquirable_id_index"]
+  }
+}
+
+Table "inventory_batches" {
+  "id" bigint [pk, not null, increment]
+  "branch_id" bigint [not null]
+  "product_id" bigint [not null]
+  "batch_number" varchar(255)
+  "expiration_date" date
+  "quantity_on_hand" decimal(20,4) [not null, default: '0.0000']
+  "cost_per_unit" bigint [not null, default: '0']
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    branch_id [name: "inventory_batches_branch_id_foreign"]
+    product_id [name: "inventory_batches_product_id_foreign"]
+  }
+}
+
+Table "inventory_transactions" {
+  "id" bigint [pk, not null, increment]
+  "reference_type" varchar(255)
+  "reference_id" bigint
+  "branch_id" bigint [not null]
+  "product_id" bigint [not null]
+  "inventory_batch_id" bigint
+  "user_id" bigint [not null]
+  "type" varchar(255) [not null]
+  "quantity" decimal(10,2) [not null]
+  "running_balance" decimal(10,2) [not null]
+  "unit_cost" int [not null, default: '0']
+  "unit_price" int
+  "remarks" varchar(255)
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    (reference_type, reference_id) [name: "inventory_transactions_reference_type_reference_id_index"]
+    branch_id [name: "inventory_transactions_branch_id_foreign"]
+    product_id [name: "inventory_transactions_product_id_foreign"]
+    inventory_batch_id [name: "inventory_transactions_inventory_batch_id_foreign"]
+    user_id [name: "inventory_transactions_user_id_foreign"]
+  }
+}
+
+Table "job_batches" {
+  "id" varchar(255) [pk, not null]
+  "name" varchar(255) [not null]
+  "total_jobs" int [not null]
+  "pending_jobs" int [not null]
+  "failed_jobs" int [not null]
+  "failed_job_ids" longtext [not null]
+  "options" mediumtext
+  "cancelled_at" int
+  "created_at" int [not null]
+  "finished_at" int
+}
+
+Table "jobs" {
+  "id" bigint [pk, not null, increment]
+  "queue" varchar(255) [not null]
+  "payload" longtext [not null]
+  "attempts" tinyint [not null]
+  "reserved_at" int
+  "available_at" int [not null]
+  "created_at" int [not null]
+
+  Indexes {
+    queue [name: "jobs_queue_index"]
+  }
+}
+
+Table "migrations" {
+  "id" int [pk, not null, increment]
+  "migration" varchar(255) [not null]
+  "batch" int [not null]
+}
+
+Table "model_has_permissions" {
+  "permission_id" bigint [not null]
+  "model_type" varchar(255) [not null]
+  "model_id" bigint [not null]
+
+  Indexes {
+    (permission_id, model_id, model_type) [pk]
+    (model_id, model_type) [name: "model_has_permissions_model_id_model_type_index"]
+  }
+}
+
+Table "model_has_roles" {
+  "role_id" bigint [not null]
+  "model_type" varchar(255) [not null]
+  "model_id" bigint [not null]
+
+  Indexes {
+    (role_id, model_id, model_type) [pk]
+    (model_id, model_type) [name: "model_has_roles_model_id_model_type_index"]
+  }
+}
+
+Table "password_reset_tokens" {
+  "email" varchar(255) [pk, not null]
+  "token" varchar(255) [not null]
+  "created_at" timestamp
+}
+
+Table "payment_methods" {
+  "id" bigint [pk, not null, increment]
+  "name" varchar(255) [not null]
+  "is_active" tinyint(1) [not null, default: '1']
+  "requires_reference" tinyint(1) [not null, default: '0']
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    name [unique, name: "payment_methods_name_unique"]
+  }
+}
+
+Table "permissions" {
+  "id" bigint [pk, not null, increment]
+  "name" varchar(255) [not null]
+  "guard_name" varchar(255) [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    (name, guard_name) [unique, name: "permissions_name_guard_name_unique"]
+  }
+}
+
+Table "personal_access_tokens" {
+  "id" bigint [pk, not null, increment]
+  "tokenable_type" varchar(255) [not null]
+  "tokenable_id" bigint [not null]
+  "name" text [not null]
+  "token" varchar(64) [not null]
+  "abilities" text
+  "last_used_at" timestamp
+  "expires_at" timestamp
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    token [unique, name: "personal_access_tokens_token_unique"]
+    (tokenable_type, tokenable_id) [name: "personal_access_tokens_tokenable_type_tokenable_id_index"]
+    expires_at [name: "personal_access_tokens_expires_at_index"]
+  }
+}
+
+Table "product_categories" {
+  "id" bigint [pk, not null, increment]
+  "name" varchar(255) [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+}
+
+Table "product_packagings" {
+  "id" bigint [pk, not null, increment]
+  "product_id" bigint [not null]
+  "unit_id" bigint [not null]
+  "conversion_factor" decimal(10,4) [not null, default: '1.0000']
+  "price" bigint [not null, default: '0']
+  "barcode" varchar(255)
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    barcode [unique, name: "product_packagings_barcode_unique"]
+    product_id [name: "product_packagings_product_id_foreign"]
+    unit_id [name: "product_packagings_unit_id_foreign"]
+  }
+}
+
+Table "partnerships" {
+  "id" bigint [pk, not null, increment]
+  "branch_id" bigint [not null]
+  "customer_type_id" bigint [not null]
+  "product_packaging_id" bigint [not null]
+  "special_price" bigint [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    (branch_id, customer_type_id, product_packaging_id) [unique, name: "unique_branch_partnership_pricing"]
+    branch_id [name: "partnerships_branch_id_foreign"]
+    customer_type_id [name: "partnerships_customer_type_id_foreign"]
+    product_packaging_id [name: "partnerships_product_packaging_id_foreign"]
+  }
+}
+
+Table "products" {
+  "id" bigint [pk, not null, increment]
+  "supplier_id" bigint [not null]
+  "branch_id" bigint [not null]
+  "category_id" bigint
+  "product_category_id" bigint [not null]
+  "base_unit_id" bigint [not null]
+  "product_code" varchar(255) [not null]
+  "name" varchar(255)
+  "brand_name" varchar(255)
+  "generic_name" varchar(255)
+  "dosage" varchar(255)
+  "form" varchar(255)
+  "requires_prescription" tinyint(1) [not null, default: '0']
+  "is_active" tinyint(1) [not null, default: '1']
+  "reorder_level" decimal(10,4) [not null, default: '20.0000']
+  "attributes" json
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    product_code [unique, name: "products_product_code_unique"]
+    supplier_id [name: "products_supplier_id_foreign"]
+    branch_id [name: "products_branch_id_foreign"]
+    category_id [name: "products_category_id_foreign"]
+    product_category_id [name: "products_product_category_id_foreign"]
+    base_unit_id [name: "products_base_unit_id_foreign"]
+  }
+}
+
+Table "purchase_items" {
+  "id" bigint [pk, not null, increment]
+  "purchase_id" bigint [not null]
+  "product_id" bigint [not null]
+  "unit_id" bigint [not null]
+  "quantity_ordered" decimal(10,4) [not null]
+  "quantity_received" decimal(10,4) [not null, default: '0.0000']
+  "cost_per_unit" bigint [not null, default: '0']
+  "batch_number" varchar(255)
+  "expiration_date" date
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    purchase_id [name: "purchase_items_purchase_id_foreign"]
+    product_id [name: "purchase_items_product_id_foreign"]
+    unit_id [name: "purchase_items_unit_id_foreign"]
+  }
+}
+
+Table "purchases" {
+  "id" bigint [pk, not null, increment]
+  "branch_id" bigint [not null]
+  "supplier_id" bigint [not null]
+  "user_id" bigint [not null]
+  "reference_no" varchar(255) [not null]
+  "status" varchar(255) [not null, default: 'pending']
+  "expected_delivery_date" date
+  "total_cost" bigint [not null, default: '0']
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    reference_no [unique, name: "purchases_reference_no_unique"]
+    branch_id [name: "purchases_branch_id_foreign"]
+    supplier_id [name: "purchases_supplier_id_foreign"]
+    user_id [name: "purchases_user_id_foreign"]
+  }
+}
+
+Table "role_has_permissions" {
+  "permission_id" bigint [not null]
+  "role_id" bigint [not null]
+
+  Indexes {
+    (permission_id, role_id) [pk]
+    role_id [name: "role_has_permissions_role_id_foreign"]
+  }
+}
+
+Table "roles" {
+  "id" bigint [pk, not null, increment]
+  "name" varchar(255) [not null]
+  "guard_name" varchar(255) [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    (name, guard_name) [unique, name: "roles_name_guard_name_unique"]
+  }
+}
+
+Table "sale_items" {
+  "id" bigint [pk, not null, increment]
+  "sale_id" bigint [not null]
+  "product_id" bigint [not null]
+  "inventory_batch_id" bigint
+  "unit_id" bigint
+  "product_packaging_id" bigint
+  "quantity" decimal(10,4) [not null]
+  "price_at_moment" bigint [not null, default: '0']
+  "regular_price_at_moment" bigint
+  "price_source" varchar(255) [not null, default: 'regular']
+  "partnership_id" bigint
+  "cost_at_moment" bigint [not null, default: '0']
+  "subtotal" bigint [not null, default: '0']
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    sale_id [name: "sale_items_sale_id_foreign"]
+    product_id [name: "sale_items_product_id_foreign"]
+    inventory_batch_id [name: "sale_items_inventory_batch_id_foreign"]
+    unit_id [name: "sale_items_unit_id_foreign"]
+    product_packaging_id [name: "sale_items_product_packaging_id_foreign"]
+    partnership_id [name: "sale_items_partnership_id_foreign"]
+  }
+}
+
+Table "sales" {
+  "id" bigint [pk, not null, increment]
+  "branch_id" bigint [not null]
+  "user_id" bigint [not null]
+  "customer_id" bigint
+  "payment_method_id" bigint
+  "payment_reference" varchar(255)
+  "subtotal" bigint [not null, default: '0']
+  "discount_amount" bigint [not null, default: '0']
+  "discount_type_id" bigint
+  "amount_tendered" decimal(10,2) [not null, default: '0.00']
+  "change_amount" decimal(10,2) [not null, default: '0.00']
+  "grand_total" bigint [not null, default: '0']
+  "status" varchar(255) [not null, default: 'completed']
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    branch_id [name: "sales_branch_id_foreign"]
+    user_id [name: "sales_user_id_foreign"]
+    customer_id [name: "sales_customer_id_foreign"]
+    payment_method_id [name: "sales_payment_method_id_foreign"]
+    discount_type_id [name: "sales_discount_type_id_foreign"]
+  }
+}
+
+Table "sessions" {
+  "id" varchar(255) [pk, not null]
+  "user_id" bigint
+  "ip_address" varchar(45)
+  "user_agent" text
+  "payload" longtext [not null]
+  "last_activity" int [not null]
+
+  Indexes {
+    user_id [name: "sessions_user_id_index"]
+    last_activity [name: "sessions_last_activity_index"]
+  }
+}
+
+Table "suppliers" {
+  "id" bigint [pk, not null, increment]
+  "name" varchar(255) [not null]
+  "contact_info" text
+  "created_at" timestamp
+  "updated_at" timestamp
+}
+
+Table "telescope_entries" {
+  "sequence" bigint [pk, not null, increment]
+  "uuid" char(36) [not null]
+  "batch_id" char(36) [not null]
+  "family_hash" varchar(255)
+  "should_display_on_index" tinyint(1) [not null, default: '1']
+  "type" varchar(20) [not null]
+  "content" longtext [not null]
+  "created_at" datetime
+
+  Indexes {
+    uuid [unique, name: "telescope_entries_uuid_unique"]
+    batch_id [name: "telescope_entries_batch_id_index"]
+    family_hash [name: "telescope_entries_family_hash_index"]
+    created_at [name: "telescope_entries_created_at_index"]
+    (type, should_display_on_index) [name: "telescope_entries_type_should_display_on_index_index"]
+  }
+}
+
+Table "telescope_entries_tags" {
+  "entry_uuid" char(36) [not null]
+  "tag" varchar(255) [not null]
+
+  Indexes {
+    (entry_uuid, tag) [pk]
+    tag [name: "telescope_entries_tags_tag_index"]
+  }
+}
+
+Table "telescope_monitoring" {
+  "tag" varchar(255) [pk, not null]
+}
+
+Table "units" {
+  "id" bigint [pk, not null, increment]
+  "name" varchar(255) [not null]
+  "abbreviation" varchar(255) [not null]
+  "allow_decimal" tinyint(1) [not null, default: '0']
+  "created_at" timestamp
+  "updated_at" timestamp
+}
+
+Table "users" {
+  "id" bigint [pk, not null, increment]
+  "branch_id" bigint
+  "name" varchar(255) [not null]
+  "username" varchar(255) [not null]
+  "password" varchar(255) [not null]
+  "remember_token" varchar(100)
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    username [unique, name: "users_username_unique"]
+    branch_id [name: "users_branch_id_foreign"]
+  }
+}
+
+Ref "branches_product_category_id_foreign":"product_categories"."id" < "branches"."product_category_id"
+
+Ref "customers_customer_type_id_foreign":"customer_types"."id" < "customers"."customer_type_id"
+
+Ref "expenses_branch_id_foreign":"branches"."id" < "expenses"."branch_id" [delete: cascade]
+
+Ref "expenses_user_id_foreign":"users"."id" < "expenses"."user_id"
+
+Ref "inquiries_user_id_foreign":"users"."id" < "inquiries"."user_id" [delete: cascade]
+
+Ref "inventory_batches_branch_id_foreign":"branches"."id" < "inventory_batches"."branch_id"
+
+Ref "inventory_batches_product_id_foreign":"products"."id" < "inventory_batches"."product_id"
+
+Ref "inventory_transactions_branch_id_foreign":"branches"."id" < "inventory_transactions"."branch_id"
+
+Ref "inventory_transactions_inventory_batch_id_foreign":"inventory_batches"."id" < "inventory_transactions"."inventory_batch_id"
+
+Ref "inventory_transactions_product_id_foreign":"products"."id" < "inventory_transactions"."product_id"
+
+Ref "inventory_transactions_user_id_foreign":"users"."id" < "inventory_transactions"."user_id"
+
+Ref "model_has_permissions_permission_id_foreign":"permissions"."id" < "model_has_permissions"."permission_id" [delete: cascade]
+
+Ref "model_has_roles_role_id_foreign":"roles"."id" < "model_has_roles"."role_id" [delete: cascade]
+
+Ref "product_packagings_product_id_foreign":"products"."id" < "product_packagings"."product_id"
+
+Ref "product_packagings_unit_id_foreign":"units"."id" < "product_packagings"."unit_id"
+
+Ref "partnerships_branch_id_foreign":"branches"."id" < "partnerships"."branch_id"
+
+Ref "partnerships_customer_type_id_foreign":"customer_types"."id" < "partnerships"."customer_type_id"
+
+Ref "partnerships_product_packaging_id_foreign":"product_packagings"."id" < "partnerships"."product_packaging_id"
+
+Ref "products_base_unit_id_foreign":"units"."id" < "products"."base_unit_id"
+
+Ref "products_branch_id_foreign":"branches"."id" < "products"."branch_id"
+
+Ref "products_category_id_foreign":"categories"."id" < "products"."category_id"
+
+Ref "products_product_category_id_foreign":"product_categories"."id" < "products"."product_category_id"
+
+Ref "products_supplier_id_foreign":"suppliers"."id" < "products"."supplier_id"
+
+Ref "purchase_items_product_id_foreign":"products"."id" < "purchase_items"."product_id"
+
+Ref "purchase_items_purchase_id_foreign":"purchases"."id" < "purchase_items"."purchase_id" [delete: cascade]
+
+Ref "purchase_items_unit_id_foreign":"units"."id" < "purchase_items"."unit_id"
+
+Ref "purchases_branch_id_foreign":"branches"."id" < "purchases"."branch_id"
+
+Ref "purchases_supplier_id_foreign":"suppliers"."id" < "purchases"."supplier_id"
+
+Ref "purchases_user_id_foreign":"users"."id" < "purchases"."user_id"
+
+Ref "role_has_permissions_permission_id_foreign":"permissions"."id" < "role_has_permissions"."permission_id" [delete: cascade]
+
+Ref "role_has_permissions_role_id_foreign":"roles"."id" < "role_has_permissions"."role_id" [delete: cascade]
+
+Ref "sale_items_inventory_batch_id_foreign":"inventory_batches"."id" < "sale_items"."inventory_batch_id"
+
+Ref "sale_items_partnership_id_foreign":"partnerships"."id" < "sale_items"."partnership_id" [delete: set null]
+
+Ref "sale_items_product_packaging_id_foreign":"product_packagings"."id" < "sale_items"."product_packaging_id" [delete: set null]
+
+Ref "sale_items_product_id_foreign":"products"."id" < "sale_items"."product_id"
+
+Ref "sale_items_sale_id_foreign":"sales"."id" < "sale_items"."sale_id"
+
+Ref "sale_items_unit_id_foreign":"units"."id" < "sale_items"."unit_id"
+
+Ref "sales_branch_id_foreign":"branches"."id" < "sales"."branch_id"
+
+Ref "sales_customer_id_foreign":"customers"."id" < "sales"."customer_id"
+
+Ref "sales_discount_type_id_foreign":"customer_types"."id" < "sales"."discount_type_id" [delete: set null]
+
+Ref "sales_payment_method_id_foreign":"payment_methods"."id" < "sales"."payment_method_id" [delete: set null]
+
+Ref "sales_user_id_foreign":"users"."id" < "sales"."user_id"
+
+Ref "telescope_entries_tags_entry_uuid_foreign":"telescope_entries"."uuid" < "telescope_entries_tags"."entry_uuid" [delete: cascade]
+
+Ref "users_branch_id_foreign":"branches"."id" < "users"."branch_id"
+
+Records migrations(id, migration, batch) {
+  1, '0001_01_01_000000_create_users_table', 1
+  2, '0001_01_01_000001_create_cache_table', 1
+  3, '0001_01_01_000002_create_jobs_table', 1
+  4, '2026_01_23_061028_create_permission_tables', 1
+  5, '2026_01_23_061740_create_activity_log_table', 1
+  6, '2026_01_23_061741_add_event_column_to_activity_log_table', 1
+  7, '2026_01_23_061742_add_batch_uuid_column_to_activity_log_table', 1
+  8, '2026_01_23_063838_create_categories_table', 1
+  9, '2026_01_23_063935_create_units_table', 1
+  10, '2026_01_23_063936_create_product_categories_table', 1
+  11, '2026_01_23_063937_create_branches_table', 1
+  12, '2026_01_23_063938_create_suppliers_table', 1
+  13, '2026_01_23_063939_create_products_table', 1
+  14, '2026_01_23_063940_create_product_packagings_table', 1
+  15, '2026_01_23_063941_create_inventory_batches_table', 1
+  16, '2026_01_23_063942_create_customer_types_table', 1
+  17, '2026_01_23_063943_create_customers_table', 1
+  18, '2026_01_23_063944_create_sales_table', 1
+  19, '2026_01_23_063945_create_sale_items_table', 1
+  20, '2026_01_24_072517_create_personal_access_tokens_table', 1
+  21, '2026_02_02_083700_create_purchases_table', 1
+  22, '2026_02_02_083847_create_purchase_items_table', 1
+  23, '2026_03_04_144723_create_payment_methods_table', 1
+  24, '2026_03_11_154222_create_inquiries_table', 1
+  25, '2026_03_13_133606_create_telescope_entries_table', 1
+  26, '2026_03_26_142908_create_expenses_table', 1
+  27, '2026_04_07_135837_create_inventory_transactions_table', 1
+  28, '2026_04_14_131729_create_partnerships_table', 1
+  29, '2026_04_19_000001_add_pricing_metadata_to_sales_tables', 1
+  30, '2026_04_19_000002_update_partnership_unique_index_for_branches', 1
+  31, '2026_04_19_000003_normalize_product_category_module_names', 1
+  32, '9999_99_99_999999_set_default_system_data', 1
+}

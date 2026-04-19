@@ -6,7 +6,7 @@
 
     <x-ui.layout>
         @if ($inventory)
-            <livewire:inventory.components.sidebar />
+            <livewire:inventory.components.sidebar module="pharmacy" />
         @endif
 
         <x-ui.layout.main>

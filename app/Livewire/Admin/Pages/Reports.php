@@ -2,11 +2,16 @@
 
 namespace App\Livewire\Admin\Pages;
 
+use App\Enums\Inventory\TransactionType;
+use App\Enums\Product\CategoryType;
+use App\Enums\Sale\Status;
+use App\Exports\InventoryLedgerExport;
 use App\Models\Branch;
 use App\Models\Expense;
 use App\Models\InventoryBatch;
 use App\Models\ProductCategory;
 use App\Models\SaleItem;
+use App\Models\InventoryTransaction;
 use App\Traits\HasAuth;
 use App\Traits\HasDataTable;
 use Carbon\Carbon;
@@ -16,6 +21,7 @@ use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Maatwebsite\Excel\Facades\Excel;
 use Money\Money;
 
 #[Layout('components.layouts.admin', ['title' => 'Reports'])]
@@ -26,15 +32,30 @@ class Reports extends Component
     // Filters
     public ?int $branchId = null;
     public ?int $categoryId = null;
-    public string $dateRange = ''; // Using the date picker string
+    public string $transactionType = '';
+    public ?array $dateRange = [];
 
     // Trigger chart updates when filters change
     public function updated($property)
     {
-        if (in_array($property, ['branchId', 'categoryId', 'dateRange'])) {
-            $this->dispatch('update-trend-chart', categories: $this->trendChartData['categories'], data: $this->trendChartData['data']);
-            $this->dispatch('update-pie-chart', labels: $this->expensePieData['labels'], series: $this->expensePieData['series']);
+        if (in_array($property, ['branchId', 'categoryId', 'dateRange', 'transactionType'])) {
+            // Only update charts for master filters (Type filter is just for the ledger table)
+            if (in_array($property, ['branchId', 'categoryId', 'dateRange'])) {
+                $this->dispatch('update-trend-chart', categories: $this->trendChartData['categories'], data: $this->trendChartData['data']);
+                $this->dispatch('update-pie-chart', labels: $this->expensePieData['labels'], series: $this->expensePieData['series']);
+            }
+            $this->resetPage();
         }
+    }
+
+    #[Computed]
+    public function transactionTypes(): array
+    {
+        // Fetch all enum cases for the dropdown
+        return array_map(fn($case) => [
+            'value' => $case->value,
+            'label' => $case->label()
+        ], TransactionType::cases());
     }
 
     #[Computed]
@@ -46,24 +67,12 @@ class Reports extends Component
     #[Computed]
     public function categories(): array
     {
-        return ProductCategory::orderBy('name')->get()->map(fn($c) => ['value' => $c->id, 'label' => $c->name])->toArray();
-    }
-
-    /**
-     * Parses the string from the UI DatePicker into two Carbon instances
-     */
-    protected function getParsedDates(): array
-    {
-        if (empty($this->dateRange)) {
-            // Default to last 30 days if nothing is selected
-            return [Carbon::now()->subDays(30)->startOfDay(), Carbon::now()->endOfDay()];
-        }
-
-        $dates = explode(' - ', $this->dateRange);
-        $start = Carbon::parse($dates[0])->startOfDay();
-        $end = isset($dates[1]) ? Carbon::parse($dates[1])->endOfDay() : $start->copy()->endOfDay();
-
-        return [$start, $end];
+        return ProductCategory::orderBy('name')->get()
+            ->map(fn($c) => [
+                'value' => $c->id,
+                'label' => CategoryType::tryFrom($c->name)?->label() ?? $c->name,
+            ])
+            ->toArray();
     }
 
     #[Computed]
@@ -75,7 +84,7 @@ class Reports extends Component
         $salesQuery = SaleItem::join('sales', 'sale_items.sale_id', '=', 'sales.id')
             ->join('products', 'sale_items.product_id', '=', 'products.id')
             ->whereBetween('sales.created_at', [$start, $end])
-            ->where('sales.status', \App\Enums\Sale\Status::Completed);
+            ->where('sales.status', Status::Completed->value);
 
         if ($this->branchId) {
             $salesQuery->where('sales.branch_id', $this->branchId);
@@ -138,7 +147,7 @@ class Reports extends Component
         $salesQuery = SaleItem::join('sales', 'sale_items.sale_id', '=', 'sales.id')
             ->join('products', 'sale_items.product_id', '=', 'products.id')
             ->whereBetween('sales.created_at', [$start, $end])
-            ->where('sales.status', \App\Enums\Sale\Status::Completed);
+            ->where('sales.status', Status::Completed->value);
 
         if ($this->branchId) $salesQuery->where('sales.branch_id', $this->branchId);
         if ($this->categoryId) $salesQuery->where('products.product_category_id', $this->categoryId);
@@ -196,7 +205,7 @@ class Reports extends Component
         $series = [];
 
         foreach ($expenses as $expense) {
-            $labels[] = $expense->category->name ?? 'Uncategorized';
+            $labels[] = $expense->category ?? 'Uncategorized';
             $series[] = round($expense->total / 100, 2);
         }
 
@@ -226,8 +235,89 @@ class Reports extends Component
         ];
     }
 
+    #[Computed]
+    public function stockMovements()
+    {
+        return $this->getLedgerQuery()->latest('created_at')->paginate($this->perPage);
+    }
+
+    private function getLedgerQuery()
+    {
+        [$start, $end] = $this->getParsedDates();
+
+        $query = InventoryTransaction::with(['product.category', 'branch', 'user'])
+            ->whereBetween('created_at', [$start, $end]);
+
+        if ($this->branchId) {
+            $query->where('branch_id', $this->branchId);
+        }
+
+        if ($this->categoryId) {
+            $query->whereHas('product', function ($q) {
+                $q->where('product_category_id', $this->categoryId);
+            });
+        }
+
+        if ($this->transactionType) {
+            $query->where('type', $this->transactionType);
+        }
+
+        if ($this->search) {
+            $searchTerm = '%' . trim($this->search) . '%';
+            $query->where(function ($q) use ($searchTerm) {
+                $q->whereHas('product', function ($subQ) use ($searchTerm) {
+                    $subQ->where('name', 'like', $searchTerm)
+                        ->orWhere('brand_name', 'like', $searchTerm)
+                        ->orWhere('generic_name', 'like', $searchTerm)
+                        ->orWhere('product_code', 'like', $searchTerm);
+                })
+                ->orWhere('type', 'like', $searchTerm);
+            });
+        }
+
+        return $query;
+    }
+
+    public function exportLedger()
+    {
+        [$start, $end] = $this->getParsedDates();
+
+        $fileName = 'Inventory_Ledger_' . now()->format('Y_m_d_Hi') . '.xlsx';
+
+        return Excel::download(
+            new InventoryLedgerExport(
+                $this->branchId,
+                $this->categoryId,
+                $this->transactionType,
+                $this->search ?? '',
+                $start,
+                $end
+            ),
+            $fileName
+        );
+    }
+
+    protected function getParsedDates(): array
+    {
+        // Check if the array is empty
+        if (empty($this->dateRange) || count($this->dateRange) === 0) {
+            // Default to last 30 days if nothing is selected
+            return [Carbon::now()->subDays(30)->startOfDay(), Carbon::now()->endOfDay()];
+        }
+
+        // The date picker returns an array: [0 => StartDate, 1 => EndDate]
+        $start = Carbon::parse($this->dateRange[0])->startOfDay();
+
+        // If they only clicked one date, use it for both start and end
+        $end = isset($this->dateRange[1])
+            ? Carbon::parse($this->dateRange[1])->endOfDay()
+            : $start->copy()->endOfDay();
+
+        return [$start, $end];
+    }
+
     protected function getAdditionalPageResetProperties(): array
     {
-        return ['branchId', 'categoryId', 'dateRange'];
+        return ['branchId', 'categoryId', 'dateRange', 'transactionType'];
     }
 }

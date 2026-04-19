@@ -6,8 +6,10 @@ namespace App\Actions\Inventory;
 
 use App\Data\Inventory\DirectPurchaseData;
 use App\Data\Inventory\DirectPurchaseItemData;
+use App\Enums\Inventory\TransactionType;
 use App\Enums\Purchase\Status;
 use App\Models\InventoryBatch;
+use App\Models\InventoryTransaction;
 use App\Models\ProductPackaging;
 use App\Models\Purchase;
 use App\Traits\HasDbTransaction;
@@ -72,13 +74,27 @@ final class RecordDirectPurchase
                 $baseCostPerUnit = (int) round($receivedData->cost / $conversionFactor);
 
                 // --- STEP C: Inject into Live Inventory ---
-                InventoryBatch::create([
+                $batch = InventoryBatch::create([
                     'branch_id'        => $purchaseData->branch_id,
                     'product_id'       => $receivedData->product_id,
                     'batch_number'     => $receivedData->batch_number,
                     'expiration_date'  => $receivedData->expiration_date,
                     'quantity_on_hand' => $baseQuantityToAdd,
                     'cost_per_unit'    => $baseCostPerUnit,
+                ]);
+
+                // --- STEP D: WRITE TO LEDGER ---
+                InventoryTransaction::create([
+                    'branch_id' => $purchaseData->branch_id,
+                    'product_id' => $receivedData->product_id,
+                    'inventory_batch_id' => $batch->id,
+                    'user_id' => $purchaseData->user_id, // Safely using DTO's user_id
+                    'type' => TransactionType::Purchase,
+                    'quantity' => $baseQuantityToAdd, // Positive for IN
+                    'running_balance' => $baseQuantityToAdd,
+                    'unit_cost' => $baseCostPerUnit,
+                    'reference_type' => Purchase::class,
+                    'reference_id' => $purchase->id,
                 ]);
             }
 

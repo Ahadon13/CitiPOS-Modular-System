@@ -12,6 +12,9 @@
             <x-ui.button href="{{ route('inventory.pharmacy.products.create') }}" icon="plus">
                 Add Product
             </x-ui.button>
+            <x-ui.button href="{{ route('inventory.pharmacy.products.bulk-pricing') }}" icon="currency-dollar">
+                Bulk Pricing
+            </x-ui.button>
         </div>
     </div>
 

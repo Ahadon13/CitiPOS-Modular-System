@@ -1,4 +1,4 @@
-<div class="flex flex-col md:flex-row w-full h-full" x-data="posApp(@js($this->activePaymentMethods), @js($this->customerTypesData), @entangle('customerMode'), @entangle('customer_id'), @js($this->customers))" @keydown.window="handleKeydown($event)">
+<div class="flex flex-col md:flex-row w-full h-full" x-data="posApp(@js($this->activePaymentMethods), @js($this->customerTypesData), @entangle('customerMode').live, @entangle('customer_id').live, @js($this->customers))" @keydown.window="handleKeydown($event)">
     {{-- ========================================== --}}
     {{-- LEFT COLUMN: PRODUCT SELECTION (LIST ONLY) --}}
     {{-- ========================================== --}}
@@ -49,8 +49,11 @@
 
             <div class="flex flex-col gap-2">
                 @foreach($this->products as $product)
-                <div x-data="{ selectedPkgId: {{ $product->packagings[0]['id'] ?? 'null' }} }"
-                    x-on:click="increase({{ $product->id }}, '{{ addslashes($product->name) }}', '{{ addslashes($product->generic_name) }}', {{ $product->stock }}, {{ json_encode($product->packagings) }}, selectedPkgId)" class="cursor-pointer flex items-center justify-between p-3 rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#0a1331] hover:border-electric-blue dark:hover:border-electric-blue transition-all hover:shadow-sm active:scale-[0.99] {{ $product->stock <= 0 ? 'opacity-60 grayscale pointer-events-none' : '' }}">
+                <div
+                    x-data="{ product: @js($product), selectedPkgId: @js($product->packagings[0]['id'] ?? null) }"
+                    x-on:click="addProductToCart(product, selectedPkgId)"
+                    class="cursor-pointer flex items-center justify-between p-3 rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#0a1331] hover:border-electric-blue dark:hover:border-electric-blue transition-all hover:shadow-sm active:scale-[0.99] {{ $product->stock <= 0 || count($product->packagings) === 0 ? 'opacity-60 grayscale pointer-events-none' : '' }}"
+                >
                     {{-- Left: Details --}}
                     <div class="flex items-center gap-3 overflow-hidden">
                         <div class="size-18 rounded-lg bg-neutral-100 dark:bg-white/5 flex items-center justify-center shrink-0">
@@ -66,13 +69,27 @@
                                 {{-- PACKAGING SELECTOR --}}
                                 @if(count($product->packagings) > 1)
                                 <select x-model="selectedPkgId" @click.stop class=" w-40 text-sm py-0.5 px-1.5 rounded border border-black/10 dark:border-white/10 bg-neutral-50 dark:bg-[#060A23] font-medium text-neutral-600 dark:text-neutral-300 focus:ring-0 focus:border-electric-blue">
-                                    @foreach($product->packagings as $pkg)
-                                    <option value="{{ $pkg['id'] }}">{{ $pkg['unit'] }} (₱{{ number_format($pkg['price'], 2) }})</option>
-                                    @endforeach
+                                    <template x-for="pkg in product.packagings" :key="pkg.id">
+                                        <option
+                                            :value="pkg.id"
+                                            x-text="pkg.unit + ' - Walk-in ₱' + getPackageRegularPrice(pkg).toFixed(2) + (hasPackagePartnershipPrice(pkg) ? ' | Partner ₱' + getPackagePartnershipPrice(pkg).toFixed(2) : '')"
+                                        ></option>
+                                    </template>
                                 </select>
+                                @elseif(count($product->packagings) === 0)
+                                <span class="text-sm font-bold text-red-500 bg-red-50 dark:bg-red-500/10 px-1.5 rounded py-0.5">No Packaging</span>
                                 @else
-                                <span class="text-sm font-bold text-neutral-500 bg-neutral-100 dark:bg-white/10 px-1.5 rounded py-0.5">{{ $product->packagings[0]['unit'] ?? 'Unit' }}</span>
+                                <span
+                                    class="text-sm font-bold text-neutral-500 bg-neutral-100 dark:bg-white/10 px-1.5 rounded py-0.5"
+                                    x-text="product.packagings[0].unit + ' - Walk-in ₱' + getPackageRegularPrice(product.packagings[0]).toFixed(2) + (hasPackagePartnershipPrice(product.packagings[0]) ? ' | Partner ₱' + getPackagePartnershipPrice(product.packagings[0]).toFixed(2) : '')"
+                                ></span>
                                 @endif
+
+                                <template x-if="selectedCustomerTypeName && product.packagings.some((pkg) => hasPackagePartnershipPrice(pkg))">
+                                    <span class="px-1.5 py-0.5 rounded text-sm font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">
+                                        <span x-text="selectedCustomerTypeName"></span> Partner
+                                    </span>
+                                </template>
 
                                 {{-- STOCK INDICATOR --}}
                                 @if($product->stock <= 0)
@@ -158,7 +175,7 @@
                 <div class="animate-in fade-in slide-in-from-top-1 duration-200">
                     <x-ui-select.styled
                         invalidate
-                        wire:model="customer_id"
+                        wire:model.live="customer_id"
                         :options="$this->customers"
                         searchable
                         placeholder="Search existing customer..."
@@ -233,7 +250,31 @@
                             </div>
 
                             {{-- Row 2: Base Price --}}
-                            <div class="text-xs text-neutral-500 dark:text-neutral-400 font-medium" x-text="'₱' + item.price.toFixed(2)"></div>
+                            <div class="flex flex-wrap items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400 font-medium">
+                                <span>
+                                    Walk-in:
+                                    <span class="font-mono" x-text="'₱' + item.regularPrice.toFixed(2)"></span>
+                                </span>
+                                <template x-if="item.priceSource === 'Partnership'">
+                                    <span>
+                                        Partner:
+                                        <span class="font-mono font-bold text-emerald-600 dark:text-emerald-400" x-text="'₱' + item.price.toFixed(2)"></span>
+                                    </span>
+                                </template>
+                                <template x-if="item.priceSource !== 'Partnership'">
+                                    <span>
+                                        Active:
+                                        <span class="font-mono font-bold text-neutral-900 dark:text-white" x-text="'₱' + item.price.toFixed(2)"></span>
+                                    </span>
+                                </template>
+                                <span
+                                    x-show="item.priceSource === 'Partnership'"
+                                    x-cloak
+                                    class="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20 text-[10px] font-bold"
+                                >
+                                    <span x-text="selectedCustomerTypeName || 'Partnership'"></span> Price
+                                </span>
+                            </div>
 
                             {{-- Row 3: Actions & Controls --}}
                             <div class="flex items-center justify-between pt-3 mt-1 border-t border-black/5 dark:border-white/10">
@@ -260,12 +301,12 @@
                                         <div class="flex items-center px-1">
                                             <input type="number"
                                                 :value="item.quantity"
-                                                @change="updateQuantity(item.cartId, $event, item.maxStock, item.name, item.generic_name, item.price, item.unit)"
+                                                @change="updateQuantity(item.cartId, $event)"
                                                 class="w-8 text-center bg-transparent border-none focus:ring-0 text-sm font-bold p-0 text-neutral-900 dark:text-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
                                             <span class="text-[10px] text-neutral-500 dark:text-neutral-400 pr-1" x-text="item.unit"></span>
                                         </div>
 
-                                        <button @click="increase(item.cartId, item.name, item.generic_name, item.price, item.maxStock, item.unit)" class="size-7 flex items-center justify-center rounded-md hover:bg-white dark:hover:bg-white/10 text-neutral-600 dark:text-neutral-300 transition-colors" :disabled="item.quantity >= item.maxStock" :class="item.quantity >= item.maxStock ? 'opacity-50 cursor-not-allowed' : ''">
+                                        <button @click="increaseQuantity(item.cartId)" class="size-7 flex items-center justify-center rounded-md hover:bg-white dark:hover:bg-white/10 text-neutral-600 dark:text-neutral-300 transition-colors" :disabled="item.quantity >= getMaxQuantityForItem(item)" :class="item.quantity >= getMaxQuantityForItem(item) ? 'opacity-50 cursor-not-allowed' : ''">
                                             <x-ui.icon name="plus" class="size-3" />
                                         </button>
                                     </div>
@@ -380,6 +421,11 @@
                                         <td class="py-2 pr-2 font-medium text-neutral-900 dark:text-white leading-tight">
                                             <span x-text="item.name"></span>
                                             <div class="text-[10px] text-neutral-500" x-text="item.generic_name"></div>
+                                            <div class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold" x-show="item.priceSource === 'Partnership'" x-cloak>
+                                                <span x-text="selectedCustomerTypeName || 'Partnership'"></span> price:
+                                                <span x-text="'₱' + item.price.toFixed(2)"></span>
+                                                <span class="text-neutral-400 font-normal" x-text="'(walk-in ₱' + item.regularPrice.toFixed(2) + ')'"></span>
+                                            </div>
                                         </td>
                                         <td class="py-2 px-2 text-neutral-500 dark:text-neutral-400 text-center whitespace-nowrap">
                                             <span x-text="item.quantity + ' ' + item.unit"></span>

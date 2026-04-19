@@ -23,7 +23,8 @@ final class TransactionsExport implements FromQuery, WithHeadings, WithMapping, 
         private readonly array $dateRange,
         private readonly ?int $paymentMethodFilter,
         private readonly string $search,
-        private readonly ?string $exactDate = null
+        private readonly ?string $exactDate = null,
+        private readonly array $targetCategories = []
     ) {}
 
     public function query()
@@ -32,6 +33,12 @@ final class TransactionsExport implements FromQuery, WithHeadings, WithMapping, 
             ->with(['user', 'customer', 'paymentMethod'])
             ->withCount('saleItems')
             ->where('branch_id', $this->branchId);
+
+        if (! empty($this->targetCategories)) {
+            $query->whereHas('saleItems.product.productCategory', function ($q) {
+                $q->whereIn('name', $this->targetCategories);
+            });
+        }
 
         // Apply Date Filters
         if ($this->exactDate) {

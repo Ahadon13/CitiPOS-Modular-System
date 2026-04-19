@@ -30,8 +30,7 @@ final class ManageProductCategoryModal extends Component
         return ProductCategory::query()
             ->when($this->search, function ($query) {
                 $searchTerm = '%' . trim($this->search) . '%';
-                $query->where('name', 'like', $searchTerm)
-                      ->orWhere('description', 'like', $searchTerm);
+                $query->where('name', 'like', $searchTerm);
             })
             // Optional: If you want to show how many products belong to this category
             // ->withCount('products')

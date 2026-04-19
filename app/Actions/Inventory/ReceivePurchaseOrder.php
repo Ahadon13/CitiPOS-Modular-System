@@ -2,6 +2,8 @@
 
 namespace App\Actions\Inventory;
 
+use App\Enums\Inventory\TransactionType;
+use App\Models\InventoryTransaction;
 use App\Data\Inventory\ReceiveItemData;
 use App\Models\InventoryBatch;
 use App\Models\ProductPackaging;
@@ -52,13 +54,27 @@ class ReceivePurchaseOrder
 
                 // --- STEP B: INSERT INTO INVENTORY ---
 
-                InventoryBatch::create([
+                $batch = InventoryBatch::create([
                     'branch_id'        => $purchase->branch_id,
                     'product_id'       => $receivedData->product_id,
                     'batch_number'     => $receivedData->batch_number,
                     'expiration_date'  => $receivedData->expiration_date,
                     'quantity_on_hand' => $baseQuantityToAdd, // Store in Base Unit!
                     'cost_per_unit'    => $baseCostPerUnit,   // Base Cost for accurate COGS!
+                ]);
+
+                // --- STEP B.5: WRITE TO LEDGER ---
+                InventoryTransaction::create([
+                    'branch_id' => $purchase->branch_id,
+                    'product_id' => $receivedData->product_id,
+                    'inventory_batch_id' => $batch->id,
+                    'user_id' => auth()->id() ?? 1,
+                    'type' => TransactionType::Purchase,
+                    'quantity' => $baseQuantityToAdd, // Positive for IN
+                    'running_balance' => $baseQuantityToAdd,
+                    'unit_cost' => $baseCostPerUnit,
+                    'reference_type' => Purchase::class,
+                    'reference_id' => $purchase->id,
                 ]);
 
                 // --- STEP C: UPDATE THE PURCHASE ITEM RECORD ---

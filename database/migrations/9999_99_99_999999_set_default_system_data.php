@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Enums\Product\Unit;
+use App\Enums\Product\CategoryType;
 use App\Models\CustomerType;
 use App\Models\PaymentMethod;
 use App\Models\ProductCategory;
@@ -44,9 +45,9 @@ return new class extends Migration
         CustomerType::create(['name' => 'PWD', 'discount_percentage' => 20.00]);
 
         // Create default product categories
-        ProductCategory::create(['name' => 'Pharmacy']);
-        ProductCategory::create(['name' => 'Grocery']);
-        ProductCategory::create(['name' => 'Motor Parts']);
+        foreach (CategoryType::cases() as $categoryType) {
+            ProductCategory::firstOrCreate(['name' => $categoryType->value]);
+        }
 
         // Create default units from enums
         foreach (Unit::cases() as $unit) {

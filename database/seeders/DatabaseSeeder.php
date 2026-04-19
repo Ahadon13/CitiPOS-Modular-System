@@ -20,13 +20,12 @@ final class DatabaseSeeder extends Seeder
     public function run(): void
     {
          // These replace your old Enums
-        $catPharmacy = ProductCategory::where('name', 'Pharmacy')->first();
-        $catMotor = ProductCategory::where('name', 'Motor Parts')->first();
+        $catPharmacy = ProductCategory::where('name', \App\Enums\Product\CategoryType::Pharmacy->value)->first();
+        $catMotor = ProductCategory::where('name', \App\Enums\Product\CategoryType::MotorShop->value)->first();
         // 1. Create Branches
         $mainBranch = Branch::create(['product_category_id' => $catPharmacy->id, 'name' => 'Main Branch - Tagum', 'address' => 'Tagum City']);
         $downtownBranch = Branch::create(['product_category_id' => $catPharmacy->id, 'name' => 'Downtown Branch', 'address' => 'Tagum City']);
 
-        // 2. Create Users
         // 2. Create Users
 
         $admin = User::create([

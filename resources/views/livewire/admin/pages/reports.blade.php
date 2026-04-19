@@ -36,7 +36,7 @@
             </div>
 
             {{-- Date Filter --}}
-            <div class="w-full sm:w-64">
+            <div class="w-full sm:w-64" wire:ignore>
                 <x-ui.field class="mb-0">
                     <x-ui.label class="text-xs text-neutral-500">Date Range</x-ui.label>
                     <x-ui-date range wire:model.live="dateRange" format="YYYY-MM-DD" placeholder="Last 30 Days (Default)" />
@@ -131,7 +131,7 @@
     {{-- Bottom Data Grids --}}
     <div class="grid grid-cols-1 gap-6">
         {{-- Inventory Snapshot --}}
-        <div class="space-y-4">
+        {{-- <div class="space-y-4">
             <h2 class="text-lg font-bold text-neutral-900 dark:text-white">Current Inventory Snapshot</h2>
             <x-ui.card hoverless size="full" class="bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-900/20 dark:to-[#0a1331] border-indigo-100 dark:border-indigo-900/30">
                 <div class="flex items-center gap-4 mb-4">
@@ -152,6 +152,124 @@
                     <x-ui.button variant="outline" class="w-full justify-center" href="{{ route('admin.branches') }}">
                         Manage Branches &rarr;
                     </x-ui.button>
+                </div>
+            </x-ui.card>
+        </div> --}}
+
+        {{-- Inventory Ledger (In & Out Report) --}}
+        <div class="space-y-4 lg:col-span-2">
+            {{-- Table Header with Export Button --}}
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-4">
+                <h2 class="text-lg font-bold text-neutral-900 dark:text-white">Stock Movement Ledger (In & Out)</h2>
+                <x-ui.button wire:click="exportLedger" wire:loading.attr="disabled" icon="arrow-down-tray" variant="outline" size="sm">
+                    <span wire:loading.remove wire:target="exportLedger">Export</span>
+                    <span wire:loading wire:target="exportLedger">Generating...</span>
+                </x-ui.button>
+            </div>
+
+            <x-ui.card hoverless size="full" class="p-0">
+
+                {{-- Table Filters --}}
+                <div class="px-6 py-5 border-b border-black/10 dark:border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div class="w-full md:w-80">
+                        <x-ui.input wire:model.live.debounce.300ms="search" leftIcon="magnifying-glass" clearable placeholder="Search products..." class="w-full" />
+                    </div>
+
+                    {{-- NEW: Transaction Type Filter --}}
+                    <div class="w-full sm:w-64">
+                        <select wire:model.live="transactionType" class="w-full text-sm rounded-lg border-neutral-300 dark:border-neutral-700 dark:bg-[#0a1331] text-neutral-700 dark:text-neutral-200 focus:ring-blue-500">
+                            <option value="">All Movement Types</option>
+                            @foreach($this->transactionTypes as $type)
+                            <option value="{{ $type['value'] }}">{{ $type['label'] }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <div class="w-full overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left text-sm whitespace-nowrap">
+                        <thead class="bg-neutral-50 dark:bg-[#0a1331] text-xs uppercase text-neutral-500 border-b border-black/10 dark:border-white/10">
+                            <tr>
+                                <th class="px-6 py-4">Date</th>
+                                <th class="px-6 py-4">Product Details</th>
+                                <th class="px-6 py-4">Type</th>
+                                <th class="px-6 py-4 text-center">Qty Change</th>
+                                <th class="px-6 py-4 text-center">Running Bal.</th>
+                                <th class="px-6 py-4">Branch / User</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-black/10 dark:divide-white/10 bg-white dark:bg-[#060A23]">
+                            @forelse ($this->stockMovements as $tx)
+                            <tr class="hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors">
+                                {{-- Date --}}
+                                <td class="px-6 py-4">
+                                    <div class="font-bold text-neutral-900 dark:text-white">{{ $tx->created_at->format('M d, Y') }}</div>
+                                    <div class="text-xs text-neutral-500">{{ $tx->created_at->format('h:i A') }}</div>
+                                </td>
+
+                                {{-- Product --}}
+                                <td class="px-6 py-4">
+                                    <div class="font-bold text-neutral-900 dark:text-white">
+                                        {{ $tx->product->brand_name ?? $tx->product->name ?? $tx->product->product_code ?? 'Unknown product' }}
+                                    </div>
+                                    <div class="text-xs text-neutral-500">
+                                        @if($tx->product->generic_name || $tx->product->dosage || $tx->product->form)
+                                            {{ trim(($tx->product->generic_name ?? '') . ' ' . (($tx->product->dosage ?? '') ? "- {$tx->product->dosage}" : '') . ' ' . (($tx->product->form ?? '') ? "({$tx->product->form})" : '')) }}
+                                        @else
+                                            {{ $tx->product->product_code ?? 'No product code' }}
+                                        @endif
+                                    </div>
+                                    <div class="text-xs text-neutral-500 mt-0.5">
+                                        {{ $tx->product->category->name ?? 'Uncategorized' }}
+                                    </div>
+                                </td>
+
+                                {{-- Movement Type Badge (Using the Enum Helpers) --}}
+                                <td class="px-6 py-4">
+                                    <span class="inline-flex items-center px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider {{ $tx->type->colorBadge() }}">
+                                        {{ $tx->type->label() }}
+                                    </span>
+                                </td>
+
+                                {{-- Quantity IN or OUT --}}
+                                <td class="px-6 py-4 text-center">
+                                    <span class="font-black {{ $tx->type->isAddition() ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                        {{ $tx->type->isAddition() ? '+' : '' }}{{ rtrim(rtrim($tx->quantity, '0'), '.') }}
+                                    </span>
+                                </td>
+
+                                {{-- Running Balance (What was left on the shelf after this move) --}}
+                                <td class="px-6 py-4 text-center font-bold text-neutral-700 dark:text-neutral-300">
+                                    {{ rtrim(rtrim($tx->running_balance, '0'), '.') }}
+                                </td>
+
+                                {{-- Location and Operator --}}
+                                <td class="px-6 py-4">
+                                    <div class="text-neutral-900 dark:text-white text-xs font-semibold">{{ $tx->branch->name }}</div>
+                                    <div class="text-[10px] text-neutral-500">By: {{ $tx->user->name }}</div>
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="6" class="px-6 py-12 text-center text-neutral-500">
+                                    <x-ui.empty>
+                                        <x-ui.empty.media class="bg-neutral-100 dark:bg-white/5 rounded-full size-12 flex items-center justify-center">
+                                            <x-ui.icon name="archive-box-x-mark" class="size-6 text-neutral-400" />
+                                        </x-ui.empty.media>
+                                        <x-ui.empty.contents>
+                                            <x-ui.text>No stock movements found for the selected filters.</x-ui.text>
+                                        </x-ui.empty.contents>
+                                    </x-ui.empty>
+                                </td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+
+                {{-- Pagination --}}
+                <div class="border-t border-black/10 dark:border-white/10 px-4 pb-3 flex justify-center w-full">
+                    <x-ui.pagination wire:model.live="perPage" :per-page-options="$perPageOptions" :data="$this->stockMovements" />
                 </div>
             </x-ui.card>
         </div>

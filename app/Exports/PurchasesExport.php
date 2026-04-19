@@ -23,7 +23,8 @@ final class PurchasesExport implements FromQuery, WithHeadings, WithMapping, Sho
         private readonly int $branchId,
         private readonly string $statusFilter,
         private readonly ?int $supplierFilter,
-        private readonly string $search
+        private readonly string $search,
+        private readonly array $targetCategories = []
     ) {}
 
     public function query()
@@ -32,6 +33,12 @@ final class PurchasesExport implements FromQuery, WithHeadings, WithMapping, Sho
             ->with(['supplier', 'user'])
             ->withCount('purchaseItems')
             ->where('branch_id', $this->branchId);
+
+        if (! empty($this->targetCategories)) {
+            $query->whereHas('purchaseItems.product.productCategory', function ($q) {
+                $q->whereIn('name', $this->targetCategories);
+            });
+        }
 
         // Apply Status Filter
         if ($this->statusFilter !== 'all') {

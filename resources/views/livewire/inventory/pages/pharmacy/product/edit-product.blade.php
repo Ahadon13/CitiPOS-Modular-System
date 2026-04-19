@@ -1,5 +1,6 @@
 <div class="max-w-7xl mx-auto space-y-6"
     x-data="{
+        activeTab: 'details',
         packagings: @entangle('form.packagings'),
         baseUnitId: @entangle('form.base_unit_id'),
         allUnits: @js($this->units), // Load the master list of units into Alpine
@@ -65,239 +66,312 @@
          </x-ui.button>
     </div>
 
-    <form wire:submit.prevent="save" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    {{-- TABS NAVIGATION --}}
+    <div class="border-b border-neutral-200 dark:border-white/10 mb-6">
+        <nav class="-mb-px flex gap-6">
+            <button type="button" x-on:click="activeTab = 'details'" :class="activeTab === 'details' ? 'border-blue-500 text-blue-600 dark:text-blue-400' : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'" class="whitespace-nowrap border-b-2 py-4 px-1 text-sm font-bold transition-colors">
+                1. Product & Packagings
+            </button>
+            <button type="button" x-on:click="activeTab = 'pricing'" :class="activeTab === 'pricing' ? 'border-blue-500 text-blue-600 dark:text-blue-400' : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'" class="whitespace-nowrap border-b-2 py-4 px-1 text-sm font-bold transition-colors">
+                2. Partnership Pricing
+            </button>
+        </nav>
+    </div>
 
-        {{-- LEFT COLUMN: Basic Details --}}
-        <div class="lg:col-span-2 space-y-6">
-            <x-ui.card hoverless size="full">
-                <x-ui.heading level="h3" size="md" class="mb-4">Product Information</x-ui.heading>
+    {{-- ========================================== --}}
+    {{-- TAB 1: PRODUCT DETAILS & PACKAGING FORM --}}
+    {{-- ========================================== --}}
+    <div x-show="activeTab === 'details'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0">
+        <form wire:submit.prevent="save" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <x-ui.field required>
-                        <x-ui.label>Brand Name</x-ui.label>
-                        <x-ui.input wire:model="form.brand_name" placeholder="e.g. Biogesic" />
-                        <x-ui.error name="form.brand_name" />
-                    </x-ui.field>
+            {{-- LEFT COLUMN: Basic Details --}}
+            <div class="lg:col-span-2 space-y-6">
+                <x-ui.card hoverless size="full">
+                    <x-ui.heading level="h3" size="md" class="mb-4">Product Information</x-ui.heading>
 
-                    <x-ui.field required>
-                        <x-ui.label>Generic Name</x-ui.label>
-                        <x-ui.input wire:model="form.generic_name" placeholder="e.g. Paracetamol" />
-                        <x-ui.error name="form.generic_name" />
-                    </x-ui.field>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <x-ui.field required>
+                            <x-ui.label>Brand Name</x-ui.label>
+                            <x-ui.input wire:model="form.brand_name" placeholder="e.g. Biogesic" />
+                            <x-ui.error name="form.brand_name" />
+                        </x-ui.field>
 
-                    <x-ui.field required>
-                        <x-ui.label>Dosage</x-ui.label>
-                        <x-ui.input wire:model="form.dosage" placeholder="e.g. 500mg" />
-                        <x-ui.error name="form.dosage" />
-                    </x-ui.field>
+                        <x-ui.field required>
+                            <x-ui.label>Generic Name</x-ui.label>
+                            <x-ui.input wire:model="form.generic_name" placeholder="e.g. Paracetamol" />
+                            <x-ui.error name="form.generic_name" />
+                        </x-ui.field>
 
-                    <x-ui.field>
-                        <x-ui.label>Form</x-ui.label>
-                        <x-ui.input wire:model="form.form" placeholder="e.g. Tablet" />
-                        <x-ui.error name="form.form" />
-                    </x-ui.field>
+                        <x-ui.field required>
+                            <x-ui.label>Dosage</x-ui.label>
+                            <x-ui.input wire:model="form.dosage" placeholder="e.g. 500mg" />
+                            <x-ui.error name="form.dosage" />
+                        </x-ui.field>
 
-                    <x-ui.field required>
-                        <x-ui.label>Supplier</x-ui.label>
+                        <x-ui.field>
+                            <x-ui.label>Form (Optional)</x-ui.label>
+                            <x-ui.input wire:model="form.form" placeholder="e.g. Tablet" />
+                            <x-ui.error name="form.form" />
+                        </x-ui.field>
+
+                        <x-ui.field required>
+                            <x-ui.label>Supplier</x-ui.label>
+                            <x-ui-select.styled
+                                invalidate
+                                wire:model="form.supplier_id"
+                                :options="$this->suppliers"
+                                searchable
+                                placeholder="Select or create a supplier"
+                            >
+                                <x-slot:after>
+                                    <div x-show="search?.length > 0" class="px-2 py-2 border-t border-gray-100 dark:border-white/10">
+                                        <x-ui.button class="w-full justify-center" size="sm" variant="outline" x-on:click="show = false; $wire.createSupplier(search)">
+                                            <span x-html="`Create new supplier: <b>${search}</b>`"></span>
+                                        </x-ui.button>
+                                    </div>
+                                </x-slot:after>
+                            </x-ui-select.styled>
+                            <x-ui.error name="form.supplier_id" />
+                        </x-ui.field>
+
+                        {{-- Product Code --}}
+                        <x-ui.field required x-data="{
+                            generateCode() {
+                                    // Generates a string like 'PRD-X7B9A2'
+                                    let randomStr = Math.random().toString(36).substring(2, 8).toUpperCase();
+                                    $wire.set('form.product_code', 'PRD-' + randomStr);
+                                }
+                            }">
+                            <x-ui.label>Product Code</x-ui.label>
+                            <div class="flex items-start gap-2">
+                                <div class="flex-1">
+                                    <x-ui.input
+                                        wire:model="form.product_code"
+                                        placeholder="e.g. PRD-001"
+                                    />
+                                </div>
+                                <x-ui.button
+                                    type="button"
+                                    variant="outline"
+                                    icon="arrow-path"
+                                    x-on:click="generateCode()"
+                                    class="shrink-0"
+                                    size="sm"
+                                    title="Generate Random Code"
+                                >
+                                    Generate
+                                </x-ui.button>
+                            </div>
+                            <x-ui.error name="form.product_code" />
+                        </x-ui.field>
+                    </div>
+                    <x-ui.field required class="mt-5">
+                        <x-ui.label>Product Category</x-ui.label>
                         <x-ui-select.styled
                             invalidate
-                            wire:model="form.supplier_id"
-                            :options="$this->suppliers"
+                            wire:model="form.category_id"
+                            :options="$this->categories"
                             searchable
-                            placeholder="Select or create a supplier"
+                            placeholder="Select or create a Category (e.g. Pain Relief)"
                         >
-                            <x-slot:after>
-                                <div x-show="search?.length > 0" class="px-2 py-2 border-t border-gray-100 dark:border-white/10">
-                                    <x-ui.button class="w-full justify-center" size="sm" variant="outline" x-on:click="show = false; $wire.createSupplier(search)">
-                                        <span x-html="`Create new supplier: <b>${search}</b>`"></span>
-                                    </x-ui.button>
-                                </div>
-                            </x-slot:after>
+                        {{-- Slot for the "Create" button at the bottom of the dropdown --}}
+                        <x-slot:after>
+                            <div
+                                x-show="search?.length > 0"
+                                class="px-2 py-2 border-t border-gray-100 dark:border-white/10"
+                            >
+                                <x-ui.button
+                                    class="w-full justify-center"
+                                    size="sm"
+                                    variant="outline"
+                                    {{-- 1. Hide the dropdown, 2. Call Livewire method with the search term --}}
+                                    x-on:click="show = false; $wire.createCategory(search)"
+                                >
+                                    <span x-html="`Create new category: <b>${search}</b>`"></span>
+                                </x-ui.button>
+                            </div>
+                        </x-slot:after>
                         </x-ui-select.styled>
-                        <x-ui.error name="form.supplier_id" />
+                        <x-ui.error name="form.category_id" />
                     </x-ui.field>
 
-                    {{-- Product Code --}}
-                    <x-ui.field required x-data="{
-                        generateCode() {
-                                // Generates a string like 'PRD-X7B9A2'
-                                let randomStr = Math.random().toString(36).substring(2, 8).toUpperCase();
-                                $wire.set('form.product_code', 'PRD-' + randomStr);
-                            }
-                        }">
-                        <x-ui.label>Product Code</x-ui.label>
-                        <div class="flex items-start gap-2">
-                            <div class="flex-1">
-                                <x-ui.input
-                                    wire:model="form.product_code"
-                                    placeholder="e.g. PRD-001"
-                                />
-                            </div>
-                            <x-ui.button
-                                type="button"
-                                variant="outline"
-                                icon="arrow-path"
-                                x-on:click="generateCode()"
-                                class="shrink-0"
-                                size="sm"
-                                title="Generate Random Code"
-                            >
-                                Generate
-                            </x-ui.button>
-                        </div>
-                        <x-ui.error name="form.product_code" />
-                    </x-ui.field>
-                </div>
-                <x-ui.field required class="mt-5">
-                    <x-ui.label>Product Category</x-ui.label>
-                    <x-ui-select.styled
-                        invalidate
-                        wire:model="form.category_id"
-                        :options="$this->categories"
-                        searchable
-                        placeholder="Select or create a Category (e.g. Pain Relief)"
-                    >
-                    {{-- Slot for the "Create" button at the bottom of the dropdown --}}
-                    <x-slot:after>
-                        <div
-                            x-show="search?.length > 0"
-                            class="px-2 py-2 border-t border-gray-100 dark:border-white/10"
-                        >
-                            <x-ui.button
-                                class="w-full justify-center"
-                                size="sm"
-                                variant="outline"
-                                {{-- 1. Hide the dropdown, 2. Call Livewire method with the search term --}}
-                                x-on:click="show = false; $wire.createCategory(search)"
-                            >
-                                <span x-html="`Create new category: <b>${search}</b>`"></span>
-                            </x-ui.button>
-                        </div>
-                    </x-slot:after>
-                    </x-ui-select.styled>
-                    <x-ui.error name="form.category_id" />
-                </x-ui.field>
-
-                <x-ui.field class="mt-5">
-                    <x-ui.label>Description (Optional)</x-ui.label>
-                    <x-ui.textarea wire:model="form.description" placeholder="e.g. Pain reliever" rows="3" />
-                    <x-ui.error name="form.description" />
-                </x-ui.field>
-
-                <div class="mt-5 flex items-center gap-6">
-                    <x-ui.checkbox wire:model="form.requires_prescription" label="Requires Prescription" />
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5 pt-5 border-t border-black/5 dark:border-white/5">
-
-                    {{-- Base Unit derived from Packagings --}}
-                    <x-ui.field required>
-                        <x-ui.label>Inventory Tracking Unit (Base Unit)</x-ui.label>
-
-                        {{-- Using a native styled select for guaranteed Alpine reactivity on the dynamic array --}}
-                        <select x-model="baseUnitId" class="w-full h-10 px-3 rounded-md border border-neutral-200 bg-white text-sm dark:border-white/10 dark:bg-card dark:text-white focus:border-blue-500 focus:ring-blue-500">
-                            <option value="">Select unit from configured packagings...</option>
-                            <template x-for="unit in availableBaseUnits" :key="unit.value">
-                                <option :value="unit.value" x-text="unit.label"></option>
-                            </template>
-                        </select>
-
-                        {{-- Helpful hint if array is empty --}}
-                        <p x-show="availableBaseUnits.length === 0" x-cloak class="text-xs text-orange-500 mt-1">
-                            Add a packaging on the right to select your base unit.
-                        </p>
-                        <x-ui.error name="form.base_unit_id" />
+                    <x-ui.field class="mt-5">
+                        <x-ui.label>Description (Optional)</x-ui.label>
+                        <x-ui.textarea wire:model="form.description" placeholder="e.g. Pain reliever" rows="3" />
+                        <x-ui.error name="form.description" />
                     </x-ui.field>
 
-                    <x-ui.field required>
-                        <x-ui.label>Low Stock Alert Level</x-ui.label>
-                        <x-ui.input type="number" step="any" wire:model="form.reorder_level" placeholder="e.g 50.00" />
-                        <x-ui.error name="form.reorder_level" />
-                    </x-ui.field>
-                </div>
-            </x-ui.card>
-        </div>
-
-        {{-- RIGHT COLUMN: Unified Packagings --}}
-        <div class="lg:col-span-1 space-y-6">
-
-            <x-ui.card hoverless size="full">
-                <div class="flex flex-col mb-4">
-                    <div class="flex items-center justify-between mb-1">
-                        <x-ui.heading level="h3" size="sm">Packagings & Pricing</x-ui.heading>
-                        <x-ui.button type="button" size="xs" x-on:click="packagings.push({ unit_id: '', conversion_factor: '', price: '', barcode: '' })" icon="plus">
-                            Add Pack
-                        </x-ui.button>
+                    <div class="mt-5 flex items-center gap-6">
+                        <x-ui.checkbox wire:model="form.requires_prescription" label="Requires Prescription" />
                     </div>
-                    <p class="text-xs text-neutral-500">Configure prices for your Base Unit and any larger packs (Boxes, Cartons).</p>
-                </div>
 
-                <div class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5 pt-5 border-t border-black/5 dark:border-white/5">
 
-                    <template x-for="(pkg, index) in packagings" :key="index">
-                        <div class="p-4 bg-gray-50 dark:bg-white/5 rounded-lg relative group border"
-                             :class="pkg.unit_id == baseUnitId && baseUnitId !== null ? 'border-blue-300 dark:border-blue-800' : 'border-transparent dark:border-white/5'">
+                        {{-- Base Unit derived from Packagings --}}
+                        <x-ui.field required>
+                            <x-ui.label>Inventory Tracking Unit (Base Unit)</x-ui.label>
 
-                            {{-- Badge if it's the Base Unit --}}
-                            <div x-show="pkg.unit_id == baseUnitId && baseUnitId !== null" class="absolute -top-2.5 left-3 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 text-[10px] font-bold px-2 py-0.5 rounded border border-blue-200 dark:border-blue-800">
-                                Base Unit
-                            </div>
+                            {{-- Using a native styled select for guaranteed Alpine reactivity on the dynamic array --}}
+                            <select x-model="baseUnitId" class="w-full h-10 px-3 rounded-md border border-neutral-200 bg-white text-sm dark:border-white/10 dark:bg-card dark:text-white focus:border-blue-500 focus:ring-blue-500">
+                                <option value="">Select unit from configured packagings...</option>
+                                <template x-for="unit in availableBaseUnits" :key="unit.value">
+                                    <option :value="unit.value" x-text="unit.label"></option>
+                                </template>
+                            </select>
 
-                            <button type="button" x-on:click="packagings.splice(index, 1)" class="absolute top-3 right-3 text-gray-400 hover:text-red-500 transition-colors">
-                                <x-ui.icon name="x-mark" class="size-5" />
-                            </button>
+                            {{-- Helpful hint if array is empty --}}
+                            <p x-show="availableBaseUnits.length === 0" x-cloak class="text-xs text-orange-500 mt-1">
+                                Add a packaging on the right to select your base unit.
+                            </p>
+                            <x-ui.error name="form.base_unit_id" />
+                        </x-ui.field>
 
-                            <div class="grid grid-cols-1 gap-4 mt-2">
-                                <x-ui.field required>
-                                    <x-ui.label>Unit Type</x-ui.label>
-                                    <x-ui-select.styled invalidate x-model="pkg.unit_id" :options="$this->units" searchable placeholder="Select Unit" />
-                                </x-ui.field>
+                        <x-ui.field required>
+                            <x-ui.label>Low Stock Alert Level</x-ui.label>
+                            <x-ui.input type="number" step="any" wire:model="form.reorder_level" placeholder="e.g 50.00" />
+                            <x-ui.error name="form.reorder_level" />
+                        </x-ui.field>
+                    </div>
+                </x-ui.card>
+            </div>
 
-                                <div class="flex gap-3">
-                                    <x-ui.field class="w-1/2!" required>
-                                        <x-ui.label>Conversion</x-ui.label>
-                                        {{-- Alpine Magic: If this is the base unit, force to 1 and disable! --}}
-                                        <x-ui.input
-                                            type="number" step="any"
-                                            x-model="pkg.conversion_factor"
-                                            placeholder="e.g. 10"
-                                            x-bind:readonly="pkg.unit_id == baseUnitId && baseUnitId !== null"
-                                        />
-                                    </x-ui.field>
+            {{-- RIGHT COLUMN: Unified Packagings --}}
+            <div class="lg:col-span-1 space-y-6">
 
-                                    <x-ui.field class="w-1/2!" required>
-                                        <x-ui.label>Selling Price</x-ui.label>
-                                        <x-ui.input type="number" step="any" x-model="pkg.price" placeholder="e.g. 50.00" />
-                                    </x-ui.field>
+                <x-ui.card hoverless size="full">
+                    <div class="flex flex-col mb-4">
+                        <div class="flex items-center justify-between mb-1">
+                            <x-ui.heading level="h3" size="sm">Packagings & Pricing</x-ui.heading>
+                            <x-ui.button type="button" size="xs" x-on:click="packagings.push({ unit_id: '', conversion_factor: '', price: '', barcode: '' })" icon="plus">
+                                Add Pack
+                            </x-ui.button>
+                        </div>
+                        <p class="text-xs text-neutral-500">Configure prices for your Base Unit and any larger packs (Boxes, Cartons).</p>
+                    </div>
+
+                    <div class="space-y-4">
+
+                        <template x-for="(pkg, index) in packagings" :key="index">
+                            <div class="p-4 bg-gray-50 dark:bg-white/5 rounded-lg relative group border"
+                                :class="pkg.unit_id == baseUnitId && baseUnitId !== null ? 'border-blue-300 dark:border-blue-800' : 'border-transparent dark:border-white/5'">
+
+                                {{-- Badge if it's the Base Unit --}}
+                                <div x-show="pkg.unit_id == baseUnitId && baseUnitId !== null" class="absolute -top-2.5 left-3 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 text-[10px] font-bold px-2 py-0.5 rounded border border-blue-200 dark:border-blue-800">
+                                    Base Unit
                                 </div>
 
-                                <x-ui.field>
-                                    <x-ui.label>Barcode (Optional)</x-ui.label>
-                                    <x-ui.input x-model="pkg.barcode" icon="qr-code" />
-                                </x-ui.field>
+                                <button type="button" x-on:click="packagings.splice(index, 1)" class="absolute top-3 right-3 text-gray-400 hover:text-red-500 transition-colors">
+                                    <x-ui.icon name="x-mark" class="size-5" />
+                                </button>
+
+                                <div class="grid grid-cols-1 gap-4 mt-2">
+                                    <x-ui.field required>
+                                        <x-ui.label>Unit Type</x-ui.label>
+                                        <x-ui-select.styled invalidate x-model="pkg.unit_id" :options="$this->units" searchable placeholder="Select Unit" />
+                                    </x-ui.field>
+
+                                    <div class="flex gap-3">
+                                        <x-ui.field class="w-1/2!" required>
+                                            <x-ui.label>Conversion</x-ui.label>
+                                            {{-- Alpine Magic: If this is the base unit, force to 1 and disable! --}}
+                                            <x-ui.input
+                                                type="number" step="any"
+                                                x-model="pkg.conversion_factor"
+                                                placeholder="e.g. 10"
+                                                x-bind:readonly="pkg.unit_id == baseUnitId && baseUnitId !== null"
+                                            />
+                                        </x-ui.field>
+
+                                        <x-ui.field class="w-1/2!" required>
+                                            <x-ui.label>Selling Price</x-ui.label>
+                                            <x-ui.input type="number" step="any" x-model="pkg.price" placeholder="e.g. 50.00" />
+                                        </x-ui.field>
+                                    </div>
+
+                                    <x-ui.field>
+                                        <x-ui.label>Barcode (Optional)</x-ui.label>
+                                        <x-ui.input x-model="pkg.barcode" icon="qr-code" />
+                                    </x-ui.field>
+                                </div>
                             </div>
+                        </template>
+
+                        {{-- Alert if array is empty --}}
+                        <div x-show="packagings.length === 0" x-cloak class="text-center p-6 border border-dashed rounded-lg border-neutral-300 dark:border-white/20 text-neutral-500 text-sm">
+                            You must add at least one packaging to configure pricing and set your Base Unit.
                         </div>
-                    </template>
-
-                    {{-- Alert if array is empty --}}
-                    <div x-show="packagings.length === 0" x-cloak class="text-center p-6 border border-dashed rounded-lg border-neutral-300 dark:border-white/20 text-neutral-500 text-sm">
-                        You must add at least one packaging to configure pricing and set your Base Unit.
                     </div>
-                </div>
 
-                {{-- General Validation Error --}}
-                <x-ui.error name="form.base_unit_id" class="mt-4" />
-                <x-ui.error name="form.packagings.*" class="mt-4 p-3 bg-red-50 dark:bg-red-500/10 rounded-md border border-red-200 dark:border-red-500/20" />
-            </x-ui.card>
+                    {{-- General Validation Error --}}
+                    <x-ui.error name="form.base_unit_id" class="mt-4" />
+                    <x-ui.error name="form.packagings.*" class="mt-4 p-3 bg-red-50 dark:bg-red-500/10 rounded-md border border-red-200 dark:border-red-500/20" />
+                </x-ui.card>
+            </div>
+
+            <div class="col-span-1 lg:col-span-3 gap-3 flex justify-end">
+                <x-ui.button variant="danger" href="{{ route('inventory.pharmacy.products') }}">
+                    Cancel
+                </x-ui.button>
+                <x-ui.button type="submit" size="md" icon="check" wire:loading.attr="disabled" wire:target="save">
+                    Save Changes
+                </x-ui.button>
+            </div>
+        </form>
+    </div>
+
+    {{-- ========================================== --}}
+    {{-- TAB 2: PARTNERSHIP PRICING (DSWD / LGU) --}}
+    {{-- ========================================== --}}
+    <div x-show="activeTab === 'pricing'" style="display: none;" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0">
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 space-y-6">
+                <x-ui.card hoverless size="full">
+                    <x-ui.heading level="h3" size="md" class="mb-4">Configure Price Books</x-ui.heading>
+                    <p class="text-sm text-neutral-500 mb-6">Select a branch, then assign the mandated partnership prices for each specific packaging unit. If left blank, the system will use the regular retail price.</p>
+
+                    <div class="space-y-8">
+                        {{-- Loop through the actual saved packagings from the database --}}
+                        @foreach($product->productPackagings as $packaging)
+                        <div class="pb-6 border-b border-neutral-200 dark:border-white/10 last:border-0 last:pb-0">
+
+                            <div class="mb-4 flex items-center justify-between bg-neutral-50 dark:bg-[#0a1331] p-3 rounded-lg border border-neutral-200 dark:border-white/10">
+                                <h4 class="font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+                                    <x-ui.icon name="cube" class="size-5 text-blue-500" />
+                                    {{ $packaging->unit->name }}
+                                    @if($packaging->is_base)
+                                    <span class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded uppercase tracking-wider ml-2">Base Unit</span>
+                                    @endif
+                                </h4>
+                                <div class="text-sm font-bold text-neutral-500">
+                                    Retail Price: <span class="text-neutral-900 dark:text-white">@money($packaging->price)</span>
+                                </div>
+                            </div>
+
+                            {{-- The Livewire Component we built specifically for Partnership Pricing --}}
+                            <livewire:inventory.pages.pharmacy.common.manage-partnership :packaging="$packaging" :key="'pricing-'.$packaging->id" />
+
+                        </div>
+                        @endforeach
+                    </div>
+                </x-ui.card>
+            </div>
+
+            {{-- Right Column Info Widget --}}
+            <div class="lg:col-span-1">
+                <x-ui.card hoverless class="bg-blue-50/50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-900/30">
+                    <h4 class="font-bold text-blue-900 dark:text-blue-400 mb-2 flex items-center gap-2">
+                        <x-ui.icon name="information-circle" class="size-5" />
+                        How Pricing Works
+                    </h4>
+                    <ul class="text-sm text-blue-800/80 dark:text-blue-300/80 space-y-3 list-disc pl-4">
+                        <li>Prices are locked to specific <strong>Branches</strong>. A DSWD price in Branch A does not affect Branch B.</li>
+                        <li>Prices are specific to the <strong>Packaging</strong>. You must set a separate price for a Box versus a single Piece.</li>
+                        <li>If a cashier selects a partnership at the POS, the system instantly overrides the retail price with the price you set here.</li>
+                    </ul>
+                </x-ui.card>
+            </div>
         </div>
 
-        <div class="col-span-1 lg:col-span-3 gap-3 flex justify-end">
-            <x-ui.button variant="danger" href="{{ route('inventory.pharmacy.products') }}">
-                Cancel
-            </x-ui.button>
-            <x-ui.button type="submit" size="md" icon="check" wire:loading.attr="disabled" wire:target="save">
-                Save Changes
-            </x-ui.button>
-        </div>
-    </form>
+    </div>
 </div>

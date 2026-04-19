@@ -197,7 +197,7 @@
 
                      {{-- Batch number --}}
                      <x-ui.field>
-                        <x-ui.label>Batch Number (Optional)</x-ui.label>
+                        <x-ui.label>Batch No. / Lot No. (Optional)</x-ui.label>
                         <x-ui.input
                             label="Batch Number"
                             wire:model="form.batch_number"

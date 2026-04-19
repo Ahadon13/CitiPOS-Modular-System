@@ -41,6 +41,15 @@ window.posApp = (
         },
 
         init() {
+            this.$watch("customerId", () => this.refreshCartPricing());
+            this.$watch("customerMode", () => {
+                if (this.customerMode === "customer") {
+                    this.walkInDiscountTypeId = "";
+                }
+
+                this.refreshCartPricing();
+            });
+
             window.addEventListener("close-modal", (e) => {
                 if (e.detail && e.detail.id === "calculator-modal") {
                     this.isCalculatorOpen = false;
@@ -56,6 +65,23 @@ window.posApp = (
                     }),
                 );
             });
+            window.addEventListener("customer-created", (e) => {
+                if (!e.detail?.customer) return;
+
+                const customer = e.detail.customer;
+                const existingIndex = this.customersData.findIndex(
+                    (item) => item.value == customer.value,
+                );
+
+                if (existingIndex === -1) {
+                    this.customersData.push(customer);
+                } else {
+                    this.customersData[existingIndex] = customer;
+                }
+
+                this.customerId = customer.value;
+                this.refreshCartPricing();
+            });
         },
 
         get netSales() {
@@ -63,6 +89,30 @@ window.posApp = (
                 (sum, item) => sum + item.price * item.quantity,
                 0,
             );
+        },
+
+        get selectedCustomerTypeId() {
+            if (this.customerMode !== "customer" || !this.customerId) {
+                return null;
+            }
+
+            const customer = this.customersData.find(
+                (c) => c.value == this.customerId,
+            );
+
+            return customer?.type_id ?? null;
+        },
+
+        get selectedCustomerType() {
+            const customerTypeId = this.selectedCustomerTypeId;
+
+            if (!customerTypeId) return null;
+
+            return this.customerTypes.find((type) => type.id == customerTypeId);
+        },
+
+        get selectedCustomerTypeName() {
+            return this.selectedCustomerType?.name || "";
         },
 
         get discountPercentage() {
@@ -97,6 +147,66 @@ window.posApp = (
             }
 
             return percentage;
+        },
+
+        getPackageRegularPrice(pkg) {
+            if (!pkg) return 0;
+
+            return parseFloat(pkg.regular_price ?? pkg.price) || 0;
+        },
+
+        getPackagePartnershipPrice(pkg) {
+            if (!pkg) return null;
+
+            const customerTypeId = this.selectedCustomerTypeId;
+            const partnershipPrices = pkg.partnership_prices || {};
+
+            if (
+                customerTypeId &&
+                Object.prototype.hasOwnProperty.call(
+                    partnershipPrices,
+                    String(customerTypeId),
+                )
+            ) {
+                return parseFloat(partnershipPrices[String(customerTypeId)]) || 0;
+            }
+
+            return null;
+        },
+
+        hasPackagePartnershipPrice(pkg) {
+            return this.getPackagePartnershipPrice(pkg) !== null;
+        },
+
+        getPackagePrice(pkg) {
+            const partnershipPrice = this.getPackagePartnershipPrice(pkg);
+
+            return partnershipPrice !== null
+                ? partnershipPrice
+                : this.getPackageRegularPrice(pkg);
+        },
+
+        getPackagePriceSource(pkg) {
+            return this.hasPackagePartnershipPrice(pkg)
+                ? "Partnership"
+                : "Regular";
+        },
+
+        refreshCartPricing() {
+            this.cart = this.cart.map((item) => {
+                const price = this.getPackagePrice(item.packaging);
+                const partnershipPrice = this.getPackagePartnershipPrice(
+                    item.packaging,
+                );
+
+                return {
+                    ...item,
+                    price,
+                    regularPrice: this.getPackageRegularPrice(item.packaging),
+                    partnershipPrice,
+                    priceSource: this.getPackagePriceSource(item.packaging),
+                };
+            });
         },
 
         get discountAmount() {
@@ -138,34 +248,66 @@ window.posApp = (
             return item ? item.quantity : 0;
         },
 
-        updateQuantity(cartId, event, maxStock) {
+        getUsedBaseStock(productId, exceptCartId = null) {
+            return this.cart.reduce((sum, item) => {
+                if (item.product_id != productId || item.cartId === exceptCartId) {
+                    return sum;
+                }
+
+                return sum + item.quantity * item.conversionFactor;
+            }, 0);
+        },
+
+        getMaxQuantityForItem(item) {
+            const remainingBase =
+                item.productStock -
+                this.getUsedBaseStock(item.product_id, item.cartId);
+
+            return Math.max(
+                0,
+                Math.floor(remainingBase / item.conversionFactor),
+            );
+        },
+
+        updateQuantity(cartId, event) {
             let val = parseInt(event.target.value);
             if (isNaN(val) || val < 0) val = 1;
-            if (val > maxStock) val = maxStock;
-
-            event.target.value = val;
             let existingIndex = this.cart.findIndex((i) => i.cartId === cartId);
 
             if (existingIndex !== -1) {
+                const item = this.cart[existingIndex];
+                const maxQuantity = this.getMaxQuantityForItem(item);
+
+                if (val > maxQuantity) val = maxQuantity;
+
+                event.target.value = val;
+
                 if (val === 0) this.cart.splice(existingIndex, 1);
                 else this.cart[existingIndex].quantity = val;
             }
         },
 
-        increase(
-            productId,
-            name,
-            generic_name,
-            productStock,
-            packagings,
-            selectedPkgId,
-        ) {
-            let pkg =
-                packagings.find((p) => p.id == selectedPkgId) || packagings[0];
-            let cartId = productId + "_" + pkg.id; // Unique ID based on product + packaging
+        addProductToCart(product, selectedPkgId) {
+            if (!product || !Array.isArray(product.packagings)) return;
 
-            // Convert global stock to this packaging's capacity
-            let maxAvailable = Math.floor(productStock / pkg.conversion_factor);
+            let pkg =
+                product.packagings.find((p) => p.id == selectedPkgId) ||
+                product.packagings[0];
+
+            if (!pkg) {
+                console.warn("Product has no sellable packaging.", product);
+                return;
+            }
+
+            const conversionFactor = parseFloat(pkg.conversion_factor) || 1;
+            const productStock = parseFloat(product.stock) || 0;
+            let cartId = product.id + "_" + pkg.id; // Unique ID based on product + packaging
+            const remainingBase =
+                productStock - this.getUsedBaseStock(product.id, cartId);
+            let maxAvailable = Math.max(
+                0,
+                Math.floor(remainingBase / conversionFactor),
+            );
 
             let item = this.cart.find((i) => i.cartId === cartId);
 
@@ -174,17 +316,34 @@ window.posApp = (
             } else if (maxAvailable > 0) {
                 this.cart.push({
                     cartId: cartId,
-                    product_id: productId,
+                    product_id: product.id,
                     packaging_id: pkg.id,
-                    name: name,
-                    generic_name: generic_name,
-                    price: pkg.price,
+                    name: product.name,
+                    generic_name: product.generic_name,
+                    price: this.getPackagePrice(pkg),
+                    regularPrice: this.getPackageRegularPrice(pkg),
+                    partnershipPrice: this.getPackagePartnershipPrice(pkg),
+                    priceSource: this.getPackagePriceSource(pkg),
                     quantity: 1,
                     maxStock: maxAvailable,
+                    productStock: productStock,
+                    conversionFactor: conversionFactor,
                     unit: pkg.unit,
+                    packaging: pkg,
                 });
             } else {
                 console.warn("Out of stock for this packaging.");
+            }
+        },
+
+        increaseQuantity(cartId) {
+            let item = this.cart.find((i) => i.cartId === cartId);
+            if (!item) return;
+
+            const maxQuantity = this.getMaxQuantityForItem(item);
+
+            if (item.quantity < maxQuantity) {
+                item.quantity++;
             }
         },
 
@@ -221,19 +380,21 @@ window.posApp = (
         submitToBackend($wire) {
             // Build the final payload
             const payload = {
-                cart: this.cart,
+                cart: this.cart.map((item) => ({
+                    product_id: item.product_id,
+                    packaging_id: item.packaging_id,
+                    quantity: item.quantity,
+                    name: item.name,
+                })),
                 payment_method_id: this.checkoutState.payment_method_id,
                 amount_received: parseFloat(this.checkoutState.amount_received),
                 reference_number: this.checkoutState.reference_number,
                 remarks: this.checkoutState.remarks,
-                change_amount: parseFloat(this.change.toFixed(2)),
                 // Send the calculated discount data so the backend can verify it
                 applied_discount_type_id:
-                    this.customerMode === "walk_in"
+                    this.customerMode === "walk_in" && this.walkInDiscountTypeId
                         ? this.walkInDiscountTypeId
                         : null,
-                discount_amount: this.discountAmount,
-                grand_total: this.total,
             };
 
             $wire.submitOrder(payload);
@@ -285,6 +446,356 @@ window.posApp = (
         },
     };
 };
+
+window.groceryPosApp = (
+    paymentMethods = [],
+    customerTypes = [],
+    customerMode,
+    customerId,
+    customers = [],
+) => {
+    return {
+        cart: [],
+        paymentMethods: paymentMethods,
+        customerTypes: customerTypes,
+        customerMode: customerMode,
+        customerId: customerId,
+        customersData: customers,
+        walkInDiscountTypeId: "",
+        checkoutState: {
+            payment_method_id: "",
+            reference_number: "",
+            amount_received: "",
+            remarks: "",
+        },
+
+        init() {
+            this.$watch("customerMode", () => {
+                if (this.customerMode === "customer") {
+                    this.walkInDiscountTypeId = "";
+                }
+            });
+
+            window.addEventListener("sale-completed", () => {
+                this.cart = [];
+                this.resetCheckout();
+                window.dispatchEvent(
+                    new CustomEvent("close-modal", {
+                        detail: { id: "checkout-modal" },
+                    }),
+                );
+            });
+
+            window.addEventListener("customer-created", (e) => {
+                if (!e.detail?.customer) return;
+
+                const customer = e.detail.customer;
+                const existingIndex = this.customersData.findIndex(
+                    (item) => item.value == customer.value,
+                );
+
+                if (existingIndex === -1) {
+                    this.customersData.push(customer);
+                } else {
+                    this.customersData[existingIndex] = customer;
+                }
+
+                this.customerId = customer.value;
+            });
+        },
+
+        get netSales() {
+            return this.cart.reduce(
+                (sum, item) => sum + item.price * item.quantity,
+                0,
+            );
+        },
+
+        get selectedCustomerTypeId() {
+            if (this.customerMode !== "customer" || !this.customerId) {
+                return null;
+            }
+
+            const customer = this.customersData.find(
+                (c) => c.value == this.customerId,
+            );
+
+            return customer?.type_id ?? null;
+        },
+
+        get discountPercentage() {
+            let typeId = null;
+
+            if (this.customerMode === "customer") {
+                typeId = this.selectedCustomerTypeId;
+            } else if (this.walkInDiscountTypeId) {
+                typeId = this.walkInDiscountTypeId;
+            }
+
+            if (!typeId) return 0;
+
+            const type = this.customerTypes.find((t) => t.id == typeId);
+
+            return type ? (parseFloat(type.discount_percentage) || 0) / 100 : 0;
+        },
+
+        get discountAmount() {
+            return this.netSales * this.discountPercentage;
+        },
+
+        get total() {
+            return Math.max(0, this.netSales - this.discountAmount);
+        },
+
+        get change() {
+            const received = parseFloat(this.checkoutState.amount_received) || 0;
+            return Math.max(0, received - this.total);
+        },
+
+        get requiresReference() {
+            const method = this.paymentMethods.find(
+                (p) => p.id == this.checkoutState.payment_method_id,
+            );
+            return method ? method.requires_reference : false;
+        },
+
+        getPackagePrice(pkg) {
+            if (!pkg) return 0;
+
+            return parseFloat(pkg.regular_price ?? pkg.price) || 0;
+        },
+
+        getQuantityStep(item) {
+            return item?.allowDecimal ? "0.01" : "1";
+        },
+
+        normalizeQuantity(value, item = null) {
+            const quantity = parseFloat(value);
+
+            if (Number.isNaN(quantity) || quantity <= 0) {
+                return item?.allowDecimal ? 0.01 : 1;
+            }
+
+            if (item?.allowDecimal) {
+                return Math.round(quantity * 100) / 100;
+            }
+
+            return Math.floor(quantity);
+        },
+
+        formatQuantity(value) {
+            const quantity = parseFloat(value) || 0;
+            return Number.isInteger(quantity)
+                ? String(quantity)
+                : quantity.toFixed(2).replace(/\.?0+$/, "");
+        },
+
+        getItemQuantity(cartId) {
+            const item = this.cart.find((i) => i.cartId === cartId);
+            return item ? item.quantity : 0;
+        },
+
+        getUsedBaseStock(productId, exceptCartId = null) {
+            return this.cart.reduce((sum, item) => {
+                if (item.product_id != productId || item.cartId === exceptCartId) {
+                    return sum;
+                }
+
+                return sum + item.quantity * item.conversionFactor;
+            }, 0);
+        },
+
+        getMaxQuantityForItem(item) {
+            const remainingBase =
+                item.productStock -
+                this.getUsedBaseStock(item.product_id, item.cartId);
+            const maxQuantity = remainingBase / item.conversionFactor;
+
+            if (item.allowDecimal) {
+                return Math.max(0, Math.floor(maxQuantity * 100) / 100);
+            }
+
+            return Math.max(0, Math.floor(maxQuantity));
+        },
+
+        updateQuantity(cartId, event) {
+            const existingIndex = this.cart.findIndex((i) => i.cartId === cartId);
+
+            if (existingIndex === -1) return;
+
+            const item = this.cart[existingIndex];
+            let value = this.normalizeQuantity(event.target.value, item);
+            const maxQuantity = this.getMaxQuantityForItem(item);
+
+            if (value > maxQuantity) value = maxQuantity;
+
+            event.target.value = this.formatQuantity(value);
+
+            if (value <= 0) {
+                this.cart.splice(existingIndex, 1);
+            } else {
+                this.cart[existingIndex].quantity = value;
+            }
+        },
+
+        addProductToCart(product, selectedPkgId) {
+            if (!product || !Array.isArray(product.packagings)) return;
+
+            const pkg =
+                product.packagings.find((p) => p.id == selectedPkgId) ||
+                product.packagings[0];
+
+            if (!pkg) {
+                console.warn("Product has no sellable packaging.", product);
+                return;
+            }
+
+            const conversionFactor = parseFloat(pkg.conversion_factor) || 1;
+            const productStock = parseFloat(product.stock) || 0;
+            const cartId = product.id + "_" + pkg.id;
+            const allowDecimal = Boolean(pkg.allow_decimal);
+            const remainingBase =
+                productStock - this.getUsedBaseStock(product.id, cartId);
+            const maxAvailable = allowDecimal
+                ? Math.max(0, Math.floor((remainingBase / conversionFactor) * 100) / 100)
+                : Math.max(0, Math.floor(remainingBase / conversionFactor));
+            const step = allowDecimal ? 0.01 : 1;
+            const item = this.cart.find((i) => i.cartId === cartId);
+
+            if (item) {
+                item.quantity = Math.min(maxAvailable, item.quantity + step);
+            } else if (maxAvailable > 0) {
+                this.cart.push({
+                    cartId: cartId,
+                    product_id: product.id,
+                    packaging_id: pkg.id,
+                    name: product.name,
+                    price: this.getPackagePrice(pkg),
+                    quantity: step,
+                    productStock: productStock,
+                    conversionFactor: conversionFactor,
+                    unit: pkg.unit,
+                    packaging: pkg,
+                    allowDecimal: allowDecimal,
+                });
+            } else {
+                console.warn("Out of stock for this packaging.");
+            }
+        },
+
+        increaseQuantity(cartId) {
+            const item = this.cart.find((i) => i.cartId === cartId);
+            if (!item) return;
+
+            const step = item.allowDecimal ? 0.01 : 1;
+            const maxQuantity = this.getMaxQuantityForItem(item);
+
+            item.quantity = Math.min(
+                maxQuantity,
+                Math.round((item.quantity + step) * 100) / 100,
+            );
+        },
+
+        decrease(cartId) {
+            const item = this.cart.find((i) => i.cartId === cartId);
+            if (!item) return;
+
+            const step = item.allowDecimal ? 0.01 : 1;
+            const nextQuantity = Math.round((item.quantity - step) * 100) / 100;
+
+            if (nextQuantity > 0) {
+                item.quantity = nextQuantity;
+            } else {
+                this.removeItem(cartId);
+            }
+        },
+
+        removeItem(cartId) {
+            this.cart = this.cart.filter((i) => i.cartId !== cartId);
+        },
+
+        async clearCart() {
+            const isConfirmed = await window.confirmModal(
+                "Clear Cart",
+                "Are you sure you want to clear the current order?",
+            );
+            if (isConfirmed) this.cart = [];
+        },
+
+        triggerCheckout() {
+            if (this.cart.length === 0) return;
+            this.resetCheckout();
+            window.dispatchEvent(
+                new CustomEvent("open-modal", {
+                    detail: { id: "checkout-modal" },
+                }),
+            );
+        },
+
+        setExactAmount() {
+            this.checkoutState.amount_received = this.total.toFixed(2);
+        },
+
+        resetCheckout() {
+            this.checkoutState = {
+                payment_method_id: "",
+                reference_number: "",
+                amount_received: "",
+                remarks: "",
+            };
+        },
+
+        submitToBackend($wire) {
+            $wire.submitOrder({
+                cart: this.cart.map((item) => ({
+                    product_id: item.product_id,
+                    packaging_id: item.packaging_id,
+                    quantity: item.quantity,
+                    name: item.name,
+                })),
+                payment_method_id: this.checkoutState.payment_method_id,
+                amount_received: parseFloat(this.checkoutState.amount_received),
+                reference_number: this.checkoutState.reference_number,
+                remarks: this.checkoutState.remarks,
+                applied_discount_type_id:
+                    this.customerMode === "walk_in" && this.walkInDiscountTypeId
+                        ? this.walkInDiscountTypeId
+                        : null,
+            });
+        },
+
+        focusSearch() {
+            const searchInput = document.querySelector(
+                'input[wire\\:model\\.live\\.debounce\\.300ms="search"]',
+            );
+            if (searchInput) {
+                searchInput.focus();
+                searchInput.select();
+            }
+        },
+
+        handleKeydown(e) {
+            if (e.key.toLowerCase() === "k" && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                this.focusSearch();
+            }
+            if (e.key === "F1") {
+                e.preventDefault();
+                this.focusSearch();
+            }
+            if (e.key === "F4") {
+                e.preventDefault();
+                this.triggerCheckout();
+            }
+            if (e.key.toLowerCase() === "escape") {
+                e.preventDefault();
+                this.clearCart();
+            }
+        },
+    };
+};
+
+window.motorShopPosApp = window.groceryPosApp;
 
 window.transactionManager = () => {
     return {

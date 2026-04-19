@@ -21,6 +21,7 @@ final class RecordPurchaseForm extends Form
     public ?int $supplier_id = null;
 
     public array $orderItems = [];
+    public bool $requiresExpiration = true;
 
     public function rules(): array
     {
@@ -36,7 +37,9 @@ final class RecordPurchaseForm extends Form
             'orderItems.*.quantity' => ['required', 'numeric', 'min:0.01'],
             'orderItems.*.cost' => ['required', 'numeric', 'min:0'],
             'orderItems.*.batch_number' => ['nullable', 'string', 'max:255'],
-            'orderItems.*.expiration_date' => ['required', 'date', 'after:today'],
+            'orderItems.*.expiration_date' => $this->requiresExpiration
+                ? ['required', 'date', 'after:today']
+                : ['nullable', 'date', 'after:today'],
         ];
     }
 
@@ -85,8 +88,8 @@ final class RecordPurchaseForm extends Form
                     unit_id: (int) $item['unit_id'],
                     quantity: (float) $item['quantity'],
                     cost: (int) round((float) $item['cost'] * 100), // convert to cents
-                    batch_number: $item['batch_number'],
-                    expiration_date: $item['expiration_date'],
+                    batch_number: $item['batch_number'] ?: null,
+                    expiration_date: $item['expiration_date'] ?: null,
                 );
             })->all();
 
@@ -103,8 +106,8 @@ final class RecordPurchaseForm extends Form
                     actual_unit_id: (int) $item['unit_id'],
                     actual_quantity: (float) $item['quantity'],
                     actual_cost: (int) round((float) $item['cost'] * 100),
-                    batch_number: $item['batch_number'],
-                    expiration_date: $item['expiration_date'],
+                    batch_number: $item['batch_number'] ?: null,
+                    expiration_date: $item['expiration_date'] ?: null,
                 );
             })->all();
 

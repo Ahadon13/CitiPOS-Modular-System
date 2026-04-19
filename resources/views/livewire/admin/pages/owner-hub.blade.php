@@ -79,14 +79,26 @@
                     </div>
 
                     {{-- Right: Stats & Action --}}
-                    <div class="flex items-center justify-between sm:justify-end gap-6 sm:gap-8 border-t sm:border-t-0 border-blue-100/50 pt-3 sm:pt-0">
-                        <div class="text-center">
-                            <p class="font-bold text-neutral-900 dark:text-white leading-none">₱{{ number_format($branch->today_sales ?? 0) }}</p>
-                            <p class="text-[10px] font-bold text-neutral-400 dark:text-neutral-400 uppercase tracking-widest mt-1.5">today</p>
-                        </div>
-                        <div class="text-center">
-                            <p class="font-bold text-neutral-900 dark:text-white leading-none">{{ number_format($branch->today_orders ?? 0) }}</p>
-                            <p class="text-[10px] font-bold text-neutral-400 dark:text-neutral-400 uppercase tracking-widest mt-1.5">orders</p>
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between sm:justify-end gap-4 sm:gap-6 border-t sm:border-t-0 border-blue-100/50 pt-3 sm:pt-0">
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-5">
+                            <div class="text-center">
+                                <p class="font-bold text-neutral-900 dark:text-white leading-none">
+                                    @money(\Money\Money::PHP((int) ($branch->today_sales ?? 0)))
+                                </p>
+                                <p class="text-[10px] font-bold text-neutral-400 dark:text-neutral-400 uppercase tracking-widest mt-1.5">today</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="font-bold text-neutral-900 dark:text-white leading-none">{{ number_format($branch->today_orders ?? 0) }}</p>
+                                <p class="text-[10px] font-bold text-neutral-400 dark:text-neutral-400 uppercase tracking-widest mt-1.5">today orders</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="font-bold text-neutral-900 dark:text-white leading-none">{{ number_format($branch->sales_count ?? 0) }}</p>
+                                <p class="text-[10px] font-bold text-neutral-400 dark:text-neutral-400 uppercase tracking-widest mt-1.5">sales</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="font-bold text-neutral-900 dark:text-white leading-none">{{ number_format($branch->purchases_count ?? 0) }}</p>
+                                <p class="text-[10px] font-bold text-neutral-400 dark:text-neutral-400 uppercase tracking-widest mt-1.5">purchase orders</p>
+                            </div>
                         </div>
 
                         <x-ui.button href="{{ route('admin.branches.view', $branch->id) }}" iconAfter="chevron-right" wire:loading.attr="disabled" class="bg-blue-500 hover:bg-blue-600 text-white border-0 shadow-md shadow-blue-500/20 px-5">

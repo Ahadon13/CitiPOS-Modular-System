@@ -6,7 +6,11 @@ namespace App\Models;
 
 use App\Models\User;
 use App\Models\InventoryBatch;
+use App\Models\Product;
+use App\Models\ProductCategory;
+use App\Models\InventoryTransaction;
 use App\Models\Sale;
+use App\Models\Expense;
 use App\Traits\ChecksIfInUse;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -56,6 +60,21 @@ final class Branch extends Model
     public function purchases(): HasMany
     {
         return $this->hasMany(Purchase::class);
+    }
+
+    public function inventoryTransactions()
+    {
+        return $this->hasMany(InventoryTransaction::class);
+    }
+
+    public function partnerships()
+    {
+        return $this->hasMany(Partnership::class);
+    }
+
+    public function expenses(): HasMany
+    {
+        return $this->hasMany(Expense::class);
     }
 
     /**

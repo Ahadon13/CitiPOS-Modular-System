@@ -2,6 +2,8 @@
 
 namespace App\Livewire\Admin\Common;
 
+use App\Enums\Product\CategoryType;
+use App\Enums\Role;
 use App\Livewire\Concerns\HasToast;
 use App\Models\Branch;
 use App\Models\ProductCategory;
@@ -35,7 +37,10 @@ final class ManageBranchModal extends Component
     {
         return ProductCategory::orderBy('name')
             ->get()
-            ->map(fn($cat) => ['value' => $cat->id, 'label' => $cat->name])
+            ->map(fn($cat) => [
+                'value' => $cat->id,
+                'label' => CategoryType::tryFrom($cat->name)?->label() ?? $cat->name,
+            ])
             ->toArray();
     }
 
@@ -93,10 +98,24 @@ final class ManageBranchModal extends Component
     public function delete(int $id): void
     {
         try {
+            if (! (auth()->user()?->hasAnyRole(Role::adminRoles()) ?? false)) {
+                $this->toastError('You are not allowed to delete branches.');
+
+                return;
+            }
+
             $branch = Branch::findOrFail($id);
 
-            // Optional: Proactively check if branch has users/sales/inventory before deleting
-            if ($errorMessage = $branch->checkInUse(['users', 'sales', 'inventoryBatches', 'purchases', 'products'])) {
+            if ($errorMessage = $branch->checkInUse([
+                'users',
+                'products',
+                'inventoryBatches',
+                'inventoryTransactions',
+                'sales',
+                'purchases',
+                'expenses',
+                'partnerships',
+            ])) {
                 $this->toastError($errorMessage);
                 $this->resetForm();
                 return;

@@ -32,7 +32,7 @@ class CreatePurchase extends Component
     public function products(): array
     {
         return Product::where('branch_id', $this->currentBranchId)->orderBy('brand_name')->whereHas('productCategory', function ($query) {
-            $query->where('name', CategoryType::Pharmacy->label());
+                $query->where('name', CategoryType::Pharmacy->value);
         })->get()
             ->map(fn($p) => ['value' => $p->id, 'label' => $p->brand_name . ' (' . $p->generic_name . ')' . ' - ' . $p->dosage])
             ->toArray();

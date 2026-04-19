@@ -12,7 +12,7 @@ class ReceiveItemData extends Data
         public int $actual_unit_id,      // e.g., They ordered Pieces, but received Boxes
         public float $actual_quantity,   // e.g., 9
         public int $actual_cost,         // In cents (e.g., 8000 for ₱80.00)
-        public string $expiration_date,  // e.g., 2028-12-31
+        public ?string $expiration_date = null,  // e.g., 2028-12-31
         public ?string $batch_number = null,     // e.g., BATCH-A123
     ) {}
 

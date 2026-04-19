@@ -102,7 +102,7 @@ final class RecordPurchase extends Component
             // check the category name
             ->whereHas('purchaseItems.product.productCategory', function ($query) {
                 // Adjust 'name' if your database column is different (e.g., 'slug' => 'pharmacy')
-                $query->where('name', CategoryType::Pharmacy->label());
+                $query->where('name', CategoryType::Pharmacy->value);
             })
 
             ->with('supplier') // Eager load supplier to prevent N+1 queries in the map() below
@@ -127,7 +127,7 @@ final class RecordPurchase extends Component
     public function products(): array
     {
         return Product::where('branch_id', $this->currentBranchId)->orderBy('brand_name')->whereHas('productCategory', function ($query) {
-            $query->where('name', CategoryType::Pharmacy->label());
+            $query->where('name', CategoryType::Pharmacy->value);
         })->get()
             ->map(fn($p) => ['value' => $p->id, 'label' => $p->brand_name . ' (' . $p->dosage . ')' . ' - ' . $p->generic_name])
             ->toArray();

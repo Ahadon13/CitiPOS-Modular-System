@@ -121,7 +121,7 @@
 
                 <x-ui.field :required="!$user_id">
                     <x-ui.label>{{ $user_id ? 'Reset Password (Leave blank to keep current)' : 'Password' }}</x-ui.label>
-                    <x-ui.input type="password" wire:model="password" placeholder="••••••••" autocomplete="new-password" />
+                    <x-ui.input revealable type="password" wire:model="password" placeholder="••••••••" autocomplete="new-password" />
                     <x-ui.error name="password" />
                 </x-ui.field>
 

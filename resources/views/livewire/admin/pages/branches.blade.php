@@ -24,7 +24,16 @@
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         @forelse($this->branches as $branch)
-            <x-ui.card hoverless size="full" href="{{ route('admin.branches.view', ['branch' => $branch]) }}" class="group relative overflow-hidden p-6 transition-all hover:shadow-lg hover:-translate-y-1">
+            <x-ui.card
+                hoverless
+                size="full"
+                role="link"
+                tabindex="0"
+                x-on:click="window.location.href = '{{ route('admin.branches.view', ['branch' => $branch]) }}'"
+                x-on:keydown.enter="window.location.href = '{{ route('admin.branches.view', ['branch' => $branch]) }}'"
+                x-on:keydown.space.prevent="window.location.href = '{{ route('admin.branches.view', ['branch' => $branch]) }}'"
+                class="group relative cursor-pointer overflow-hidden p-6 transition-all hover:shadow-lg hover:-translate-y-1"
+            >
 
                 <div class="absolute top-0 right-0 -mr-16 -mt-16 h-32 w-32 rounded-full bg-blue-50/50 dark:bg-blue-900/10 transition-transform group-hover:scale-150"></div>
 
@@ -43,15 +52,29 @@
                                 </p>
                             </div>
                         </div>
-                        @if($branch->is_active)
-                            <x-ui.badge color="emerald" size="sm">
-                                Active
-                            </x-ui.badge>
-                        @else
-                            <x-ui.badge color="red" size="sm">
-                                Inactive
-                            </x-ui.badge>
-                        @endif
+                        <div class="flex items-center gap-2">
+                            @if($branch->is_active)
+                                <x-ui.badge color="emerald" size="sm">
+                                    Active
+                                </x-ui.badge>
+                            @else
+                                <x-ui.badge color="red" size="sm">
+                                    Inactive
+                                </x-ui.badge>
+                            @endif
+
+                            @if($this->canDeleteBranches)
+                                <x-ui.button
+                                    size="xs"
+                                    variant="danger"
+                                    icon="trash"
+                                    x-on:click.stop
+                                    wire:click="delete({{ $branch->id }})"
+                                    wire:custom-confirm="Delete {{ $branch->name }}? This will only proceed if the branch has no linked users, products, stocks, sales, purchases, expenses, inventory movements, or partnership prices."
+                                    title="Delete Branch"
+                                />
+                            @endif
+                        </div>
                     </div>
 
                     <hr class="border-neutral-100 dark:border-neutral-800" />

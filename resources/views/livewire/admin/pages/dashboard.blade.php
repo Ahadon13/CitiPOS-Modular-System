@@ -25,7 +25,7 @@
                 <select wire:model.live="categoryId" class="w-full text-sm rounded-lg border-neutral-300 dark:border-neutral-700 dark:bg-card text-neutral-700 dark:text-neutral-200 focus:ring-blue-500">
                     <option value="">All Modules</option>
                     @foreach($this->categories as $category)
-                    <option value="{{ $category->id }}">{{ $category->name }}</option>
+                    <option value="{{ $category->id }}">{{ $this->categoryLabel($category->name) }}</option>
                     @endforeach
                 </select>
             </x-ui.field>
@@ -432,8 +432,16 @@
                             @forelse($this->lowStockProducts as $item)
                             <tr class="hover:bg-white/5 transition-colors">
                                 <td class="px-4 py-3">
-                                    <span class="font-bold text-neutral-900 dark:text-white block">{{ $item->brand_name }} - ({{ $item->dosage }})</span>
-                                    <span class="text-xs text-neutral-500">{{ $item->generic_name }}</span>
+                                    <span class="font-bold text-neutral-900 dark:text-white block">
+                                        {{ $item->brand_name ?? $item->name ?? 'Unknown' }}
+                                    </span>
+                                    <span class="text-xs text-neutral-500">
+                                        @if(! empty($item->generic_name) || ! empty($item->dosage) || ! empty($item->form))
+                                            {{ trim(($item->generic_name ?? '') . ' ' . (($item->dosage ?? '') ? "- {$item->dosage}" : '') . ' ' . (($item->form ?? '') ? "({$item->form})" : '')) }}
+                                        @else
+                                            {{ $item->product_code ?? '-' }}
+                                        @endif
+                                    </span>
                                 </td>
                                 <td class="px-4 py-3 text-neutral-500">{{ $item->branch_name }}</td>
                                 <td class="px-4 py-3 text-neutral-500">{{ $item->category_name ?? 'N/A' }}</td>
@@ -486,8 +494,14 @@
                             @forelse($this->nearExpiryBatches as $batch)
                             <tr class="hover:bg-white/5 transition-colors">
                                 <td class="px-4 py-3">
-                                    <span class="font-bold text-neutral-900 dark:text-white block">{{ $batch->product->brand_name }} - ({{ $batch->product->dosage }})</span>
-                                    <span class="text-xs text-neutral-500">{{ $batch->product->generic_name }}</span>
+                                    <span class="font-bold text-neutral-900 dark:text-white block">{{ $batch->product->brand_name ?? $batch->product->name ?? 'Unknown' }}</span>
+                                    <span class="text-xs text-neutral-500">
+                                        @if($batch->product->generic_name || $batch->product->dosage || $batch->product->form)
+                                            {{ trim(($batch->product->generic_name ?? '') . ' ' . (($batch->product->dosage ?? '') ? "- {$batch->product->dosage}" : '') . ' ' . (($batch->product->form ?? '') ? "({$batch->product->form})" : '')) }}
+                                        @else
+                                            {{ $batch->product->product_code ?? '-' }}
+                                        @endif
+                                    </span>
                                 </td>
                                 <td class="px-4 py-3 text-neutral-500">{{ $batch->branch->name ?? 'N/A' }}</td>
                                 <td class="px-4 py-3 font-mono text-neutral-500">{{ $batch->batch_number }}</td>
@@ -543,8 +557,14 @@
                             @forelse($this->expiredBatches as $batch)
                             <tr class="hover:bg-white/5 transition-colors">
                                 <td class="px-4 py-3">
-                                    <span class="font-bold text-neutral-900 dark:text-white block">{{ $batch->product->brand_name }} - ({{ $batch->product->dosage }})</span>
-                                    <span class="text-xs text-neutral-500">{{ $batch->product->generic_name }}</span>
+                                    <span class="font-bold text-neutral-900 dark:text-white block">{{ $batch->product->brand_name ?? $batch->product->name ?? 'Unknown' }}</span>
+                                    <span class="text-xs text-neutral-500">
+                                        @if($batch->product->generic_name || $batch->product->dosage || $batch->product->form)
+                                            {{ trim(($batch->product->generic_name ?? '') . ' ' . (($batch->product->dosage ?? '') ? "- {$batch->product->dosage}" : '') . ' ' . (($batch->product->form ?? '') ? "({$batch->product->form})" : '')) }}
+                                        @else
+                                            {{ $batch->product->product_code ?? '-' }}
+                                        @endif
+                                    </span>
                                 </td>
                                 <td class="px-4 py-3 text-neutral-500">{{ $batch->branch->name ?? 'N/A' }}</td>
                                 <td class="px-4 py-3 font-mono text-neutral-500">{{ $batch->batch_number }}</td>
@@ -638,6 +658,6 @@
     </div>
 
     {{-- View/Print Modal --}}
-    <livewire:inventory.pages.pharmacy.purchase.view-purchase-modal wire:model="view_purchase" />
+    <livewire:admin.common.view-purchase-modal wire:model="view_purchase" />
 
 </div>

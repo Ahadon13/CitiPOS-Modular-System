@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\Unit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 final class ProductPackaging extends Model
 {
@@ -35,6 +36,23 @@ final class ProductPackaging extends Model
         return $this->belongsTo(Unit::class);
     }
 
+    public function partnerships(): HasMany
+    {
+        return $this->hasMany(Partnership::class);
+    }
+
+    public function findPartnershipForCustomer(?int $customerTypeId = null, ?int $branchId = null): ?Partnership
+    {
+        if (! $customerTypeId || ! $branchId) {
+            return null;
+        }
+
+        return $this->partnerships()
+            ->where('branch_id', $branchId)
+            ->where('customer_type_id', $customerTypeId)
+            ->first();
+    }
+
     /**
      * Get the attributes that should be cast.
      *
@@ -46,5 +64,17 @@ final class ProductPackaging extends Model
             'conversion_factor' => 'decimal:4',
             'price' => MoneyCast::class,
         ];
+    }
+
+    /**
+     * Instantly get the correct price based on the Customer Type AND Branch.
+     */
+    public function getPriceForCustomer(?int $customerTypeId = null, ?int $branchId = null): int
+    {
+        $partnership = $this->findPartnershipForCustomer($customerTypeId, $branchId);
+
+        return $partnership
+            ? (int) $partnership->getRawOriginal('special_price')
+            : (int) $this->getRawOriginal('price');
     }
 }

@@ -31,6 +31,8 @@ final class HomeRouteController extends Controller
             // Specific Roles -> Specific Dashboards
             Role::Pharmacist->value => redirect()->route('inventory.pharmacy.dashboard'),
             Role::GroceryCashier->value => redirect()->route('inventory.grocery.dashboard'),
+            Role::MotorShopCashier->value,
+            Role::ChiefMechanic->value => redirect()->route('inventory.motor-shop.dashboard'),
 
             // Admin / SuperAdmin -> Main Dashboard (Overview)
             Role::SuperAdmin->value,

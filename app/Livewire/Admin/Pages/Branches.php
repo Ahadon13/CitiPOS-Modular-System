@@ -2,8 +2,11 @@
 
 namespace App\Livewire\Admin\Pages;
 
+use App\Enums\Role;
+use App\Livewire\Concerns\HasToast;
 use App\Models\Branch;
 use App\Models\ProductCategory;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
@@ -13,6 +16,8 @@ use Livewire\Component;
 
 class Branches extends Component
 {
+    use HasToast;
+
     public ?int $categoryId = null;
 
     #[Computed]
@@ -53,5 +58,55 @@ class Branches extends Component
 
                 return $branch;
             });
+    }
+
+    #[Computed]
+    public function canDeleteBranches(): bool
+    {
+        return auth()->user()?->hasAnyRole(Role::adminRoles()) ?? false;
+    }
+
+    public function delete(int $branchId): void
+    {
+        if (! $this->canDeleteBranches) {
+            $this->toastError('You are not allowed to delete branches.');
+
+            return;
+        }
+
+        try {
+            $branch = Branch::findOrFail($branchId);
+
+            if ($errorMessage = $branch->checkInUse($this->branchUsageRelationships())) {
+                $this->toastError($errorMessage);
+
+                return;
+            }
+
+            $branchName = $branch->name;
+            $branch->delete();
+
+            unset($this->branches);
+
+            $this->toastSuccess("Branch '{$branchName}' deleted successfully.");
+        } catch (QueryException $e) {
+            $this->toastError('Cannot delete this branch because it is still referenced by existing records.');
+        } catch (\Exception $e) {
+            $this->toastError('Failed to delete branch: ' . $e->getMessage());
+        }
+    }
+
+    private function branchUsageRelationships(): array
+    {
+        return [
+            'users',
+            'products',
+            'inventoryBatches',
+            'inventoryTransactions',
+            'sales',
+            'purchases',
+            'expenses',
+            'partnerships',
+        ];
     }
 }

@@ -37,7 +37,7 @@ final class UpdateProductPharmacyForm extends Form
 
         $this->brand_name = $product->brand_name;
         $this->generic_name = $product->generic_name;
-        $this->dosage = $product->dosage;
+        $this->dosage = $product->dosage ?? '';
         $this->form = $product->form;
         $this->supplier_id = $product->supplier_id;
         $this->product_code = $product->product_code;

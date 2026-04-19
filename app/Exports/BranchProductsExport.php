@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Exports;
 
 use App\Enums\Product\CategoryType;
+use App\Models\Branch;
 use App\Models\Product;
+use App\Models\ProductCategory;
 use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
@@ -41,14 +43,13 @@ final class BranchProductsExport implements FromQuery, WithHeadings, WithMapping
                 $q->where('branch_id', $this->branchId);
             }], 'quantity_on_hand')
             ->where('branch_id', $this->branchId)
-            ->whereHas('productCategory', function ($query) {
-                $query->where('name', CategoryType::Pharmacy->label());
-            });
+            ->where('product_category_id', Branch::whereKey($this->branchId)->value('product_category_id'));
 
         // 1. Search
         if ($this->search) {
             $query->where(function ($q) {
                 $q->where('brand_name', 'like', '%' . $this->search . '%')
+                  ->orWhere('name', 'like', '%' . $this->search . '%')
                   ->orWhere('generic_name', 'like', '%' . $this->search . '%')
                   ->orWhere('product_code', 'like', '%' . $this->search . '%');
             });
@@ -57,9 +58,9 @@ final class BranchProductsExport implements FromQuery, WithHeadings, WithMapping
         // 2. Basic Filters
         if ($this->active) $query->where('is_active', true);
         if ($this->disabled) $query->where('is_active', false);
-        if ($this->requirePrescription) $query->where('requires_prescription', true);
+        if ($this->isPharmacyBranch() && $this->requirePrescription) $query->where('requires_prescription', true);
         if (!empty($this->productCategories)) {
-            $query->whereIn('product_category_id', $this->productCategories);
+            $query->whereIn('category_id', $this->productCategories);
         }
 
         // 3. Stock Filters
@@ -92,11 +93,9 @@ final class BranchProductsExport implements FromQuery, WithHeadings, WithMapping
     {
         return [
             'Product Code',
-            'Brand Name',
-            'Generic Name',
+            'Product Name',
+            'Product Detail',
             'Category',
-            'Dosage',
-            'Form',
             'Current Stock',
             'Base Unit',
             'Reorder Level',
@@ -118,18 +117,43 @@ final class BranchProductsExport implements FromQuery, WithHeadings, WithMapping
 
         return [
             $product->product_code ?? 'N/A',
-            $product->brand_name,
-            $product->generic_name ?? 'N/A',
+            $product->brand_name ?? $product->name ?? 'N/A',
+            $this->productDetail($product),
             $product->category->name ?? 'Uncategorized',
-            $product->dosage ?? 'N/A',
-            $product->form ?? 'N/A',
             (float) $stock, // Casting to float keeps Excel from complaining about "Numbers stored as text"
             $product->baseUnit->name ?? 'N/A',
             (float) $product->reorder_level,
             $expiryDate,
-            $product->requires_prescription ? 'Yes' : 'No',
+            $this->isPharmacyBranch() ? ($product->requires_prescription ? 'Yes' : 'No') : 'N/A',
             $product->is_active ? 'Active' : 'Disabled',
         ];
+    }
+
+    private function isPharmacyBranch(): bool
+    {
+        return (int) Branch::whereKey($this->branchId)->value('product_category_id') === $this->pharmacyProductCategoryId();
+    }
+
+    private function pharmacyProductCategoryId(): int
+    {
+        return (int) ProductCategory::where('name', CategoryType::Pharmacy->value)->value('id');
+    }
+
+    private function productDetail(Product $product): string
+    {
+        $pharmacyDetail = trim(($product->generic_name ?? '') . ' ' . (($product->dosage ?? '') ? "- {$product->dosage}" : '') . ' ' . (($product->form ?? '') ? "({$product->form})" : ''));
+
+        if ($pharmacyDetail !== '') {
+            return $pharmacyDetail;
+        }
+
+        $attributes = is_array($product->attributes) ? $product->attributes : [];
+
+        return collect([
+            $attributes['part_number'] ?? null,
+            $attributes['oem_number'] ?? null,
+            $attributes['vehicle_fitment'] ?? null,
+        ])->filter()->implode(' | ') ?: 'N/A';
     }
 
     public function styles(Worksheet $sheet)

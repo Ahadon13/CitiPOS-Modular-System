@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Actions\Inventory;
 
+use App\Enums\Inventory\TransactionType;
 use App\Models\InventoryBatch;
+use App\Models\InventoryTransaction;
 use App\Traits\HasDbTransaction;
 
 final class AdjustStock
@@ -35,6 +37,17 @@ final class AdjustStock
 
                 $batch->decrement('quantity_on_hand', $quantity);
 
+                InventoryTransaction::create([
+                    'branch_id' => $branchId,
+                    'product_id' => $productId,
+                    'inventory_batch_id' => $batch->id,
+                    'user_id' => auth()->id() ?? 1,
+                    'type' => TransactionType::AdjustmentOut->value,
+                    'quantity' => $quantity, // Negative for OUT
+                    'running_balance' => $batch->quantity_on_hand - $quantity,
+                    'unit_cost' => $batch->cost_per_unit,
+                ]);
+
                 return true;
             }
             elseif ($type === 'add') {
@@ -53,6 +66,18 @@ final class AdjustStock
 
                 $batch->quantity_on_hand += $quantity;
                 $batch->save();
+
+                InventoryTransaction::create([
+                    'branch_id' => $branchId,
+                    'product_id' => $productId,
+                    'inventory_batch_id' => $batch->id,
+                    'user_id' => auth()->id() ?? 1,
+                    'type' => TransactionType::AdjustmentIn->value,
+                    'quantity' => $quantity, // Positive for IN
+                    'running_balance' => $batch->quantity_on_hand,
+                    'unit_cost' => $batch->cost_per_unit,
+                ]);
+
                 return true;
             } else {
                 throw new \Exception("Invalid adjustment type.");

@@ -4,7 +4,13 @@ declare(strict_types=1);
 
 namespace App\Livewire\Inventory\Pages\Pharmacy;
 
+use App\Exports\ExpiredBatchesExport;
+use App\Exports\LowStockProductsExport;
+use App\Exports\StockMovementsExport;
+use App\Exports\TopDemandProductsExport;
+use App\Enums\Inventory\TransactionType;
 use App\Models\InventoryBatch;
+use App\Models\InventoryTransaction;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Traits\HasAuth;
@@ -15,6 +21,8 @@ use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Maatwebsite\Excel\Facades\Excel;
+use Maatwebsite\Excel\Excel as ExcelFormat;
 
 #[Layout('components.layouts.app', ['title' => 'Pharmacy Dashboard', 'inventory' => true])]
 final class Dashboard extends Component
@@ -25,6 +33,12 @@ final class Dashboard extends Component
      * Hardcoded categories for this specific Dashboard.
      */
     protected array $targetCategories = ['Pharmacy', 'Medicine'];
+
+    public ?string $stockMovementTypeFilter = null;
+
+    public string $stockMovementDateFrom = '';
+
+    public string $stockMovementDateTo = '';
 
 
     // Total Products
@@ -211,9 +225,105 @@ final class Dashboard extends Component
             ->paginate($this->perPage, ['*'], 'top_demand_page');
     }
 
+    #[Computed]
+    public function stockMovementTypeOptions(): array
+    {
+        return collect(TransactionType::cases())
+            ->map(fn (TransactionType $type): array => [
+                'value' => $type->value,
+                'label' => $type->label(),
+            ])
+            ->values()
+            ->toArray();
+    }
+
+    #[Computed]
+    public function stockMovements()
+    {
+        return $this->stockMovementQuery()
+            ->latest()
+            ->paginate($this->perPage, ['*'], 'stock_movements_page');
+    }
+
+    public function exportTopDemandProducts()
+    {
+        $fileName = 'top-in-demand-products-' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+
+        return Excel::download(
+            new TopDemandProductsExport($this->currentBranchId, $this->targetCategories),
+            $fileName,
+            ExcelFormat::XLSX
+        );
+    }
+
+    public function exportLowStockProducts()
+    {
+        $fileName = 'low-stock-products-' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+
+        return Excel::download(
+            new LowStockProductsExport($this->currentBranchId, $this->targetCategories),
+            $fileName,
+            ExcelFormat::XLSX
+        );
+    }
+
+    public function exportExpiredBatches()
+    {
+        $fileName = 'expired-batches-' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+
+        return Excel::download(
+            new ExpiredBatchesExport($this->currentBranchId, $this->targetCategories),
+            $fileName,
+            ExcelFormat::XLSX
+        );
+    }
+
+    public function exportStockMovements()
+    {
+        $fileName = 'stock-movements-' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+
+        return Excel::download(
+            new StockMovementsExport(
+                branchId: $this->currentBranchId,
+                targetCategories: $this->targetCategories,
+                transactionType: $this->stockMovementTypeFilter,
+                dateRange: $this->stockMovementExportDateRange(),
+            ),
+            $fileName,
+            ExcelFormat::XLSX
+        );
+    }
+
+    public function clearStockMovementFilters(): void
+    {
+        $this->stockMovementTypeFilter = null;
+        $this->stockMovementDateFrom = '';
+        $this->stockMovementDateTo = '';
+        $this->resetPage('stock_movements_page');
+    }
+
     public function getAdditionalPageResetProperties(): array
     {
-        return [];
+        return [
+            'stockMovementTypeFilter',
+            'stockMovementDateFrom',
+            'stockMovementDateTo',
+        ];
+    }
+
+    public function updatedStockMovementTypeFilter(): void
+    {
+        $this->resetPage('stock_movements_page');
+    }
+
+    public function updatedStockMovementDateFrom(): void
+    {
+        $this->resetPage('stock_movements_page');
+    }
+
+    public function updatedStockMovementDateTo(): void
+    {
+        $this->resetPage('stock_movements_page');
     }
 
     /**
@@ -224,5 +334,45 @@ final class Dashboard extends Component
         $query->whereHas($relationPathToCategory, function ($q) {
             $q->whereIn('name', $this->targetCategories);
         });
+    }
+
+    protected function stockMovementQuery(): Builder
+    {
+        $query = InventoryTransaction::query()
+            ->with(['product.baseUnit', 'product.productCategory', 'batch', 'user', 'reference'])
+            ->where('branch_id', $this->currentBranchId);
+
+        $this->applyPharmacyScope($query, 'product.productCategory');
+
+        $query->when(! empty($this->stockMovementTypeFilter), function (Builder $query) {
+            $query->where('type', $this->stockMovementTypeFilter);
+        });
+
+        if ($this->hasStockMovementDateRange()) {
+            $query->whereBetween('created_at', [
+                Carbon::parse($this->stockMovementDateFrom)->startOfDay(),
+                Carbon::parse($this->stockMovementDateTo)->endOfDay(),
+            ]);
+        }
+
+        return $query;
+    }
+
+    protected function hasStockMovementDateRange(): bool
+    {
+        return ! empty($this->stockMovementDateFrom)
+            && ! empty($this->stockMovementDateTo);
+    }
+
+    protected function stockMovementExportDateRange(): array
+    {
+        if (! $this->hasStockMovementDateRange()) {
+            return [];
+        }
+
+        return [
+            $this->stockMovementDateFrom,
+            $this->stockMovementDateTo,
+        ];
     }
 }

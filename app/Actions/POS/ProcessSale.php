@@ -7,6 +7,7 @@ namespace App\Actions\POS;
 use App\Actions\Inventory\DeductInventoryBatch;
 use App\Data\ProcessSale\SaleData;
 use App\Data\ProcessSale\SaleItemData;
+use App\Enums\Inventory\TransactionType;
 use App\Models\Sale;
 use App\Traits\HasDbTransaction;
 
@@ -46,7 +47,10 @@ final class ProcessSale
                     batchId: $item->inventory_batch_id,
                     productId: $item->product_id,
                     unitId: $item->unit_id,
-                    soldQuantity: $item->quantity
+                    soldQuantity: $item->quantity,
+                    transactionType: TransactionType::Sale,
+                    reference: $sale,
+                    unitPriceInCents: $item->price_at_moment,
                 );
             }
 

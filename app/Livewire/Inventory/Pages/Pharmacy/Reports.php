@@ -2,20 +2,30 @@
 
 namespace App\Livewire\Inventory\Pages\Pharmacy;
 
+use App\Enums\Inventory\TransactionType;
+use App\Enums\Product\CategoryType;
+use App\Exports\PharmacySellingPricesExport;
+use App\Exports\StockMovementsExport;
 use App\Livewire\Concerns\HasToast;
+use App\Models\Category;
+use App\Models\CustomerType;
 use App\Models\Expense;
+use App\Models\InventoryBatch;
+use App\Models\InventoryTransaction;
+use App\Models\ProductPackaging;
 use App\Models\Sale;
 use App\Models\SaleItem;
-use App\Models\User;
-use App\Models\InventoryBatch;
 use App\Traits\HasAuth;
 use App\Traits\HasDataTable;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Maatwebsite\Excel\Facades\Excel;
+use Maatwebsite\Excel\Excel as ExcelFormat;
 use Money\Money;
 
 #[Layout('components.layouts.app', ['title' => 'Financial & Performance Reports', 'inventory' => true])]
@@ -23,8 +33,16 @@ class Reports extends Component
 {
     use HasAuth, HasToast, HasDataTable, WithPagination;
 
+    protected array $targetCategories = ['pharmacy'];
+
     // Default to the last 30 days
     public array $dateRange = [];
+
+    public ?string $stockMovementTypeFilter = null;
+    public string $sellingPriceSearch = '';
+    public ?int $sellingPriceCustomerTypeFilter = null;
+    public ?int $sellingPriceCategoryFilter = null;
+    public bool $sellingPriceOnlyPartnership = false;
 
     public function mount()
     {
@@ -184,8 +202,100 @@ class Reports extends Component
         ];
     }
 
+    #[Computed]
+    public function stockMovementTypeOptions(): array
+    {
+        return collect(TransactionType::cases())
+            ->map(fn (TransactionType $type): array => [
+                'value' => $type->value,
+                'label' => $type->label(),
+            ])
+            ->values()
+            ->toArray();
+    }
+
+    #[Computed]
+    public function stockMovements()
+    {
+        return $this->stockMovementQuery()
+            ->latest()
+            ->paginate($this->perPage, ['*'], 'stock_movements_page');
+    }
+
+    #[Computed]
+    public function sellingPriceCustomerTypeOptions(): array
+    {
+        return CustomerType::orderBy('name')
+            ->get(['id', 'name'])
+            ->map(fn (CustomerType $type): array => [
+                'value' => $type->id,
+                'label' => $type->name,
+            ])
+            ->toArray();
+    }
+
+    #[Computed]
+    public function sellingPriceCategoryOptions(): array
+    {
+        return Category::orderBy('name')
+            ->get(['id', 'name'])
+            ->map(fn (Category $category): array => [
+                'value' => $category->id,
+                'label' => $category->name,
+            ])
+            ->toArray();
+    }
+
+    #[Computed]
+    public function sellingPrices()
+    {
+        return $this->sellingPricesQuery()
+            ->paginate($this->perPage, ['*'], 'selling_prices_page');
+    }
+
+    public function exportStockMovements()
+    {
+        $fileName = 'stock-movements-report-' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+
+        return Excel::download(
+            new StockMovementsExport(
+                branchId: $this->currentBranchId,
+                targetCategories: $this->targetCategories,
+                transactionType: $this->stockMovementTypeFilter,
+                dateRange: $this->stockMovementExportDateRange(),
+            ),
+            $fileName,
+            ExcelFormat::XLSX
+        );
+    }
+
+    public function exportSellingPrices()
+    {
+        $fileName = 'pharmacy-selling-prices-' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+
+        return Excel::download(
+            new PharmacySellingPricesExport(
+                branchId: $this->currentBranchId,
+                search: $this->sellingPriceSearch,
+                customerTypeId: $this->sellingPriceCustomerTypeFilter,
+                categoryId: $this->sellingPriceCategoryFilter,
+                onlyWithPartnership: $this->sellingPriceOnlyPartnership,
+            ),
+            $fileName,
+            ExcelFormat::XLSX
+        );
+    }
+
+    public function clearStockMovementFilters(): void
+    {
+        $this->stockMovementTypeFilter = null;
+        $this->resetPage('stock_movements_page');
+    }
+
     public function updatedDateRange()
     {
+        $this->resetPage('stock_movements_page');
+
         // Tell Alpine to re-render the charts with the new data
         $this->dispatch('update-trend-chart', data: [
             'labels' => $this->trendChartData['categories'],
@@ -201,8 +311,126 @@ class Reports extends Component
         ]);
     }
 
+    public function updatedStockMovementTypeFilter(): void
+    {
+        $this->resetPage('stock_movements_page');
+    }
+
+    public function updatedSellingPriceSearch(): void
+    {
+        $this->resetPage('selling_prices_page');
+    }
+
+    public function updatedSellingPriceCustomerTypeFilter(): void
+    {
+        $this->resetPage('selling_prices_page');
+    }
+
+    public function updatedSellingPriceCategoryFilter(): void
+    {
+        $this->resetPage('selling_prices_page');
+    }
+
+    public function updatedSellingPriceOnlyPartnership(): void
+    {
+        $this->resetPage('selling_prices_page');
+    }
+
+    public function clearSellingPriceFilters(): void
+    {
+        $this->sellingPriceSearch = '';
+        $this->sellingPriceCustomerTypeFilter = null;
+        $this->sellingPriceCategoryFilter = null;
+        $this->sellingPriceOnlyPartnership = false;
+        $this->resetPage('selling_prices_page');
+    }
+
     protected function getAdditionalPageResetProperties(): array
     {
-        return ['dateRange'];
+        return [
+            'dateRange',
+            'stockMovementTypeFilter',
+            'sellingPriceSearch',
+            'sellingPriceCustomerTypeFilter',
+            'sellingPriceCategoryFilter',
+            'sellingPriceOnlyPartnership',
+        ];
+    }
+
+    protected function sellingPricesQuery(): Builder
+    {
+        return ProductPackaging::query()
+            ->with([
+                'unit',
+                'product.category',
+                'product.productCategory',
+                'partnerships' => function ($query) {
+                    $query->with('customerType')
+                        ->where('branch_id', $this->currentBranchId)
+                        ->when($this->sellingPriceCustomerTypeFilter, fn ($query) => $query->where('customer_type_id', $this->sellingPriceCustomerTypeFilter));
+                },
+            ])
+            ->whereHas('product', function (Builder $query) {
+                $query->where('branch_id', $this->currentBranchId)
+                    ->whereHas('productCategory', fn (Builder $query) => $query->where('name', CategoryType::Pharmacy->value))
+                    ->when($this->sellingPriceCategoryFilter, fn (Builder $query) => $query->where('category_id', $this->sellingPriceCategoryFilter));
+            })
+            ->when($this->sellingPriceSearch !== '', function (Builder $query) {
+                $search = '%' . trim($this->sellingPriceSearch) . '%';
+                $query->where(function (Builder $query) use ($search) {
+                    $query->where('barcode', 'like', $search)
+                        ->orWhereHas('product', function (Builder $query) use ($search) {
+                            $query->where('brand_name', 'like', $search)
+                                ->orWhere('generic_name', 'like', $search)
+                                ->orWhere('product_code', 'like', $search);
+                        });
+                });
+            })
+            ->when($this->sellingPriceOnlyPartnership, function (Builder $query) {
+                $query->whereHas('partnerships', function (Builder $query) {
+                    $query->where('branch_id', $this->currentBranchId)
+                        ->when($this->sellingPriceCustomerTypeFilter, fn (Builder $query) => $query->where('customer_type_id', $this->sellingPriceCustomerTypeFilter));
+                });
+            })
+            ->orderBy(
+                \App\Models\Product::select('brand_name')
+                    ->whereColumn('products.id', 'product_packagings.product_id')
+                    ->limit(1)
+            );
+    }
+
+    protected function stockMovementQuery(): Builder
+    {
+        [$start, $end] = $this->getDates();
+
+        $query = InventoryTransaction::query()
+            ->with(['product.baseUnit', 'product.productCategory', 'batch', 'user', 'reference'])
+            ->where('branch_id', $this->currentBranchId)
+            ->whereBetween('created_at', [$start, $end]);
+
+        $this->applyPharmacyScope($query, 'product.productCategory');
+
+        $query->when(! empty($this->stockMovementTypeFilter), function (Builder $query) {
+            $query->where('type', $this->stockMovementTypeFilter);
+        });
+
+        return $query;
+    }
+
+    protected function stockMovementExportDateRange(): array
+    {
+        [$start, $end] = $this->getDates();
+
+        return [
+            $start->format('Y-m-d'),
+            $end->format('Y-m-d'),
+        ];
+    }
+
+    protected function applyPharmacyScope(Builder $query, string $relationPathToCategory = 'product.productCategory'): void
+    {
+        $query->whereHas($relationPathToCategory, function (Builder $query) {
+            $query->whereIn('name', $this->targetCategories);
+        });
     }
 }

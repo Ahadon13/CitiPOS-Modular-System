@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Inventory\Components;
 
+use App\Enums\Product\CategoryType;
 use App\Models\InventoryBatch;
 use App\Traits\HasAuth;
 use Carbon\Carbon;
@@ -14,16 +15,18 @@ final class ExpiryBanner extends Component
 {
     use HasAuth;
 
-    // This will accept 'pharmacy' or 'grocery' when you call the component
+    // This will accept supported inventory module route prefixes.
     public string $module = 'pharmacy';
 
     #[Computed]
     public function expiredCount(): int
     {
-        // Define which categories belong to which module
-        $targetCategories = $this->module === 'pharmacy'
-            ? ['Pharmacy', 'Medicine']
-            : ['Grocery', 'Food', 'Beverage']; // Adjust these to match your actual grocery categories
+        $targetCategories = match ($this->module) {
+            'pharmacy' => [CategoryType::Pharmacy->value],
+            'grocery' => [CategoryType::Grocery->value],
+            'motor-shop' => [CategoryType::MotorShop->value],
+            default => [],
+        };
 
         return InventoryBatch::where('branch_id', $this->currentBranchId)
             ->where('quantity_on_hand', '>', 0)

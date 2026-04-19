@@ -2,8 +2,8 @@
 
 namespace App\Livewire\Admin\Pages;
 
-use App\Actions\Common\SwitchBranch;
-use App\Models\Branch; // Adjust to your actual Branch model
+use App\Enums\Sale\Status as SaleStatus;
+use App\Models\Branch;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
@@ -19,8 +19,24 @@ class OwnerHub extends Component
     #[Computed]
     public function branches()
     {
-        // Replace with your actual logic. E.g., Auth::user()->branches
-        return Branch::orderBy('created_at', 'desc')->orderBy('name')->get();
+        return Branch::query()
+            ->with('productCategory')
+            ->withCount([
+                'sales',
+                'purchases',
+                'sales as today_orders' => function ($query) {
+                    $query->whereDate('created_at', today());
+                },
+            ])
+            ->withSum([
+                'sales as today_sales' => function ($query) {
+                    $query->whereDate('created_at', today())
+                        ->where('status', SaleStatus::Completed->value);
+                },
+            ], 'grand_total')
+            ->orderBy('created_at', 'desc')
+            ->orderBy('name')
+            ->get();
     }
 
     /**

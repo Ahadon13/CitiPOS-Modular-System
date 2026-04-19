@@ -27,8 +27,12 @@ final class SaleItem extends Model
         'product_id',
         'inventory_batch_id',
         'unit_id',
+        'product_packaging_id',
         'quantity',
         'price_at_moment',
+        'regular_price_at_moment',
+        'price_source',
+        'partnership_id',
         'cost_at_moment',
         'subtotal',
     ];
@@ -53,6 +57,16 @@ final class SaleItem extends Model
         return $this->belongsTo(Unit::class);
     }
 
+    public function productPackaging(): BelongsTo
+    {
+        return $this->belongsTo(ProductPackaging::class);
+    }
+
+    public function partnership(): BelongsTo
+    {
+        return $this->belongsTo(Partnership::class);
+    }
+
     /**
      * Get the attributes that should be cast.
      *
@@ -66,8 +80,12 @@ final class SaleItem extends Model
             'product_id' => 'integer',
             'inventory_batch_id' => 'integer',
             'unit_id' => 'integer',
+            'product_packaging_id' => 'integer',
             'quantity' => 'decimal:2',
             'price_at_moment' => MoneyCast::class,
+            'regular_price_at_moment' => MoneyCast::class,
+            'price_source' => 'string',
+            'partnership_id' => 'integer',
             'cost_at_moment' => MoneyCast::class,
             'subtotal' => MoneyCast::class,
         ];

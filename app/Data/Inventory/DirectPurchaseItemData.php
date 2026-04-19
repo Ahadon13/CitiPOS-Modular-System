@@ -11,8 +11,8 @@ class DirectPurchaseItemData extends Data
         public int $unit_id,
         public float $quantity,
         public int $cost,               // In cents
-        public string $batch_number,    // Required right away
-        public string $expiration_date, // Required right away
+        public ?string $batch_number = null,
+        public ?string $expiration_date = null,
     ) {}
 
     public function modelAttributes(): array

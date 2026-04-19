@@ -1,4 +1,16 @@
 @props(['title' => '', 'inventory' => false])
+@php
+    $routeName = request()->route()?->getName() ?? '';
+    $module = str($routeName)->contains('pos.grocery.')
+        ? 'grocery'
+        : (str($routeName)->contains('pos.motor-shop.') ? 'motor-shop' : 'pharmacy');
+
+    $inventoryDashboardRoute = match ($module) {
+        'grocery' => 'inventory.grocery.dashboard',
+        'motor-shop' => 'inventory.motor-shop.dashboard',
+        default => 'inventory.pharmacy.dashboard',
+    };
+@endphp
 <x-layouts.base>
     <x-slot:title>
         {{ $title }}
@@ -7,7 +19,7 @@
     {{-- Tell it to use the new layout! --}}
     <div class="flex-col flex min-h-screen" x-data>
         <x-ui.layout.header class="my-0!" :sticky="false">
-            <x-ui.button href="{{ route('inventory.pharmacy.dashboard') }}" variant="outline" size="sm" icon="cube" class="ml-1.5">
+            <x-ui.button href="{{ route($inventoryDashboardRoute) }}" variant="outline" size="sm" icon="cube" class="ml-1.5">
                 Inventory
             </x-ui.button>
 
@@ -18,7 +30,7 @@
                 </span>
             </div>
 
-            <livewire:inventory.components.expiry-banner module="pharmacy" />
+            <livewire:inventory.components.expiry-banner :module="$module" />
 
             <div class="ml-auto flex items-center gap-3 mr-1.5">
                 <x-calculator />

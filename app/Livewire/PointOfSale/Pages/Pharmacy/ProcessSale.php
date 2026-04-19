@@ -18,6 +18,7 @@ use App\Models\Product;
 use App\Models\ProductPackaging;
 use App\Traits\HasAuth;
 use App\Traits\HasDataTable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Validator;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
@@ -52,6 +53,10 @@ final class ProcessSale extends Component
     public function setCustomerMode(string $mode): void
     {
         $this->customerMode = $mode;
+
+        if ($mode === 'walk_in') {
+            $this->customer_id = null;
+        }
     }
 
     public function mount(): void
@@ -81,7 +86,7 @@ final class ProcessSale extends Component
             ->isPharmacy() // Only Pharmacy products
             ->where('is_active', true)
             ->where('branch_id', $this->currentBranchId)
-            ->with(['productPackagings.unit', 'baseUnit']); // Eager load baseUnit to prevent N+1
+            ->with(['productPackagings.unit', 'productPackagings.partnerships', 'baseUnit']); // Eager load baseUnit to prevent N+1
 
         if ($this->activeCategory !== null) {
             $query->where('category_id', $this->activeCategory);
@@ -106,6 +111,13 @@ final class ProcessSale extends Component
                     'id' => $pkg->id,
                     'unit' => $pkg->unit->abbreviation ?? 'Unit',
                     'price' => (float) ($pkg->getRawOriginal('price') / 100),
+                    'regular_price' => (float) ($pkg->getRawOriginal('price') / 100),
+                    'partnership_prices' => $pkg->partnerships
+                        ->where('branch_id', $this->currentBranchId)
+                        ->mapWithKeys(fn ($partnership) => [
+                            (string) $partnership->customer_type_id => (float) ($partnership->getRawOriginal('special_price') / 100),
+                        ])
+                        ->toArray(),
                     'conversion_factor' => (float) $pkg->conversion_factor,
                 ])->values()->toArray();
 
@@ -176,6 +188,11 @@ final class ProcessSale extends Component
 
         // 5. Notify the user and close the modal
         $this->toastSuccess("Customer '{$customer->name}' created and selected!");
+        $this->dispatch('customer-created', customer: [
+            'label' => $customer->name . ($customer->customerType ? " ({$customer->customerType->name} - {$customer->customerType->discount_percentage}%)" : ''),
+            'value' => $customer->id,
+            'type_id' => $customer->customer_type_id,
+        ]);
         $this->dispatch('close-modal', id: 'customer-form');
     }
 
@@ -187,10 +204,12 @@ final class ProcessSale extends Component
         // 1. Backend Validation
         $validator = Validator::make($checkoutData, [
             'cart' => ['required', 'array', 'min:1'],
+            'cart.*.product_id' => ['required', 'integer', 'exists:products,id'],
+            'cart.*.packaging_id' => ['required', 'integer', 'exists:product_packagings,id'],
+            'cart.*.quantity' => ['required', 'numeric', 'gt:0'],
+            'cart.*.name' => ['nullable', 'string'],
             'payment_method_id' => ['required', 'integer', 'exists:payment_methods,id'],
             'amount_received' => ['required', 'numeric', 'min:0'],
-            'change_amount' => ['required', 'numeric', 'min:0'],
-            'discount_amount' => ['nullable', 'numeric', 'min:0'],
             'applied_discount_type_id' => ['nullable', 'integer', 'exists:customer_types,id'],
             'reference_number' => ['nullable', 'string'],
             'remarks' => ['nullable', 'string'],
@@ -204,31 +223,46 @@ final class ProcessSale extends Component
         $validated = $validator->validated();
 
         try {
-            // 2. Prepare SaleData DTO (Convert monetary values to CENTS)
-            $saleData = new SaleData(
-                branch_id: $this->currentBranchId,
-                user_id: $this->user->id,
-                payment_method_id: (int) $validated['payment_method_id'],
-                amount_tendered: (int) round($validated['amount_received'] * 100),
-                change_amount: (int) round($validated['change_amount'] * 100),
-                discount_amount: (int) round(($validated['discount_amount'] ?? 0) * 100),
-                customer_id: $this->customerMode === 'customer' ? $this->customer_id : null,
-                discount_type_id: (int) $validated['applied_discount_type_id'] ?? null,
-                payment_reference: $validated['reference_number'] ?? null,
-                status: Status::Completed
-            );
+            $paymentMethod = PaymentMethod::findOrFail((int) $validated['payment_method_id']);
 
-            // 3. Process Cart Items & Resolve FIFO Batches
+            if ($paymentMethod->requires_reference && empty($validated['reference_number'])) {
+                throw new \Exception("Reference number is required for {$paymentMethod->name} payments.");
+            }
+
+            $customer = $this->customerMode === 'customer' && $this->customer_id
+                ? Customer::with('customerType')->findOrFail($this->customer_id)
+                : null;
+
+            if ($this->customerMode === 'customer' && ! $customer) {
+                throw new \Exception('Please select a customer before checking out.');
+            }
+
+            $customerTypeId = $customer?->customer_type_id;
             $itemsData = [];
 
             foreach ($validated['cart'] as $cartItem) {
                 $remainingToDeduct = (float) $cartItem['quantity'];
 
                 // Fetch packaging to secure the exact conversion factor and unit_id
-                $packaging = ProductPackaging::findOrFail($cartItem['packaging_id']);
+                $packaging = ProductPackaging::query()
+                    ->with('product.productCategory')
+                    ->whereKey((int) $cartItem['packaging_id'])
+                    ->where('product_id', (int) $cartItem['product_id'])
+                    ->whereHas('product', function (Builder $query) {
+                        $query->where('branch_id', $this->currentBranchId)
+                            ->where('is_active', true)
+                            ->isPharmacy();
+                    })
+                    ->firstOrFail();
+
                 $unitId = $packaging->unit_id;
                 $conversionFactor = (float) $packaging->conversion_factor;
-                $priceCents = (int) round($cartItem['price'] * 100);
+                $regularPriceCents = (int) $packaging->getRawOriginal('price');
+                $partnership = $packaging->findPartnershipForCustomer($customerTypeId, $this->currentBranchId);
+                $priceCents = $partnership
+                    ? (int) $partnership->getRawOriginal('special_price')
+                    : $regularPriceCents;
+                $priceSource = $partnership ? 'partnership' : 'regular';
 
                 // Fetch available inventory batches (FIFO: Oldest first)
                 $batches = InventoryBatch::where('product_id', $cartItem['product_id'])
@@ -258,7 +292,11 @@ final class ProcessSale extends Component
                         quantity: $qtyTaken,
                         price_at_moment: $priceCents,
                         cost_at_moment: $packagingCostCents,
-                        subtotal: (int) round($qtyTaken * $priceCents)
+                        subtotal: (int) round($qtyTaken * $priceCents),
+                        product_packaging_id: $packaging->id,
+                        regular_price_at_moment: $regularPriceCents,
+                        price_source: $priceSource,
+                        partnership_id: $partnership?->id,
                     );
 
                     $remainingToDeduct -= $qtyTaken;
@@ -266,9 +304,37 @@ final class ProcessSale extends Component
 
                 // If we ran out of batches before fulfilling the cart item:
                 if (round($remainingToDeduct, 4) > 0) {
-                    throw new \Exception("Insufficient stock in inventory for {$cartItem['name']}. Another transaction may have consumed it.");
+                    throw new \Exception('Insufficient stock in inventory for ' . ($cartItem['name'] ?? 'the selected product') . '. Another transaction may have consumed it.');
                 }
             }
+
+            $subtotalCents = collect($itemsData)->sum(fn (SaleItemData $item) => $item->subtotal);
+            $requestedDiscountTypeId = ! empty($validated['applied_discount_type_id'])
+                ? (int) $validated['applied_discount_type_id']
+                : null;
+
+            $discountTypeId = $this->resolveDiscountTypeId($requestedDiscountTypeId, $customer);
+            $discountCents = $this->calculateDiscountAmount($subtotalCents, $discountTypeId);
+            $grandTotalCents = max(0, $subtotalCents - $discountCents);
+            $amountTenderedCents = (int) round($validated['amount_received'] * 100);
+
+            if ($amountTenderedCents < $grandTotalCents) {
+                throw new \Exception('Amount received is lower than the amount due.');
+            }
+
+            // 2. Prepare SaleData DTO (Convert monetary values to CENTS)
+            $saleData = new SaleData(
+                branch_id: $this->currentBranchId,
+                user_id: $this->user->id,
+                payment_method_id: (int) $validated['payment_method_id'],
+                amount_tendered: $amountTenderedCents,
+                change_amount: $amountTenderedCents - $grandTotalCents,
+                discount_amount: $discountCents,
+                customer_id: $customer?->id,
+                discount_type_id: $discountTypeId,
+                payment_reference: $validated['reference_number'] ?? null,
+                status: Status::Completed
+            );
 
             // 4. Execute the fully structured Action
             $action = app(ProcessSaleAction::class);
@@ -286,5 +352,25 @@ final class ProcessSale extends Component
     protected function getAdditionalPageResetProperties(): array
     {
         return ['search', 'activeCategory'];
+    }
+
+    private function resolveDiscountTypeId(?int $requestedDiscountTypeId, ?Customer $customer): ?int
+    {
+        if ($customer) {
+            return $customer->customer_type_id;
+        }
+
+        return $requestedDiscountTypeId ?: null;
+    }
+
+    private function calculateDiscountAmount(int $subtotalCents, ?int $discountTypeId): int
+    {
+        if (! $discountTypeId) {
+            return 0;
+        }
+
+        $percentage = (float) CustomerType::whereKey($discountTypeId)->value('discount_percentage');
+
+        return (int) round($subtotalCents * ($percentage / 100));
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Pages;
 
+use App\Enums\Product\CategoryType;
 use App\Models\InventoryBatch;
 use App\Models\Branch;
 use App\Models\Product;
@@ -27,7 +28,7 @@ class Dashboard extends Component
 
     // Filters
     public ?int $branchId = null;   // Null = All Branches
-    public ?int $categoryId = null; // Null = All Modules (Pharmacy, Grocery, etc.)
+    public ?int $categoryId = null; // Null = all modules.
     public ?array $view_purchase = null;
     public string $dateRange = 'all';
 
@@ -61,6 +62,11 @@ class Dashboard extends Component
         return ProductCategory::orderBy('name')->get();
     }
 
+    public function categoryLabel(string $categoryName): string
+    {
+        return CategoryType::tryFrom($categoryName)?->label() ?? $categoryName;
+    }
+
     /**
      * Get the date constraint based on the selected range.
      */
@@ -85,8 +91,12 @@ class Dashboard extends Component
             ->join('branches', 'inventory_batches.branch_id', '=', 'branches.id')
             ->join('product_categories', 'products.product_category_id', '=', 'product_categories.id')
             ->select(
+                'products.name',
                 'products.brand_name',
                 'products.generic_name',
+                'products.dosage',
+                'products.form',
+                'products.product_code',
                 'products.reorder_level',
                 'branches.name as branch_name',
                 'product_categories.name as category_name',
@@ -95,8 +105,12 @@ class Dashboard extends Component
             ->where('inventory_batches.quantity_on_hand', '>', 0)
             ->groupBy(
                 'products.id',
+                'products.name',
                 'products.brand_name',
                 'products.generic_name',
+                'products.dosage',
+                'products.form',
+                'products.product_code',
                 'products.reorder_level',
                 'branches.id',
                 'branches.name',
@@ -106,6 +120,10 @@ class Dashboard extends Component
 
         if ($this->categoryId) {
             $query->where('products.product_category_id', $this->categoryId);
+        }
+
+        if ($this->branchId) {
+            $query->where('inventory_batches.branch_id', $this->branchId);
         }
 
         return $query;
@@ -190,6 +208,7 @@ class Dashboard extends Component
 
         // 2. Total Products Count
         $productsCount = Product::when($this->categoryId, fn($q) => $q->where('product_category_id', $this->categoryId))
+            ->when($this->branchId, fn ($q) => $q->where('branch_id', $this->branchId))
             ->count();
 
         // 3. Low Stock, Near Expiry, and Expired Items
@@ -278,21 +297,22 @@ class Dashboard extends Component
     {
         $dateRange = $this->getDateRange();
 
-        return User::where('branch_id', $this->currentBranchId)
+        return User::query()
+            ->when($this->branchId, fn ($query) => $query->where('branch_id', $this->branchId))
             ->whereHas('sales', function ($q) use ($dateRange) {
-                $q->where('branch_id', $this->currentBranchId)
-                  ->where('status', \App\Enums\Sale\Status::Completed)
+                $q->where('status', \App\Enums\Sale\Status::Completed)
+                  ->when($this->branchId, fn ($query) => $query->where('branch_id', $this->branchId))
                   // Only run whereBetween if $dateRange is not null/empty
                   ->when($dateRange, fn($query) => $query->whereBetween('created_at', $dateRange));
             })
             ->withCount(['sales as total_transactions' => function ($q) use ($dateRange) {
-                $q->where('branch_id', $this->currentBranchId)
-                  ->where('status', \App\Enums\Sale\Status::Completed)
+                $q->where('status', \App\Enums\Sale\Status::Completed)
+                  ->when($this->branchId, fn ($query) => $query->where('branch_id', $this->branchId))
                   ->when($dateRange, fn($query) => $query->whereBetween('created_at', $dateRange));
             }])
             ->withSum(['sales as total_revenue' => function ($q) use ($dateRange) {
-                $q->where('branch_id', $this->currentBranchId)
-                  ->where('status', \App\Enums\Sale\Status::Completed)
+                $q->where('status', \App\Enums\Sale\Status::Completed)
+                  ->when($this->branchId, fn ($query) => $query->where('branch_id', $this->branchId))
                   ->when($dateRange, fn($query) => $query->whereBetween('created_at', $dateRange));
             }], 'grand_total')
             ->orderByDesc('total_revenue')

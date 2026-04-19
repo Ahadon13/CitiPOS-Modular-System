@@ -152,7 +152,9 @@ class Transaction extends Component
                 'customer.customerType',
                 'paymentMethod',
                 'saleItems.product',
-                'saleItems.unit'
+                'saleItems.unit',
+                'saleItems.productPackaging.unit',
+                'saleItems.partnership.customerType',
             ])
             ->withCount('saleItems')    // Automatically counts the items in the transaction
             ->orderBy($this->sort['column'] ?? 'created_at', $this->sort['direction'] ?? 'desc')

@@ -8,6 +8,7 @@ use App\Casts\MoneyCast;
 use App\Enums\Sale\Status;
 use App\Models\Branch;
 use App\Models\Customer;
+use App\Models\InventoryTransaction;
 use App\Models\SaleItem;
 use App\Models\User;
 use App\Models\PaymentMethod;
@@ -33,6 +34,9 @@ final class Sale extends Model
         'status',
         'payment_method_id',
         'payment_reference',
+        'subtotal',
+        'discount_amount',
+        'discount_type_id',
         'amount_tendered',
         'change_amount',
     ];
@@ -57,9 +61,22 @@ final class Sale extends Model
         return $this->belongsTo(Customer::class);
     }
 
+    public function discountType(): BelongsTo
+    {
+        return $this->belongsTo(CustomerType::class, 'discount_type_id');
+    }
+
     public function saleItems(): HasMany
     {
         return $this->hasMany(SaleItem::class);
+    }
+
+    /**
+     * Get all inventory movements triggered by this specific sale receipt.
+     */
+    public function inventoryTransactions()
+    {
+        return $this->morphMany(InventoryTransaction::class, 'reference');
     }
 
     /**
@@ -74,7 +91,10 @@ final class Sale extends Model
             'branch_id' => 'integer',
             'user_id' => 'integer',
             'customer_id' => 'integer',
+            'discount_type_id' => 'integer',
             'status' => Status::class,
+            'subtotal' => MoneyCast::class,
+            'discount_amount' => MoneyCast::class,
             'grand_total' => MoneyCast::class,
             'amount_tendered' => MoneyCast::class,
             'change_amount' => MoneyCast::class,

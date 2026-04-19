@@ -6,9 +6,9 @@
 
             <div class="flex items-center justify-between mb-2">
                 <h3 class="text-sm font-bold text-neutral-900 dark:text-white">
-                    {{ $category_id ? 'Edit Category' : 'Add New Category' }}
+                    {{ $product_category_id ? 'Edit Category' : 'Add New Category' }}
                 </h3>
-                @if($category_id)
+                @if($product_category_id)
                     <button type="button" wire:click="resetForm" class="text-xs text-blue-600 hover:underline">
                         Cancel Edit
                     </button>
@@ -21,22 +21,8 @@
                 <div class="md:col-span-2">
                     <x-ui.field required>
                         <x-ui.label>Category Name</x-ui.label>
-                        <x-ui.input wire:model="name" placeholder="e.g., Pain Relievers, Antibiotics, Vitamins" />
+                        <x-ui.input wire:model="name" placeholder="Use module values: pharmacy, grocery, motor-shop" />
                         <x-ui.error name="name" />
-                    </x-ui.field>
-                </div>
-
-                {{-- Description --}}
-                <div class="md:col-span-2">
-                    <x-ui.field>
-                        <x-ui.label>Description (Optional)</x-ui.label>
-                        <textarea
-                            wire:model="description"
-                            rows="2"
-                            class="w-full text-sm rounded-lg border-neutral-300 dark:border-neutral-700 dark:bg-neutral-800 text-neutral-900 dark:text-white focus:ring-blue-500 custom-scrollbar"
-                            placeholder="Briefly describe this category..."
-                        ></textarea>
-                        <x-ui.error name="description" />
                     </x-ui.field>
                 </div>
 
@@ -49,7 +35,7 @@
 
             <div class="flex justify-end pt-2">
                 <x-ui.button type="submit" size="sm" wire:loading.attr="disabled" wire:target="save" icon="check-circle">
-                    {{ $category_id ? 'Update Category' : 'Save Category' }}
+                    {{ $product_category_id ? 'Update Category' : 'Save Category' }}
                 </x-ui.button>
             </div>
         </form>
@@ -76,7 +62,7 @@
                     </thead>
                     <tbody class="divide-y divide-black/10 dark:divide-white/10 bg-white dark:bg-[#060A23]">
                         @forelse($this->categories as $category)
-                            <tr class="hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors {{ $category_id === $category->id ? 'bg-blue-50/50 dark:bg-blue-900/20' : '' }}">
+                            <tr class="hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors {{ $product_category_id === $category->id ? 'bg-blue-50/50 dark:bg-blue-900/20' : '' }}">
 
                                 <td class="px-4 py-3">
                                     <span class="font-bold text-neutral-900 dark:text-white block">{{ $category->name }}</span>

@@ -11,9 +11,11 @@ use App\Models\Purchase;
 use App\Models\Sale;
 use App\Models\Product;
 use App\Models\InventoryBatch;
+use App\Models\InventoryTransaction;
 use App\Exports\BranchSalesExport;
 use App\Exports\BranchPurchasesExport;
 use App\Models\Category;
+use App\Enums\Inventory\TransactionType;
 use App\Traits\HasDataTable;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -39,6 +41,27 @@ class ViewBranch extends Component
     public array $productCategories = [];
     public bool $nearExpiryOnly = false;
     public bool $expiredOnly = false;
+    public string $inventoryMovementTypeFilter = '';
+
+    #[Computed]
+    public function moduleLabel(): string
+    {
+        return CategoryType::tryFrom($this->branch->productCategory?->name ?? '')?->label()
+            ?? $this->branch->productCategory?->name
+            ?? 'Inventory';
+    }
+
+    #[Computed]
+    public function isPharmacyBranch(): bool
+    {
+        return $this->branch->productCategory?->name === CategoryType::Pharmacy->value;
+    }
+
+    #[Computed]
+    public function isMotorShopBranch(): bool
+    {
+        return $this->branch->productCategory?->name === CategoryType::MotorShop->value;
+    }
 
     #[Computed]
     public function categories(): array
@@ -149,9 +172,9 @@ class ViewBranch extends Component
         // 2. Basic Filters
         if ($this->active) $query->where('is_active', true);
         if ($this->disabled) $query->where('is_active', false);
-        if ($this->requirePrescription) $query->where('requires_prescription', true);
+        if ($this->isPharmacyBranch && $this->requirePrescription) $query->where('requires_prescription', true);
         if (!empty($this->productCategories)) {
-            $query->whereIn('product_category_id', $this->productCategories);
+            $query->whereIn('category_id', $this->productCategories);
         }
 
         // 3. Stock Filters
@@ -224,11 +247,54 @@ class ViewBranch extends Component
             ->paginate(5, ['*'], 'poPage');
     }
 
+    #[Computed]
+    public function inventoryMovementTypeOptions(): array
+    {
+        return collect(TransactionType::cases())
+            ->map(fn (TransactionType $type): array => [
+                'value' => $type->value,
+                'label' => $type->label(),
+            ])
+            ->toArray();
+    }
+
+    #[Computed]
+    public function inventoryMovements()
+    {
+        return InventoryTransaction::query()
+            ->with(['product.baseUnit', 'batch', 'user', 'reference'])
+            ->where('branch_id', $this->branch->id)
+            ->whereHas('product', fn ($query) => $query->where('product_category_id', $this->branch->product_category_id))
+            ->when($this->inventoryMovementTypeFilter !== '', fn ($query) => $query->where('type', $this->inventoryMovementTypeFilter))
+            ->latest()
+            ->paginate(10, ['*'], 'inventoryMovementsPage');
+    }
+
+    #[Computed]
+    public function expiredStockBannerItems()
+    {
+        return InventoryBatch::query()
+            ->with(['product.baseUnit'])
+            ->where('branch_id', $this->branch->id)
+            ->where('quantity_on_hand', '>', 0)
+            ->whereDate('expiration_date', '<=', now())
+            ->whereHas('product', fn ($query) => $query->where('product_category_id', $this->branch->product_category_id))
+            ->orderBy('expiration_date')
+            ->limit(3)
+            ->get();
+    }
+
     // Reset pagination when the date filter changes
     public function updatingDateRange()
     {
         $this->resetPage('salesPage');
         $this->resetPage('poPage');
+        $this->resetPage('inventoryMovementsPage');
+    }
+
+    public function updatedInventoryMovementTypeFilter(): void
+    {
+        $this->resetPage('inventoryMovementsPage');
     }
 
     public function exportProducts()
@@ -258,8 +324,8 @@ class ViewBranch extends Component
         // 1. Set the active branch in the session
         (new SwitchBranch())->execute($this->branch->id);
 
-        // Redirect to the Pharmacy Dashboard with this branch's context active
-        return redirect()->route('inventory.pharmacy.dashboard');
+        // Redirect to the branch's inventory dashboard with this branch context active.
+        return redirect()->route('inventory.redirect', ['branch' => $this->branch->id]);
     }
 
     protected function getDateRange(): array
@@ -294,6 +360,6 @@ class ViewBranch extends Component
 
     protected function getAdditionalPageResetProperties(): array
     {
-        return ['branchId', 'dateRange', 'view_purchase', 'lowStockOnly', 'outOfStockOnly', 'requirePrescription', 'active', 'disabled', 'productCategories', 'expiryFilter', 'nearExpiryOnly', 'expiredOnly'];
+        return ['branchId', 'dateRange', 'view_purchase', 'lowStockOnly', 'outOfStockOnly', 'requirePrescription', 'active', 'disabled', 'productCategories', 'expiryFilter', 'nearExpiryOnly', 'expiredOnly', 'inventoryMovementTypeFilter'];
     }
 }

@@ -169,6 +169,20 @@
             </table>
         </div>
 
+        {{-- NEW: Partnership Pricing Notice --}}
+        <div class="mb-6 bg-blue-50/50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800/50 rounded-lg p-4 flex gap-3 items-start">
+            <x-ui.icon name="information-circle" class="size-6 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+            <div>
+                <h4 class="text-sm font-bold text-blue-900 dark:text-blue-300">What about DSWD, LGU, or etc.?</h4>
+                <p class="text-xs text-blue-800/80 dark:text-blue-300/80 mt-1 leading-relaxed">
+                    Do not include mandated partnership prices in the import file. This file is strictly for importing master inventory data and regular retail prices. Because government prices can vary by branch/municipality, you must configure them in the system <strong>after</strong> importing.
+                </p>
+                <div class="mt-2 text-xs font-medium text-blue-700 dark:text-blue-400">
+                    Workflow: Import this file &rarr; Go to Product List &rarr; Edit a Product &rarr; Open the "Partnership Pricing" tab. / Import this file &rarr; Go to Product List &rarr; Bulk Price Book.
+                </div>
+            </div>
+        </div>
+
         {{-- Grouping Logic Explanation --}}
         <ul class="space-y-2 text-sm text-neutral-600 dark:text-neutral-400 mb-8 list-disc list-inside">
             <li><strong>product_code</strong> must be unique for each distinct product.</li>

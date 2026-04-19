@@ -14,7 +14,7 @@
 
             <div class="flex items-center gap-3">
                 {{-- Desktop App Download Button --}}
-                <x-ui.button href="{{ asset('app/citipos-app.exe') }}" download variant="outline" class="hidden sm:flex border-neutral-600 text-neutral-300 hover:text-white hover:bg-white/5" icon-after="arrow-down-tray">
+                <x-ui.button href="https://github.com/Ahadon13/POSAndInventory/releases/download/v1.0.0/citipos-app.exe" download variant="outline" class="hidden sm:flex border-neutral-600 text-neutral-300 hover:text-white hover:bg-white/5" icon-after="arrow-down-tray">
                     Get Desktop App
                 </x-ui.button>
 
@@ -92,7 +92,7 @@
             <div class="border-neutral-600/30 before:border-neutral-600/30 flex flex-col sm:flex-row items-center justify-center gap-4 relative col-span-3 border border-t-0 border-dashed py-6 before:absolute before:-bottom-5 before:-right-6 before:z-10 before:h-10 before:w-12 before:rounded-none before:border before:border-dashed before:content-[''] lg:col-span-1 dark:before:border-neutral-600/30 before:bg-[#050609]">
 
                 {{-- Download Desktop App CTA --}}
-                <x-ui.button href="{{ asset('app/citipos-app.exe') }}" download variant="outline" iconAfter="arrow-down-tray" class="w-full sm:w-auto border-neutral-600! text-white! hover:bg-white/5! px-8! py-3!">
+                <x-ui.button href="https://github.com/Ahadon13/POSAndInventory/releases/download/v1.0.0/citipos-app.exe" download variant="outline" iconAfter="arrow-down-tray" class="w-full sm:w-auto border-neutral-600! text-white! hover:bg-white/5! px-8! py-3!">
                     Download App
                 </x-ui.button>
 

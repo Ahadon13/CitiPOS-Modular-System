@@ -22,12 +22,12 @@
             </button>
 
             {{-- Product Categories --}}
-            {{-- <button type="button" x-on:click="$dispatch('open-modal', { id: 'manage-product-category' })" class="flex flex-col items-center justify-center gap-2 p-5 rounded-lg border border-neutral-200 dark:border-white/10 hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group">
+            <button type="button" x-on:click="$dispatch('open-modal', { id: 'manage-product-category' })" class="flex flex-col items-center justify-center gap-2 p-5 rounded-lg border border-neutral-200 dark:border-white/10 hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group">
                 <div class="p-3 bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-full group-hover:scale-110 transition-transform">
                     <x-ui.icon name="rectangle-stack" class="size-6" />
                 </div>
                 <span class="font-bold text-sm text-neutral-900 dark:text-white">Categories</span>
-            </button> --}}
+            </button>
 
             {{-- Measurement Units --}}
             <button type="button" x-on:click="$dispatch('open-modal', { id: 'create-unit' })" class="flex flex-col items-center justify-center gap-2 p-5 rounded-lg border border-neutral-200 dark:border-white/10 hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group">
@@ -54,12 +54,12 @@
             </button>
 
             {{-- Desktop App Uploader --}}
-            <button type="button" x-on:click="$dispatch('open-modal', { id: 'upload-app' })" class="flex flex-col items-center justify-center gap-2 p-5 rounded-lg border border-neutral-200 dark:border-white/10 hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group">
+            {{-- <button type="button" x-on:click="$dispatch('open-modal', { id: 'upload-app' })" class="flex flex-col items-center justify-center gap-2 p-5 rounded-lg border border-neutral-200 dark:border-white/10 hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group">
                 <div class="p-3 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full group-hover:scale-110 transition-transform">
                     <x-ui.icon name="cloud-arrow-up" class="size-6" />
                 </div>
                 <span class="font-bold text-sm text-neutral-900 dark:text-white">Desktop App</span>
-            </button>
+            </button> --}}
 
         </div>
     </x-ui.card>
@@ -124,10 +124,10 @@
     </div>
 
     {{-- System Configuration Modals --}}
-    <livewire:inventory.pages.pharmacy.common.create-supplier-modal />
-    <livewire:inventory.pages.pharmacy.common.create-customer-type-modal />
-    <livewire:inventory.pages.pharmacy.common.create-unit-modal />
-    <livewire:inventory.pages.pharmacy.common.create-payment-method-modal />
-    {{-- <livewire:admin.common.manage-product-category-modal /> --}}
-    <livewire:admin.common.upload-app-modal />
+    <livewire:admin.common.create-supplier-modal />
+    <livewire:admin.common.create-customer-type-modal />
+    <livewire:admin.common.create-unit-modal />
+    <livewire:admin.common.create-payment-method-modal />
+    <livewire:admin.common.manage-product-category-modal />
+    {{-- <livewire:admin.common.upload-app-modal /> --}}
 </div>

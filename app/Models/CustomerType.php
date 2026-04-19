@@ -29,6 +29,11 @@ final class CustomerType extends Model
         return $this->hasMany(Customer::class);
     }
 
+    public function partnerships(): HasMany
+    {
+        return $this->hasMany(Partnership::class);
+    }
+
     /**
      * Get the attributes that should be cast.
      *

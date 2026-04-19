@@ -22,7 +22,7 @@ final class NativeAppServiceProvider implements ProvidesPhpIni
             ->title('CitiPOS')
             ->backgroundColor('#171717')
             ->hideMenu()
-            ->kiosk()
+            ->maximized()
             ->focusable(true);
     }
 

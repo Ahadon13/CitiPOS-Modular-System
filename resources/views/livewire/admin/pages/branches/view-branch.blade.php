@@ -1,4 +1,8 @@
 <div class="max-w-7xl mx-auto space-y-6 p-5">
+    @php
+        $isPharmacyBranch = $this->isPharmacyBranch;
+        $isMotorShopBranch = $this->isMotorShopBranch;
+    @endphp
 
     {{-- Breadcrumbs --}}
     <x-ui.breadcrumbs>
@@ -27,6 +31,9 @@
                 <x-ui.icon name="map-pin" class="size-4 shrink-0 mt-0.5 sm:mt-0" />
                 <span class="leading-tight">{{ $branch->address ?? 'No address provided' }}</span>
             </p>
+            <p class="mt-2 text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                {{ $this->moduleLabel }} Module
+            </p>
         </div>
 
         {{-- Right Side: Controls --}}
@@ -52,6 +59,36 @@
 
         </div>
     </x-ui.card>
+
+    @if($this->expiredStockBannerItems->isNotEmpty())
+        <div class="rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-900/50 dark:bg-red-950/30">
+            <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                <div class="flex gap-3">
+                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600 dark:bg-red-900/60 dark:text-red-300">
+                        <x-ui.icon name="exclamation-triangle" class="size-5" />
+                    </div>
+                    <div>
+                        <h2 class="text-sm font-bold text-red-800 dark:text-red-200">
+                            {{ number_format($this->productStats['expired']) }} expired {{ strtolower($this->moduleLabel) }} batch{{ $this->productStats['expired'] > 1 ? 'es' : '' }} need review
+                        </h2>
+                        <p class="mt-1 text-sm text-red-700/80 dark:text-red-200/80">
+                            These stocked items are past expiration and should be pulled from shelves.
+                        </p>
+                        <div class="mt-3 flex flex-wrap gap-2">
+                            @foreach($this->expiredStockBannerItems as $batch)
+                                <span class="inline-flex items-center rounded-md bg-white px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-red-200 dark:bg-red-950 dark:text-red-200 dark:ring-red-800">
+                                    {{ $batch->product->brand_name ?? 'Unknown' }} / {{ $batch->batch_number ?? 'No batch' }}
+                                </span>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+                <x-ui.button size="sm" variant="outline" color="red" wire:click="$set('expiredOnly', true)">
+                    Show Expired
+                </x-ui.button>
+            </div>
+        </div>
+    @endif
 
     {{-- Top Level KPI Cards --}}
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -272,7 +309,9 @@
                                 <x-ui.dropdown.item wire:model.live="outOfStockOnly">Out of Stock</x-ui.dropdown.item>
                                 <x-ui.dropdown.item wire:model.live="nearExpiryOnly">Near Expiry</x-ui.dropdown.item>
                                 <x-ui.dropdown.item wire:model.live="expiredOnly">Expired Batches</x-ui.dropdown.item>
-                                <x-ui.dropdown.item wire:model.live="requirePrescription">Requires Prescription</x-ui.dropdown.item>
+                                @if($isPharmacyBranch)
+                                    <x-ui.dropdown.item wire:model.live="requirePrescription">Requires Prescription</x-ui.dropdown.item>
+                                @endif
                                 <x-ui.dropdown.item wire:model.live="active">Enabled</x-ui.dropdown.item>
                                 <x-ui.dropdown.item wire:model.live="disabled">Disabled</x-ui.dropdown.item>
                             </x-slot:menu>
@@ -295,7 +334,7 @@
                                 <thead>
                                     <tr class="border-b border-black/10 dark:border-white/10 dark:bg-[#0a1331] bg-neutral-100/10 text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                                         <th class="px-6 py-4">Name</th>
-                                        <th class="px-6 py-4">Dosage / Form</th>
+                                        <th class="px-6 py-4">{{ $isPharmacyBranch ? 'Dosage / Form' : ($isMotorShopBranch ? 'Part Details' : 'Base Unit') }}</th>
                                         <th class="px-6 py-4">Product Code</th>
                                         <th class="px-6 py-4 text-center">Stock</th>
                                         <th class="px-6 py-4 text-center">Status</th>
@@ -316,8 +355,16 @@
                                         </td>
 
                                         <td class="px-6 py-4">
-                                            <span class="text-neutral-900 dark:text-white font-medium">{{ $product->dosage ?? '-' }}</span>
-                                            <span class="block text-xs text-neutral-500">{{ $product->form ?? '-' }}</span>
+                                            @if($isPharmacyBranch)
+                                                <span class="text-neutral-900 dark:text-white font-medium">{{ $product->dosage ?? '-' }}</span>
+                                                <span class="block text-xs text-neutral-500">{{ $product->form ?? '-' }}</span>
+                                            @elseif($isMotorShopBranch)
+                                                <span class="text-neutral-900 dark:text-white font-medium">{{ data_get($product->attributes, 'part_number') ?: 'N/A' }}</span>
+                                                <span class="block text-xs text-neutral-500">OEM: {{ data_get($product->attributes, 'oem_number') ?: 'N/A' }}</span>
+                                            @else
+                                                <span class="text-neutral-900 dark:text-white font-medium">{{ $product->baseUnit->name ?? 'N/A' }}</span>
+                                                <span class="block text-xs text-neutral-500">{{ $product->baseUnit->abbreviation ?? '' }}</span>
+                                            @endif
                                         </td>
 
                                         <td class="px-6 py-4">
@@ -403,6 +450,109 @@
 
     </div>
 
+    {{-- Branch Inventory Movement Ledger --}}
+    <x-ui.card hoverless size="full" class="overflow-hidden p-0 border-emerald-500/30">
+        <div class="px-6 py-5 border-b border-black/10 dark:border-white/10 bg-emerald-50/30 dark:bg-emerald-900/10">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <x-ui.heading level="h3" size="sm" class="text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
+                        <x-ui.icon name="arrows-right-left" class="size-5" />
+                        Inventory IN / OUT Movements
+                    </x-ui.heading>
+                    <p class="text-sm text-neutral-500 mt-1">Branch-specific movement ledger for {{ $this->moduleLabel }} stock.</p>
+                </div>
+                <x-ui.field class="w-full md:w-72">
+                    <x-ui-select.styled
+                        wire:model.live="inventoryMovementTypeFilter"
+                        placeholder="All movement types"
+                        :options="$this->inventoryMovementTypeOptions"
+                        select="label:label|value:value"
+                    />
+                </x-ui.field>
+            </div>
+        </div>
+
+        <div class="w-full overflow-x-auto custom-scrollbar">
+            <table class="w-full text-left text-sm whitespace-nowrap">
+                <thead class="bg-neutral-50 dark:bg-[#0a1331] border-b border-black/10 dark:border-white/10 text-xs uppercase text-neutral-500">
+                    <tr>
+                        <th class="px-6 py-4">Date & Time</th>
+                        <th class="px-6 py-4">Product</th>
+                        <th class="px-6 py-4">Batch</th>
+                        <th class="px-6 py-4 text-center">Type</th>
+                        <th class="px-6 py-4 text-right">IN</th>
+                        <th class="px-6 py-4 text-right">OUT</th>
+                        <th class="px-6 py-4 text-right">Balance</th>
+                        <th class="px-6 py-4">User</th>
+                        <th class="px-6 py-4">Reference</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-black/5 dark:divide-white/5 bg-neutral-50 dark:bg-[#060A23]">
+                    @forelse($this->inventoryMovements as $movement)
+                        @php
+                            $isAddition = $movement->type?->isAddition() ?? false;
+                            $referenceNo = $movement->reference?->reference_no
+                                ?? $movement->reference?->payment_reference
+                                ?? $movement->reference?->id
+                                ?? null;
+                        @endphp
+                        <tr class="hover:bg-emerald-50/50 dark:hover:bg-emerald-900/20 transition-colors">
+                            <td class="px-6 py-4">
+                                <div class="text-neutral-900 dark:text-white">{{ $movement->created_at->format('M d, Y') }}</div>
+                                <div class="text-xs text-neutral-500">{{ $movement->created_at->format('h:i A') }}</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="font-medium text-neutral-900 dark:text-white">{{ $movement->product->brand_name ?? 'Unknown' }}</div>
+                                <div class="text-xs text-neutral-500">{{ $movement->product->product_code ?? '-' }}</div>
+                            </td>
+                            <td class="px-6 py-4 font-mono text-xs text-neutral-500">{{ $movement->batch->batch_number ?? '-' }}</td>
+                            <td class="px-6 py-4 text-center">
+                                <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset {{ $isAddition ? 'bg-emerald-400/10 text-emerald-600 dark:text-emerald-400 ring-emerald-400/20' : 'bg-red-400/10 text-red-600 dark:text-red-400 ring-red-400/20' }}">
+                                    {{ $movement->type?->label() ?? '-' }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-right font-bold text-emerald-600 dark:text-emerald-400">
+                                {{ $isAddition ? number_format((float) $movement->quantity, 2) : '-' }}
+                            </td>
+                            <td class="px-6 py-4 text-right font-bold text-red-600 dark:text-red-400">
+                                {{ ! $isAddition ? number_format((float) $movement->quantity, 2) : '-' }}
+                            </td>
+                            <td class="px-6 py-4 text-right text-neutral-900 dark:text-white">
+                                {{ number_format((float) $movement->running_balance, 2) }}
+                                <span class="text-xs text-neutral-500">{{ $movement->product->baseUnit->abbreviation ?? 'pcs' }}</span>
+                            </td>
+                            <td class="px-6 py-4 text-neutral-900 dark:text-white">{{ $movement->user->name ?? 'Unknown' }}</td>
+                            <td class="px-6 py-4 font-mono text-xs text-neutral-500">
+                                {{ $movement->reference_type ? class_basename($movement->reference_type) : '-' }}{{ $referenceNo ? ' #' . $referenceNo : '' }}
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="9" class="p-8 text-center">
+                                <x-ui.empty>
+                                    <x-ui.empty.media class="bg-neutral-100 dark:bg-white/5 rounded-full size-12 flex items-center justify-center">
+                                        <x-ui.icon name="arrows-right-left" class="size-6 text-emerald-500" />
+                                    </x-ui.empty.media>
+                                    <x-ui.empty.contents>
+                                        <x-ui.heading>No inventory movements found.</x-ui.heading>
+                                        <x-ui.text class="opacity-70">This branch has no recorded inventory transactions yet.</x-ui.text>
+                                    </x-ui.empty.contents>
+                                </x-ui.empty>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+        <div class="border-t border-black/10 dark:border-white/10 px-4 pb-3 flex justify-center bg-white dark:bg-card">
+            <x-ui.pagination
+                wire:model.live="perPage"
+                :per-page-options="$perPageOptions"
+                :data="$this->inventoryMovements"
+            />
+        </div>
+    </x-ui.card>
+
     {{-- View/Print Modal --}}
-    <livewire:inventory.pages.pharmacy.purchase.view-purchase-modal wire:model="view_purchase" />
+    <livewire:admin.common.view-purchase-modal wire:model="view_purchase" />
 </div>

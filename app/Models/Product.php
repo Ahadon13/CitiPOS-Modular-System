@@ -9,6 +9,7 @@ use App\Models\ProductCategory;
 use App\Models\Category;
 use App\Models\ProductPackaging;
 use App\Models\InventoryBatch;
+use App\Models\InventoryTransaction;
 use App\Models\PurchaseItem;
 use App\Models\SaleItem;
 use App\Models\Supplier;
@@ -140,6 +141,11 @@ final class Product extends Model
         return $this->hasMany(PurchaseItem::class);
     }
 
+    public function inventoryTransactions()
+    {
+        return $this->hasMany(InventoryTransaction::class);
+    }
+
     // Helper for toggling active status
     public function toggleActive(): void
     {
@@ -170,6 +176,19 @@ final class Product extends Model
     {
         return $query->whereHas('productCategory', function ($subQ) {
             $subQ->where('name', CategoryType::Grocery->value);
+        });
+    }
+
+    /**
+     * Scope a query to only include products in the Motor Shop category.
+     *
+     * @param  Builder<Product>  $query
+     * @return Builder<Product>
+     */
+    public function scopeIsMotorShop(Builder $query): Builder
+    {
+        return $query->whereHas('productCategory', function ($subQ) {
+            $subQ->where('name', CategoryType::MotorShop->value);
         });
     }
 

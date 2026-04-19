@@ -399,6 +399,7 @@
                                     <th class="px-4 py-3">Product</th>
                                     <th class="px-4 py-3 text-center">Qty</th>
                                     <th class="px-4 py-3 text-right">Price</th>
+                                    <th class="px-4 py-3 text-center">Source</th>
                                     <th class="px-4 py-3 text-right">Subtotal</th>
                                 </tr>
                             </thead>
@@ -413,7 +414,26 @@
                                             <span class="font-medium" x-text="item.quantity"></span>
                                             <span class="text-xs text-neutral-500" x-text="item.unit?.abbreviation || 'Unit'"></span>
                                         </td>
-                                        <td class="px-4 py-3 text-right text-neutral-600 dark:text-neutral-400 font-mono" x-text="formatMoney(item.price_at_moment.amount)"></td>
+                                        <td class="px-4 py-3 text-right text-neutral-600 dark:text-neutral-400 font-mono">
+                                            <div x-text="formatMoney(item.price_at_moment.amount)"></div>
+                                            <template x-if="item.price_source === 'partnership' && item.regular_price_at_moment">
+                                                <div class="text-[10px] text-neutral-500">
+                                                    Regular: <span x-text="formatMoney(item.regular_price_at_moment.amount)"></span>
+                                                </div>
+                                            </template>
+                                        </td>
+                                        <td class="px-4 py-3 text-center">
+                                            <template x-if="item.price_source === 'partnership'">
+                                                <span class="inline-flex items-center rounded-md bg-emerald-400/10 px-2 py-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 ring-1 ring-inset ring-emerald-400/20">
+                                                    <span x-text="item.partnership?.customer_type?.name || selectedTx.customer?.customer_type?.name || 'Partnership'"></span>
+                                                </span>
+                                            </template>
+                                            <template x-if="item.price_source !== 'partnership'">
+                                                <span class="inline-flex items-center rounded-md bg-neutral-400/10 px-2 py-1 text-[10px] font-bold text-neutral-500 ring-1 ring-inset ring-neutral-400/20">
+                                                    Regular
+                                                </span>
+                                            </template>
+                                        </td>
                                         <td class="px-4 py-3 text-right font-bold text-neutral-900 dark:text-white font-mono" x-text="formatMoney(item.subtotal.amount)"></td>
                                     </tr>
                                 </template>
