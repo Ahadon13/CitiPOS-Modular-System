@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Livewire\PointOfSale\Pages\MotorShop;
 
 use App\Actions\POS\ProcessSale as ProcessSaleAction;
+use App\Data\ProcessSale\MotorShopServiceItemData;
 use App\Data\ProcessSale\SaleData;
 use App\Data\ProcessSale\SaleItemData;
+use App\Enums\Role;
 use App\Enums\Sale\Status;
 use App\Livewire\Concerns\HasToast;
 use App\Models\Category;
@@ -16,6 +18,7 @@ use App\Models\InventoryBatch;
 use App\Models\PaymentMethod;
 use App\Models\Product;
 use App\Models\ProductPackaging;
+use App\Models\User;
 use App\Traits\HasAuth;
 use App\Traits\HasDataTable;
 use Illuminate\Database\Eloquent\Builder;
@@ -70,6 +73,26 @@ final class ProcessSale extends Component
     public function activePaymentMethods()
     {
         return PaymentMethod::where('is_active', true)->orderBy('name')->get(['id', 'name', 'requires_reference']);
+    }
+
+    #[Computed]
+    public function mechanics()
+    {
+        return User::query()
+            ->whereHas('roles', fn (Builder $query) => $query->whereIn('name', [
+                Role::ChiefMechanic->value,
+                Role::Mechanic->value,
+            ]))
+            ->where(function (Builder $query) {
+                $query->where('branch_id', $this->currentBranchId)
+                    ->orWhereHas('accessibleBranches', fn (Builder $branchQuery) => $branchQuery->whereKey($this->currentBranchId));
+            })
+            ->orderBy('name')
+            ->get()
+            ->map(fn (User $user) => [
+                'value' => $user->id,
+                'label' => $user->name,
+            ]);
     }
 
     #[Computed]
@@ -162,11 +185,17 @@ final class ProcessSale extends Component
     public function submitOrder(array $checkoutData): void
     {
         $validator = Validator::make($checkoutData, [
-            'cart' => ['required', 'array', 'min:1'],
+            'cart' => ['nullable', 'array'],
             'cart.*.product_id' => ['required', 'integer', 'exists:products,id'],
             'cart.*.packaging_id' => ['required', 'integer', 'exists:product_packagings,id'],
             'cart.*.quantity' => ['required', 'numeric', 'gt:0'],
             'cart.*.name' => ['nullable', 'string'],
+            'services' => ['nullable', 'array'],
+            'services.*.service_name' => ['required', 'string', 'max:255'],
+            'services.*.mechanic_id' => ['nullable', 'integer', 'exists:users,id'],
+            'services.*.quantity' => ['required', 'numeric', 'gt:0'],
+            'services.*.price' => ['required', 'numeric', 'min:0'],
+            'services.*.description' => ['nullable', 'string', 'max:1000'],
             'payment_method_id' => ['required', 'integer', 'exists:payment_methods,id'],
             'amount_received' => ['required', 'numeric', 'min:0'],
             'applied_discount_type_id' => ['nullable', 'integer', 'exists:customer_types,id'],
@@ -182,6 +211,13 @@ final class ProcessSale extends Component
         $validated = $validator->validated();
 
         try {
+            $cartItems = $validated['cart'] ?? [];
+            $serviceItems = $validated['services'] ?? [];
+
+            if (count($cartItems) === 0 && count($serviceItems) === 0) {
+                throw new \Exception('Please add at least one product or service before checkout.');
+            }
+
             $paymentMethod = PaymentMethod::findOrFail((int) $validated['payment_method_id']);
 
             if ($paymentMethod->requires_reference && empty($validated['reference_number'])) {
@@ -198,7 +234,7 @@ final class ProcessSale extends Component
 
             $itemsData = [];
 
-            foreach ($validated['cart'] as $cartItem) {
+            foreach ($cartItems as $cartItem) {
                 $remainingToDeduct = (float) $cartItem['quantity'];
 
                 $packaging = ProductPackaging::query()
@@ -251,7 +287,25 @@ final class ProcessSale extends Component
                 }
             }
 
+            $serviceItemsData = collect($serviceItems)
+                ->map(function (array $service): MotorShopServiceItemData {
+                    $quantity = (float) $service['quantity'];
+                    $priceCents = (int) round(((float) $service['price']) * 100);
+
+                    return new MotorShopServiceItemData(
+                        service_name: trim((string) $service['service_name']),
+                        quantity: $quantity,
+                        price_at_moment: $priceCents,
+                        subtotal: (int) round($quantity * $priceCents),
+                        mechanic_id: ! empty($service['mechanic_id']) ? (int) $service['mechanic_id'] : null,
+                        description: $service['description'] ?? null,
+                    );
+                })
+                ->all();
+
             $subtotalCents = collect($itemsData)->sum(fn (SaleItemData $item) => $item->subtotal);
+            $serviceSubtotalCents = collect($serviceItemsData)->sum(fn (MotorShopServiceItemData $item) => $item->subtotal);
+            $subtotalCents += $serviceSubtotalCents;
             $requestedDiscountTypeId = ! empty($validated['applied_discount_type_id'])
                 ? (int) $validated['applied_discount_type_id']
                 : null;
@@ -264,7 +318,7 @@ final class ProcessSale extends Component
                 throw new \Exception('Amount received is lower than the amount due.');
             }
 
-            app(ProcessSaleAction::class)->execute(new SaleData(
+            $sale = app(ProcessSaleAction::class)->execute(new SaleData(
                 branch_id: $this->currentBranchId,
                 user_id: $this->user->id,
                 payment_method_id: (int) $validated['payment_method_id'],
@@ -275,9 +329,9 @@ final class ProcessSale extends Component
                 discount_type_id: $discountTypeId,
                 payment_reference: $validated['reference_number'] ?? null,
                 status: Status::Completed
-            ), $itemsData);
+            ), $itemsData, $serviceItemsData);
 
-            $this->dispatch('sale-completed');
+            $this->dispatch('sale-completed', receiptUrl: route('pos.motor-shop.sales.receipt', $sale));
             $this->toastSuccess('Payment processed successfully!');
         } catch (\Exception $e) {
             $this->toastError('Transaction failed: ' . $e->getMessage());

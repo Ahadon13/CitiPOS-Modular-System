@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Enums\Role;
+use App\Support\ModuleAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -22,22 +23,31 @@ final class InventoryRoleController extends Controller
             return redirect()->route('login');
         }
 
-        // 2. Redirect based on Role Enum
-        // We assume your User model casts 'role' to the Role Enum
-        return match ($user->role) {
+        if ($user->hasRole(Role::SuperAdmin->value)) {
+            return redirect()->route('admin.hub');
+        }
 
-            // Specific Roles -> Specific Dashboards
-            Role::Pharmacist->value => redirect()->route('inventory.pharmacy.dashboard'),
-            Role::GroceryCashier->value => redirect()->route('inventory.grocery.dashboard'),
-            Role::MotorShopCashier->value,
-            Role::ChiefMechanic->value => redirect()->route('inventory.motor-shop.dashboard'),
+        $branches = ModuleAccess::accessibleBranches($user);
 
-            // Admin / SuperAdmin -> Main Dashboard (Overview)
-            Role::SuperAdmin->value,
-            Role::Admin->value => redirect()->route('admin.hub'),
+        if ($branches->count() > 1) {
+            return redirect()->route('select-work');
+        }
 
-            // Fallback for anyone else (e.g. Regular User)
-            default => abort(403, 'Unauthorized access to Inventory module.'),
-        };
+        if ($branches->count() === 1) {
+            $branch = $branches->first();
+            ModuleAccess::setActiveBranch($user, $branch);
+
+            $route = ModuleAccess::dashboardRouteForModule(ModuleAccess::moduleForBranch($branch) ?? '');
+
+            if ($route) {
+                return redirect()->route($route);
+            }
+        }
+
+        if ($user->hasRole(Role::Admin->value)) {
+            return redirect()->route('admin.hub');
+        }
+
+        abort(403, 'Unauthorized access to Inventory module.');
     }
 }

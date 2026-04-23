@@ -59,30 +59,27 @@
                     <x-ui.icon name="exclamation-triangle" class="size-6 text-orange-600! dark:text-orange-400!" />
                 </div>
                 <div>
-                    <p class="text-xs font-medium text-orange-600/80 uppercase tracking-wide">Expiring Soon</p>
+                    <p class="text-xs font-medium text-orange-600/80 uppercase tracking-wide">Low Stock</p>
                     <h3 class="text-2xl font-bold text-orange-700 dark:text-orange-400">
-                        {{ number_format($this->stats['near_expiry']) }}
+                        {{ number_format($this->stats['low_stock']) }}
                     </h3>
                 </div>
             </div>
         </x-ui.card>
 
-        {{-- 4. Near Expiry (Alert) --}}
+        {{-- 4. Active Batches --}}
         <x-ui.card hoverless size="full" class="relative border-l-4 border-l-yellow-400!">
             <div class="flex items-center gap-3">
                 <div class="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
-                    <x-ui.icon name="clock" class="size-6 text-yellow-600! dark:text-yellow-400!" />
+                    <x-ui.icon name="archive-box" class="size-6 text-yellow-600! dark:text-yellow-400!" />
                 </div>
                 <div>
-                    <p class="text-xs font-medium text-yellow-600/80 uppercase tracking-wide">Low Stock</p>
+                    <p class="text-xs font-medium text-yellow-600/80 uppercase tracking-wide">Active Batches</p>
                     <h3 class="text-2xl font-bold text-yellow-700 dark:text-yellow-400">
-                        {{ number_format($this->stats['low_stock']) }}
+                        {{ number_format($this->stats['active_batches']) }}
                     </h3>
                 </div>
             </div>
-            @if($this->stats['low_stock'] > 0)
-            <div class="absolute top-2 right-2 size-2 bg-yellow-500 rounded-full animate-pulse"></div>
-            @endif
         </x-ui.card>
     </div>
 
@@ -155,7 +152,7 @@
                                 <th class="px-6 py-4">Product Code</th>
                                 <th class="px-6 py-4">Part Details</th>
                                 <th class="px-6 py-4">Product Category</th>
-                                <th class="px-6 py-4 text-right">Expiration Date</th>
+                                <th class="px-6 py-4 text-right">Current Batch</th>
                                 <th class="px-6 py-4 text-center">Stock</th>
                                 <th class="px-6 py-4 text-center">Reorder Level</th>
                                 <th class="px-6 py-4 text-center">Status</th>
@@ -170,7 +167,7 @@
                             @php
                             $basePkg = $product->productPackagings->where('unit_id', $product->base_unit_id)->first()
                             ?? $product->productPackagings->first();
-                            // Since we sorted by expiration_date ASC in the controller, ->first() is the oldest/current batch.
+                            // Since we sorted by received date ASC in the controller, ->first() is the oldest/current batch.
                             $currentBatch = $product->inventoryBatches->first();
                             @endphp
 
@@ -207,23 +204,17 @@
                                 </td>
 
                                 <td class="px-6 py-4 text-right">
-                                    @if($currentBatch && $currentBatch->expiration_date)
-                                        @php
-                                            $expiryDate = \Carbon\Carbon::parse($currentBatch->expiration_date);
-                                            $isSoon = $expiryDate->isBefore(now()->addMonths(3));
-                                            $expired = $expiryDate->isPast() || $expiryDate->isToday();
-                                        @endphp
-
+                                    @if($currentBatch)
                                         <div class="flex flex-col items-end">
-                                            <span class="text-sm font-medium {{ $expired ? 'text-red-600' : ($isSoon ? 'text-orange-600' : 'text-neutral-900 dark:text-white') }}">
-                                                {{ $expiryDate->format('M d, Y') }}
+                                            <span class="text-sm font-medium text-neutral-900 dark:text-white">
+                                                {{ $currentBatch->batch_number ?: 'Unnumbered batch' }}
                                             </span>
-                                            <span class="text-[10px] uppercase {{ $expired ? 'text-red-500' : ($isSoon ? 'text-orange-500' : 'text-green-500') }}">
-                                                {{ $expired ? 'Expired' : ($isSoon ? 'Expiring Soon' : 'Active Batch') }}
+                                            <span class="text-[10px] uppercase text-green-500">
+                                                Received {{ $currentBatch->created_at->format('M d, Y') }}
                                             </span>
                                         </div>
                                     @else
-                                        <span class="text-neutral-500 italic">No expiry date</span>
+                                        <span class="text-neutral-500 italic">No active batch</span>
                                     @endif
                                 </td>
 

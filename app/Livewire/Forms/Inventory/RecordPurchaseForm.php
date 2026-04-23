@@ -89,7 +89,7 @@ final class RecordPurchaseForm extends Form
                     quantity: (float) $item['quantity'],
                     cost: (int) round((float) $item['cost'] * 100), // convert to cents
                     batch_number: $item['batch_number'] ?: null,
-                    expiration_date: $item['expiration_date'] ?: null,
+                    expiration_date: ($item['expiration_date'] ?? null) ?: null,
                 );
             })->all();
 
@@ -107,7 +107,7 @@ final class RecordPurchaseForm extends Form
                     actual_quantity: (float) $item['quantity'],
                     actual_cost: (int) round((float) $item['cost'] * 100),
                     batch_number: $item['batch_number'] ?: null,
-                    expiration_date: $item['expiration_date'] ?: null,
+                    expiration_date: ($item['expiration_date'] ?? null) ?: null,
                 );
             })->all();
 

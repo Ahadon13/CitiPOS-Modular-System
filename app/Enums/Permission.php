@@ -10,6 +10,7 @@ enum Permission: string
     case AdminDashboard = 'admin-dashboard';
     case ManageBranches = 'manage-branches';
     case ManageUsers = 'manage-users';
+    case ManageModuleAccess = 'manage-module-access';
     case AdminReports = 'admin-reports';
 
     // --- Pharmacy & Grocery Specific ---
@@ -33,6 +34,7 @@ enum Permission: string
                 self::AdminDashboard,
                 self::ManageBranches,
                 self::ManageUsers,
+                self::ManageModuleAccess,
                 self::AdminReports,
             ],
             'Pharmacy & Grocery Operations' => [
@@ -56,6 +58,7 @@ enum Permission: string
             self::AdminDashboard => 'Access Admin Dashboard',
             self::ManageBranches => 'Manage Branches',
             self::ManageUsers => 'Manage Users',
+            self::ManageModuleAccess => 'Manage Module Access',
             self::AdminReports => 'View Admin Reports',
 
             // Store Labels

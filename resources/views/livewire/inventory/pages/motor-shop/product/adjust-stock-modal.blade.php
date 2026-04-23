@@ -50,16 +50,11 @@
 
                 {{-- ADD FIELDS --}}
                 @if($adjustment_type === 'add')
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 gap-4">
                         <x-ui.field required>
                             <x-ui.label>Batch Number</x-ui.label>
                             <x-ui.input wire:model="new_batch_number" />
                             <x-ui.error name="new_batch_number" />
-                        </x-ui.field>
-                        <x-ui.field>
-                            <x-ui.label>Expiry Date (Optional)</x-ui.label>
-                            <x-ui.input type="date" wire:model="new_expiry_date" />
-                            <x-ui.error name="new_expiry_date" />
                         </x-ui.field>
                     </div>
                 @endif

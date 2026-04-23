@@ -10,6 +10,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 #[Layout('components.layouts.admin', ['title' => 'Branches'])]
@@ -94,6 +95,12 @@ class Branches extends Component
         } catch (\Exception $e) {
             $this->toastError('Failed to delete branch: ' . $e->getMessage());
         }
+    }
+
+    #[On('page-reset')]
+    public function refreshBranches(): void
+    {
+        unset($this->branches);
     }
 
     private function branchUsageRelationships(): array

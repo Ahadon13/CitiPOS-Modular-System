@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\POS;
 
 use App\Actions\Inventory\DeductInventoryBatch;
+use App\Data\ProcessSale\MotorShopServiceItemData;
 use App\Data\ProcessSale\SaleData;
 use App\Data\ProcessSale\SaleItemData;
 use App\Enums\Inventory\TransactionType;
@@ -22,13 +23,16 @@ final class ProcessSale
     /**
      * @param SaleData $saleData
      * @param SaleItemData[] $itemsData
+     * @param MotorShopServiceItemData[] $serviceItemsData
      */
-    public function execute(SaleData $saleData, array $itemsData): Sale
+    public function execute(SaleData $saleData, array $itemsData, array $serviceItemsData = []): Sale
     {
-        return $this->dbTransaction(function () use ($saleData, $itemsData) {
+        return $this->dbTransaction(function () use ($saleData, $itemsData, $serviceItemsData) {
 
             // 1. Calculate Subtotal from items, then apply discount for Grand Total
-            $subtotal = collect($itemsData)->sum(fn(SaleItemData $item) => $item->subtotal);
+            $productSubtotal = collect($itemsData)->sum(fn(SaleItemData $item) => $item->subtotal);
+            $serviceSubtotal = collect($serviceItemsData)->sum(fn(MotorShopServiceItemData $item) => $item->subtotal);
+            $subtotal = $productSubtotal + $serviceSubtotal;
             $grandTotal = $subtotal - $saleData->discount_amount;
 
             // 2. Create Sale using the DTO attributes and the calculated total
@@ -52,6 +56,10 @@ final class ProcessSale
                     reference: $sale,
                     unitPriceInCents: $item->price_at_moment,
                 );
+            }
+
+            foreach ($serviceItemsData as $serviceItem) {
+                $sale->motorShopServices()->create($serviceItem->modelAttributes());
             }
 
             return $sale;

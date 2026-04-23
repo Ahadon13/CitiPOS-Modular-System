@@ -311,7 +311,9 @@ class ProductsImport implements ToCollection, WithHeadingRow, WithChunkReading, 
                             'quantity_on_hand' => $qty,
                             'cost_per_unit' => (int) round((float) ($row['cost_price'] ?? 0) * 100),
                             'batch_number' => !empty($row['batch_number']) ? $row['batch_number'] : null,
-                            'expiration_date' => $row['expiration_date'] ?? null,
+                            'expiration_date' => $this->productCategoryType === CategoryType::MotorShop
+                                ? null
+                                : ($row['expiration_date'] ?? null),
                             'created_at' => $now,
                             'updated_at' => $now,
                         ];

@@ -9,6 +9,7 @@ use App\Enums\Sale\Status;
 use App\Models\Branch;
 use App\Models\Customer;
 use App\Models\InventoryTransaction;
+use App\Models\MotorShopSaleService;
 use App\Models\SaleItem;
 use App\Models\User;
 use App\Models\PaymentMethod;
@@ -69,6 +70,11 @@ final class Sale extends Model
     public function saleItems(): HasMany
     {
         return $this->hasMany(SaleItem::class);
+    }
+
+    public function motorShopServices(): HasMany
+    {
+        return $this->hasMany(MotorShopSaleService::class);
     }
 
     /**

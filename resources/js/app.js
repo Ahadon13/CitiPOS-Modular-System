@@ -56,7 +56,17 @@ window.posApp = (
                 }
             });
             // Clear cart listener dispatched by Livewire on success
-            window.addEventListener("sale-completed", () => {
+            window.addEventListener("sale-completed", (e) => {
+                if (e.detail?.receiptUrl) {
+                    const receiptWindow = window.open(e.detail.receiptUrl, "_blank");
+
+                    if (receiptWindow) {
+                        receiptWindow.focus();
+                    } else {
+                        window.location.href = e.detail.receiptUrl;
+                    }
+                }
+
                 this.cart = [];
                 this.resetCheckout();
                 window.dispatchEvent(
@@ -453,14 +463,24 @@ window.groceryPosApp = (
     customerMode,
     customerId,
     customers = [],
+    mechanics = [],
 ) => {
     return {
         cart: [],
+        serviceLines: [],
+        serviceDraft: {
+            service_name: "",
+            mechanic_id: "",
+            quantity: 1,
+            price: "",
+            description: "",
+        },
         paymentMethods: paymentMethods,
         customerTypes: customerTypes,
         customerMode: customerMode,
         customerId: customerId,
         customersData: customers,
+        mechanicsData: mechanics,
         walkInDiscountTypeId: "",
         checkoutState: {
             payment_method_id: "",
@@ -476,8 +496,19 @@ window.groceryPosApp = (
                 }
             });
 
-            window.addEventListener("sale-completed", () => {
+            window.addEventListener("sale-completed", (e) => {
+                if (e.detail?.receiptUrl) {
+                    const receiptWindow = window.open(e.detail.receiptUrl, "_blank");
+
+                    if (receiptWindow) {
+                        receiptWindow.focus();
+                    } else {
+                        window.location.href = e.detail.receiptUrl;
+                    }
+                }
+
                 this.cart = [];
+                this.serviceLines = [];
                 this.resetCheckout();
                 window.dispatchEvent(
                     new CustomEvent("close-modal", {
@@ -508,7 +539,25 @@ window.groceryPosApp = (
             return this.cart.reduce(
                 (sum, item) => sum + item.price * item.quantity,
                 0,
+            ) + this.serviceSales;
+        },
+
+        get productSales() {
+            return this.cart.reduce(
+                (sum, item) => sum + item.price * item.quantity,
+                0,
             );
+        },
+
+        get serviceSales() {
+            return this.serviceLines.reduce(
+                (sum, item) => sum + item.price * item.quantity,
+                0,
+            );
+        },
+
+        get orderLineCount() {
+            return this.cart.length + this.serviceLines.length;
         },
 
         get selectedCustomerTypeId() {
@@ -714,16 +763,60 @@ window.groceryPosApp = (
             this.cart = this.cart.filter((i) => i.cartId !== cartId);
         },
 
+        resetServiceDraft() {
+            this.serviceDraft = {
+                service_name: "",
+                mechanic_id: "",
+                quantity: 1,
+                price: "",
+                description: "",
+            };
+        },
+
+        addServiceLine() {
+            const serviceName = (this.serviceDraft.service_name || "").trim();
+            const quantity = parseFloat(this.serviceDraft.quantity) || 0;
+            const price = parseFloat(this.serviceDraft.price) || 0;
+
+            if (!serviceName || quantity <= 0 || price < 0) {
+                return;
+            }
+
+            this.serviceLines.push({
+                cartId: "service_" + Date.now() + "_" + Math.random().toString(16).slice(2),
+                service_name: serviceName,
+                mechanic_id: this.serviceDraft.mechanic_id || null,
+                quantity: Math.round(quantity * 100) / 100,
+                price: Math.round(price * 100) / 100,
+                description: (this.serviceDraft.description || "").trim(),
+            });
+
+            this.resetServiceDraft();
+        },
+
+        removeServiceLine(cartId) {
+            this.serviceLines = this.serviceLines.filter((i) => i.cartId !== cartId);
+        },
+
+        getMechanicName(mechanicId) {
+            const mechanic = this.mechanicsData.find((item) => item.value == mechanicId);
+
+            return mechanic?.label || "No mechanic";
+        },
+
         async clearCart() {
             const isConfirmed = await window.confirmModal(
                 "Clear Cart",
                 "Are you sure you want to clear the current order?",
             );
-            if (isConfirmed) this.cart = [];
+            if (isConfirmed) {
+                this.cart = [];
+                this.serviceLines = [];
+            }
         },
 
         triggerCheckout() {
-            if (this.cart.length === 0) return;
+            if (this.cart.length === 0 && this.serviceLines.length === 0) return;
             this.resetCheckout();
             window.dispatchEvent(
                 new CustomEvent("open-modal", {
@@ -752,6 +845,13 @@ window.groceryPosApp = (
                     packaging_id: item.packaging_id,
                     quantity: item.quantity,
                     name: item.name,
+                })),
+                services: this.serviceLines.map((item) => ({
+                    service_name: item.service_name,
+                    mechanic_id: item.mechanic_id,
+                    quantity: item.quantity,
+                    price: item.price,
+                    description: item.description,
                 })),
                 payment_method_id: this.checkoutState.payment_method_id,
                 amount_received: parseFloat(this.checkoutState.amount_received),

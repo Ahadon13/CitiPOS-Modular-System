@@ -104,59 +104,6 @@
         </form>
     </x-ui.card>
 
-    {{-- Branch Transfer Request --}}
-    <x-ui.card hoverless size="full" class="border-orange-500/50">
-        <div class="flex items-start gap-4">
-            <div class="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-lg text-orange-600 dark:text-orange-400 mt-1">
-                <x-ui.icon name="building-storefront" class="size-7" />
-            </div>
-            <div class="flex-1">
-                <x-ui.heading level="h3" size="md" class="mb-1 text-orange-600 dark:text-orange-400">Branch Transfer Request</x-ui.heading>
-                <p class="text-sm text-neutral-500 dark:text-neutral-400 mb-4">
-                    Current Branch: <strong class="text-neutral-900 dark:text-white">{{ auth()->user()->branch->name ?? 'None' }}</strong>
-                </p>
-
-                @if($this->pendingTransferRequest)
-                    <div class="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 p-4 rounded-lg flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-bold text-orange-800 dark:text-orange-300">Transfer Request Pending</p>
-                            <p class="text-xs text-orange-600 dark:text-orange-400">Requested to join: <strong>{{ $this->pendingTransferRequest->inquirable->name }}</strong></p>
-                        </div>
-                        <span class="inline-flex items-center rounded-md bg-orange-100 px-2 py-1 text-xs font-medium text-orange-700 ring-1 ring-inset ring-orange-600/20">
-                            Awaiting Admin Verification
-                        </span>
-                    </div>
-                @else
-                    <form wire:submit.prevent="submitTransferRequest" class="space-y-4">
-                        <x-ui.field required>
-                            <x-ui.label>Target Branch</x-ui.label>
-                            <x-ui-select.styled
-                                invalidate
-                                wire:model="target_branch_id"
-                                :options="$this->availableBranches"
-                                searchable
-                                placeholder="Select new branch..."
-                            />
-                            <x-ui.error name="target_branch_id" />
-                        </x-ui.field>
-
-                        <x-ui.field>
-                            <x-ui.label>Reason / Remarks (Optional)</x-ui.label>
-                            <x-ui.textarea wire:model="transfer_remarks" rows="2" placeholder="Why are you requesting a transfer?" />
-                            <x-ui.error name="transfer_remarks" />
-                        </x-ui.field>
-
-                        <div class="flex justify-end pt-2">
-                            <x-ui.button type="submit" color="orange" wire:loading.attr="disabled" wire:target="submitTransferRequest">
-                                Submit Request
-                            </x-ui.button>
-                        </div>
-                    </form>
-                @endif
-            </div>
-        </div>
-    </x-ui.card>
-
     {{--
         Include your Configuration Modals exactly here at the bottom!
         Because they are independent Livewire components, they function perfectly

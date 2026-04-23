@@ -338,10 +338,10 @@ final class ProcessSale extends Component
 
             // 4. Execute the fully structured Action
             $action = app(ProcessSaleAction::class);
-            $action->execute($saleData, $itemsData);
+            $sale = $action->execute($saleData, $itemsData);
 
             // 5. Cleanup
-            $this->dispatch('sale-completed');
+            $this->dispatch('sale-completed', receiptUrl: route('pos.pharmacy.sales.receipt', $sale));
             $this->toastSuccess('Payment processed successfully!');
 
         } catch (\Exception $e) {

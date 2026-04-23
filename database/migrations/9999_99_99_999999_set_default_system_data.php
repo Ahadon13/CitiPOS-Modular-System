@@ -8,6 +8,8 @@ use App\Models\CustomerType;
 use App\Models\PaymentMethod;
 use App\Models\ProductCategory;
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -39,10 +41,14 @@ return new class extends Migration
             Spatie\Permission\Models\Permission::findOrCreate($permission->value);
         }
 
+        $this->defaultRoleModuleAccess();
+
         // Create default customer types
         CustomerType::create(['name' => 'Regular', 'discount_percentage' => 0]);
         CustomerType::create(['name' => 'Senior Citizen', 'discount_percentage' => 20.00]);
         CustomerType::create(['name' => 'PWD', 'discount_percentage' => 20.00]);
+        CustomerType::create(['name' => 'DSWD', 'discount_percentage' => 0]);
+        CustomerType::create(['name' => 'LGU', 'discount_percentage' => 0]);
 
         // Create default product categories
         foreach (CategoryType::cases() as $categoryType) {
@@ -60,5 +66,35 @@ return new class extends Migration
         // Create Default Payment Methods
         PaymentMethod::create(['name' => 'Cash']);
         PaymentMethod::create(['name' => 'GCASH']);
+    }
+
+    private function defaultRoleModuleAccess(): void
+    {
+        if (! Schema::hasTable('role_module_accesses')) {
+            return;
+        }
+
+        $defaults = [
+            App\Enums\Role::Pharmacist->value => [CategoryType::Pharmacy->value],
+            App\Enums\Role::GroceryCashier->value => [CategoryType::Grocery->value],
+            App\Enums\Role::MotorShopCashier->value => [CategoryType::MotorShop->value],
+            App\Enums\Role::ChiefMechanic->value => [CategoryType::MotorShop->value],
+            App\Enums\Role::Mechanic->value => [CategoryType::MotorShop->value],
+        ];
+
+        foreach ($defaults as $roleName => $modules) {
+            $roleId = DB::table('roles')->where('name', $roleName)->value('id');
+
+            if (! $roleId) {
+                continue;
+            }
+
+            foreach ($modules as $module) {
+                DB::table('role_module_accesses')->updateOrInsert(
+                    ['role_id' => $roleId, 'module' => $module],
+                    ['created_at' => now(), 'updated_at' => now()]
+                );
+            }
+        }
     }
 };

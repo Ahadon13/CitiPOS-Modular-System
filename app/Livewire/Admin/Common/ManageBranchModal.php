@@ -74,6 +74,8 @@ final class ManageBranchModal extends Component
             }
 
             $this->resetForm();
+            unset($this->branches);
+
             // Dispatch event to refresh the parent page grid/tables
             $this->dispatch('page-reset');
 
@@ -122,6 +124,8 @@ final class ManageBranchModal extends Component
             }
 
             $branch->delete();
+
+            unset($this->branches);
 
             $this->toastSuccess("Branch deleted successfully!");
             $this->dispatch('page-reset');

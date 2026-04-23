@@ -665,7 +665,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="5" class="px-6 py-16 text-center">
+                                <td colspan="6" class="px-6 py-16 text-center">
                                     <div class="flex flex-col items-center justify-center">
                                         <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-transparent ring-2 ring-green-400">
                                             <x-ui.icon name="check" class="h-5 w-5 text-green-400!" />

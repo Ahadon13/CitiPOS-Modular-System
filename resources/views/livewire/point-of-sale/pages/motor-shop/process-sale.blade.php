@@ -1,4 +1,4 @@
-<div class="flex flex-col md:flex-row w-full h-full" x-data="motorShopPosApp(@js($this->activePaymentMethods), @js($this->customerTypesData), @entangle('customerMode').live, @entangle('customer_id').live, @js($this->customers))" @keydown.window="handleKeydown($event)">
+<div class="flex flex-col md:flex-row w-full h-full" x-data="motorShopPosApp(@js($this->activePaymentMethods), @js($this->customerTypesData), @entangle('customerMode').live, @entangle('customer_id').live, @js($this->customers), @js($this->mechanics))" @keydown.window="handleKeydown($event)">
     <div class="flex-1 flex flex-col bg-white dark:bg-[#0a1331]/80 border border-black/10 dark:border-white/10 overflow-hidden shadow-sm min-w-0">
         <div class="p-3 h-16 border-b border-black/10 dark:border-white/10 flex flex-row items-center gap-3">
             <x-ui.button color="primary" variant="outline" icon="qr-code" class="shrink-0 hidden sm:inline-flex">
@@ -97,7 +97,7 @@
                 <h2 class="font-bold text-neutral-900 dark:text-white">Current Order</h2>
             </div>
             <div class="flex item-center gap-2">
-                <span x-show="cart.length > 0" x-cloak class="bg-electric-blue text-white text-xs font-bold px-2 py-0.5 rounded-full" x-text="cart.length + ' items'"></span>
+                <span x-show="orderLineCount > 0" x-cloak class="bg-electric-blue text-white text-xs font-bold px-2 py-0.5 rounded-full" x-text="orderLineCount + ' lines'"></span>
                 <button @click="clearCart()" class="size-8 flex items-center justify-center rounded-lg text-neutral-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors" title="Clear Cart">
                     <x-ui.icon name="trash" class="size-4" />
                 </button>
@@ -128,7 +128,7 @@
         </div>
 
         <div class="flex-1 flex flex-col bg-neutral-50/50 dark:bg-[#060A23] overflow-y-auto custom-scrollbar">
-            <template x-if="cart.length === 0">
+            <template x-if="cart.length === 0 && serviceLines.length === 0">
                 <div class="flex flex-col items-center justify-center h-full my-auto">
                     <div class="size-14 shrink-0 rounded-full bg-white dark:bg-white/5 border border-black/15 dark:border-white/15 flex items-center justify-center text-neutral-600 dark:text-neutral-400 mb-4">
                         <x-ui.icon name="shopping-cart" class="size-7" />
@@ -138,7 +138,33 @@
                 </div>
             </template>
 
-            <template x-if="cart.length > 0">
+            <div class="p-2 border-b border-black/10 dark:border-white/10 bg-white dark:bg-[#0a1331]">
+                <div class="flex items-center gap-2 mb-2">
+                    <x-ui.icon name="wrench-screwdriver" class="size-4 text-electric-blue" />
+                    <p class="text-xs font-bold uppercase tracking-wider text-neutral-500">Shop Service</p>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="col-span-2">
+                        <x-ui.input x-model="serviceDraft.service_name" placeholder="Service done, e.g. Change oil" />
+                    </div>
+                    <select x-model="serviceDraft.mechanic_id" class="col-span-2 rounded-md border-gray-300 dark:border-white/10 dark:bg-[#0a1331] shadow-xs text-sm focus:ring-electric-blue focus:border-electric-blue">
+                        <option value="">No mechanic selected</option>
+                        <template x-for="mechanic in mechanicsData" :key="mechanic.value">
+                            <option :value="mechanic.value" x-text="mechanic.label"></option>
+                        </template>
+                    </select>
+                    <x-ui.input type="number" step="0.01" min="0.01" x-model="serviceDraft.quantity" placeholder="Qty" />
+                    <x-ui.input type="number" step="0.01" min="0" x-model="serviceDraft.price" placeholder="Price" />
+                    <div class="col-span-2">
+                        <x-ui.textarea x-model="serviceDraft.description" rows="2" placeholder="Service notes (optional)" />
+                    </div>
+                    <x-ui.button type="button" size="sm" icon="plus" class="col-span-2 justify-center" x-on:click="addServiceLine()">
+                        Add Service
+                    </x-ui.button>
+                </div>
+            </div>
+
+            <template x-if="cart.length > 0 || serviceLines.length > 0">
                 <div class="divide-y divide-black/5 dark:divide-white/10">
                     <template x-for="item in cart" :key="item.cartId">
                         <div class="p-2 bg-white dark:bg-[#0a1331] border border-black/5 dark:border-white/10 flex flex-col gap-1.5">
@@ -180,12 +206,42 @@
                             </div>
                         </div>
                     </template>
+                    <template x-for="service in serviceLines" :key="service.cartId">
+                        <div class="p-2 bg-white dark:bg-[#0a1331] border border-black/5 dark:border-white/10 flex flex-col gap-1.5">
+                            <div class="flex justify-between items-start gap-2">
+                                <div>
+                                    <h4 class="text-sm font-bold text-neutral-900 dark:text-white leading-tight" x-text="'Service: ' + service.service_name"></h4>
+                                    <p class="text-xs text-neutral-500 dark:text-neutral-400" x-text="'Mechanic: ' + getMechanicName(service.mechanic_id)"></p>
+                                </div>
+                                <span class="text-sm font-extrabold text-neutral-900 dark:text-white whitespace-nowrap" x-text="'₱' + (service.price * service.quantity).toFixed(2)"></span>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400 font-medium">
+                                <span>Service price: <span class="font-mono font-bold text-neutral-900 dark:text-white" x-text="'₱' + service.price.toFixed(2)"></span></span>
+                                <span class="text-neutral-400">/</span>
+                                <span x-text="'Qty ' + formatQuantity(service.quantity)"></span>
+                            </div>
+                            <p x-show="service.description" x-cloak class="text-xs text-neutral-500 dark:text-neutral-400" x-text="service.description"></p>
+                            <div class="flex justify-end">
+                                <button @click="removeServiceLine(service.cartId)" class="size-8 flex items-center justify-center rounded-lg text-neutral-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors" title="Remove Service">
+                                    <x-ui.icon name="trash" class="size-4" />
+                                </button>
+                            </div>
+                        </div>
+                    </template>
                 </div>
             </template>
         </div>
 
         <div class="p-2 border-t border-black/10 dark:border-white/10 bg-white dark:bg-[#0a1331]/90">
             <div class="space-y-1 mb-3">
+                <div class="flex items-center justify-between text-sm text-neutral-500 dark:text-neutral-400">
+                    <span>Products:</span>
+                    <span class="font-mono font-medium" x-text="'₱' + productSales.toFixed(2)"></span>
+                </div>
+                <div class="flex items-center justify-between text-sm text-neutral-500 dark:text-neutral-400">
+                    <span>Services:</span>
+                    <span class="font-mono font-medium" x-text="'₱' + serviceSales.toFixed(2)"></span>
+                </div>
                 <div class="flex items-center justify-between text-sm text-neutral-500 dark:text-neutral-400">
                     <span>Net Sales:</span>
                     <span class="font-mono font-medium" x-text="'₱' + netSales.toFixed(2)"></span>
@@ -196,7 +252,7 @@
                 </div>
             </div>
 
-            <button @click="triggerCheckout()" :disabled="cart.length === 0" :class="cart.length === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-electric-blue active:scale-[0.98] shadow-lg shadow-electric-blue/20'" class="w-full mt-2 py-3 rounded-md bg-electric-blue text-white font-bold text-lg flex items-center justify-center gap-2 transition-all">
+            <button @click="triggerCheckout()" :disabled="orderLineCount === 0" :class="orderLineCount === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-electric-blue active:scale-[0.98] shadow-lg shadow-electric-blue/20'" class="w-full mt-2 py-3 rounded-md bg-electric-blue text-white font-bold text-lg flex items-center justify-center gap-2 transition-all">
                 <x-ui.icon name="credit-card" class="size-6" />
                 Checkout
                 <span class="ml-2 text-xs font-mono font-medium opacity-80 border border-white/30 rounded-md px-2 py-0.5">F4</span>
@@ -263,6 +319,20 @@
                                         </td>
                                         <td class="py-2 pl-2 text-right font-mono font-bold text-neutral-900 dark:text-white whitespace-nowrap">
                                             <span x-text="'₱' + (item.price * item.quantity).toFixed(2)"></span>
+                                        </td>
+                                    </tr>
+                                </template>
+                                <template x-for="service in serviceLines" :key="service.cartId">
+                                    <tr>
+                                        <td class="py-2 pr-2 font-medium text-neutral-900 dark:text-white leading-tight">
+                                            <span x-text="'Service: ' + service.service_name"></span>
+                                            <span class="block text-xs text-neutral-500" x-text="getMechanicName(service.mechanic_id)"></span>
+                                        </td>
+                                        <td class="py-2 px-2 text-neutral-500 dark:text-neutral-400 text-center whitespace-nowrap">
+                                            <span x-text="formatQuantity(service.quantity)"></span>
+                                        </td>
+                                        <td class="py-2 pl-2 text-right font-mono font-bold text-neutral-900 dark:text-white whitespace-nowrap">
+                                            <span x-text="'₱' + (service.price * service.quantity).toFixed(2)"></span>
                                         </td>
                                     </tr>
                                 </template>

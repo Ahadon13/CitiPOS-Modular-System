@@ -112,7 +112,6 @@
                         <th class="px-4 py-3 font-medium text-green-600 dark:text-green-400">selling_price</th>
                         <th class="px-4 py-3 font-medium text-green-600 dark:text-green-400">quantity_on_hand</th>
                         <th class="px-4 py-3 font-medium text-green-600 dark:text-green-400">reorder_level</th>
-                        <th class="px-4 py-3 font-medium">expiration_date</th>
                         <th class="px-4 py-3 font-medium">barcode</th>
                         <th class="px-4 py-3 font-medium">batch_number</th>
                         <th class="px-4 py-3 font-medium">part_number</th>
@@ -136,7 +135,6 @@
                         <td class="px-4 py-3">7.00</td>
                         <td class="px-4 py-3">500</td>
                         <td class="px-4 py-3">100</td>
-                        <td class="px-4 py-3 text-neutral-400">Leave blank if none</td>
                         <td class="px-4 py-3 text-neutral-400">480123456</td>
                         <td class="px-4 py-3 text-neutral-400">BATCH-001</td>
                         <td class="px-4 py-3 text-neutral-400">OF-1234</td>
@@ -156,7 +154,6 @@
                         <td class="px-4 py-3 font-medium">100</td>
                         <td class="px-4 py-3 text-neutral-400 italic">Leave blank</td>
                         <td class="px-4 py-3">650.00</td>
-                        <td class="px-4 py-3 text-neutral-400 italic">Leave blank</td>
                         <td class="px-4 py-3 text-neutral-400 italic">Leave blank</td>
                         <td class="px-4 py-3 text-neutral-400 italic">Leave blank</td>
                         <td class="px-4 py-3 text-neutral-400 italic">Leave blank</td>
@@ -187,7 +184,6 @@
                     @endforelse)
                 </code>
             </li>
-            <li><strong>expiration_date</strong> is optional for motor parts. If provided, it must be a future date formatted as <code class="font-mono text-xs bg-neutral-100 dark:bg-white/10 px-1 py-0.5 rounded">YYYY-MM-DD</code>.</li>
         </ul>
 
         <hr class="border-neutral-200 dark:border-white/10 mb-6">
@@ -215,7 +211,7 @@
                     <span class="text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Optional Columns</span>
                     <div class="flex flex-wrap gap-2">
                         @php
-                        $optional = ['description', 'batch_number', 'expiration_date', 'barcode', 'part_number', 'oem_number', 'vehicle_model', 'engine_type', 'year_range'];
+                        $optional = ['description', 'batch_number', 'barcode', 'part_number', 'oem_number', 'vehicle_model', 'engine_type', 'year_range'];
                         @endphp
                         @foreach($optional as $col)
                         <div class="px-3 py-1.5 text-sm rounded-md border border-neutral-200 bg-neutral-50 text-neutral-700 dark:border-white/10 dark:bg-white/5 dark:text-neutral-300">

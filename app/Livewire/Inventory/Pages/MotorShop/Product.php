@@ -9,7 +9,6 @@ use App\Livewire\Concerns\HasToast;
 use App\Models\Product as ProductModel;
 use App\Models\Category;
 use App\Models\ProductCategory;
-use App\Models\InventoryBatch;
 use App\Traits\HasAuth;
 use App\Traits\HasDataTable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -93,13 +92,12 @@ final class Product extends Component
             ->paginate($this->perPage);
 
         // 6. KEY OPTIMIZATION: Eager Load Batches for THIS PAGE only.
-        // Instead of asking DB to find "Min Expiry" and "Cost" for everyone,
-        // we get the batches for these 15 items and let PHP find the first one.
+        // We get the batches for these items and use oldest received batch first.
         if ($products->getCollection()->isNotEmpty()) {
             $products->getCollection()->load(['inventoryBatches' => function (HasMany $q) {
                 $q->where('branch_id', $this->currentBranchId)
                   ->where('quantity_on_hand', '>', 0)
-                  ->orderBy('expiration_date', 'asc'); // Oldest expiry first (FIFO)
+                  ->orderBy('created_at', 'asc'); // Oldest received first (FIFO)
             }]);
         }
 
@@ -141,13 +139,11 @@ final class Product extends Component
                 ->havingRaw('COALESCE(total_stock, 0) < products.reorder_level')
                 ->count(),
 
-            // D. Near Expiry Batches (Count of specific batches expiring in 3 months)
-            // We query Batches directly here for speed
-            'near_expiry' => InventoryBatch::query()
+            // D. Active batches currently available for sale/service jobs.
+            'active_batches' => \App\Models\InventoryBatch::query()
                 ->where('branch_id', $branchId)
-                ->where('quantity_on_hand', '>', 0) // Only count items we actually have
-                ->whereHas('product', fn($q) => $q->whereIn('product_category_id', $categoryIds))
-                ->where('expiration_date', '<=', now()->addMonths(3))
+                ->where('quantity_on_hand', '>', 0)
+                ->whereHas('product', fn ($q) => $q->whereIn('product_category_id', $categoryIds))
                 ->count(),
         ];
     }

@@ -11,7 +11,6 @@ use App\Models\InventoryBatch;
 use App\Models\Product;
 use App\Traits\HasAuth;
 use App\Traits\HasDataTable;
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
@@ -31,7 +30,6 @@ final class Stocks extends Component
 
     public string $stockFilter = 'all';
     public ?int $selectedProduct = null;
-    public ?string $expirationDateFilter = null;
 
     protected array $targetCategories = ['motor-shop'];
 
@@ -59,12 +57,10 @@ final class Stocks extends Component
     }
 
     #[Computed]
-    public function criticalExpiryCount(): int
+    public function depletedBatchesCount(): int
     {
         $query = InventoryBatch::where('branch_id', $this->currentBranchId)
-            ->where('quantity_on_hand', '>', 0)
-            ->where('expiration_date', '<=', Carbon::now()->addMonths(3))
-            ->where('expiration_date', '>', Carbon::now());
+            ->where('quantity_on_hand', '<=', 0);
         $this->applyMotorShopScope($query, 'product.productCategory');
 
         return $query->count();
@@ -108,20 +104,6 @@ final class Stocks extends Component
             $q->where('product_id', $this->selectedProduct);
         });
 
-        // Expiration Date Exact Match Filter
-        $query->when(!empty($this->expirationDateFilter), function ($q) {
-            try {
-                // Parse the selected month/year string (e.g., "March 2026")
-                $date = Carbon::parse($this->expirationDateFilter);
-
-                // Filter where the database year and month match the selection
-                $q->whereYear('expiration_date', $date->year)
-                  ->whereMonth('expiration_date', $date->month);
-            } catch (\Exception $e) {
-                // Failsafe in case of bad formatting
-            }
-        });
-
         // Text Search
         $query->when($this->search, function ($q) {
             $searchTerm = '%' . trim($this->search) . '%';
@@ -135,14 +117,7 @@ final class Stocks extends Component
         });
 
         // Tabs Filter Logic
-        if ($this->stockFilter === 'expiring') {
-            $query->where('quantity_on_hand', '>', 0)
-                  ->where('expiration_date', '<=', Carbon::now()->addMonths(3))
-                  ->where('expiration_date', '>', Carbon::now());
-        } elseif ($this->stockFilter === 'expired') {
-            $query->where('quantity_on_hand', '>', 0)
-                  ->where('expiration_date', '<=', Carbon::now());
-        } elseif ($this->stockFilter === 'out_of_stock') {
+        if ($this->stockFilter === 'out_of_stock') {
              // To accurately find OOS in a flat batch list, we usually look for batches that hit 0.
              // If you want products with NO batches at all, that's harder in a batch-centric query.
             $query->where('quantity_on_hand', '<=', 0);
@@ -151,7 +126,7 @@ final class Stocks extends Component
             $query->where('quantity_on_hand', '>', 0);
         }
 
-        return $query->orderBy('expiration_date', 'asc')->paginate($this->perPage);
+        return $query->orderBy('created_at', 'asc')->paginate($this->perPage);
     }
 
     // --- Actions ---
@@ -209,7 +184,7 @@ final class Stocks extends Component
                     $this->search,
                     $this->stockFilter,
                     $this->selectedProduct,
-                    $this->expirationDateFilter,
+                    null,
                     $this->targetCategories
                 ),
                 $fileName
@@ -228,6 +203,6 @@ final class Stocks extends Component
 
     protected function getAdditionalPageResetProperties(): array
     {
-        return ['selectedProduct', 'stockFilter', 'expirationDateFilter'];
+        return ['selectedProduct', 'stockFilter'];
     }
 }

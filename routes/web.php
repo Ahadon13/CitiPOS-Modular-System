@@ -8,9 +8,11 @@ use App\Enums\Role;
 use App\Http\Controllers\HomeRouteController;
 use App\Http\Controllers\InventoryRedirectController;
 use App\Http\Controllers\InventoryRoleController;
+use App\Http\Controllers\POS\ReceiptController;
 use App\Livewire;
 use App\Livewire\Admin\Pages\Branches;
 use App\Livewire\Admin\Pages\Dashboard as PagesDashboard;
+use App\Livewire\Admin\Pages\ModuleAccess as AdminModuleAccess;
 use App\Livewire\Admin\Pages\OwnerHub;
 use App\Livewire\Admin\Pages\Reports as AdminReports;
 use App\Livewire\Admin\Pages\Settings as AdminSettings;
@@ -110,6 +112,10 @@ Route::group([
             Route::get('/users', Users::class)->name('users');
         });
 
+        Route::get('/module-access', AdminModuleAccess::class)
+            ->middleware('role:' . Role::SuperAdmin->value)
+            ->name('module-access');
+
         // REPORTS ROUTE
         Route::get('/reports', AdminReports::class)->middleware('permission:' . Permission::AdminReports->value)->name('reports');
 
@@ -138,7 +144,7 @@ Route::group([
             'prefix' => 'pharmacy',
             'as' => 'pharmacy.',
             'middleware' => [
-                'role:'.Role::Pharmacist->value . '|' . Role::SuperAdmin->value . '|' . Role::Admin->value,
+                'module.access:pharmacy',
             ],
         ], function () {
             // DASHBOARD ROUTE
@@ -177,7 +183,7 @@ Route::group([
             'prefix' => 'grocery',
             'as' => 'grocery.',
             'middleware' => [
-                'role:'.Role::GroceryCashier->value . '|' . Role::SuperAdmin->value . '|' . Role::Admin->value,
+                'module.access:grocery',
             ],
         ], function () {
             // DASHBOARD ROUTE
@@ -215,7 +221,7 @@ Route::group([
             'prefix' => 'motor-shop',
             'as' => 'motor-shop.',
             'middleware' => [
-                'role:'.Role::MotorShopCashier->value . '|' . Role::ChiefMechanic->value . '|' . Role::SuperAdmin->value . '|' . Role::Admin->value,
+                'module.access:motor-shop',
             ],
         ], function () {
             // DASHBOARD ROUTE
@@ -263,36 +269,36 @@ Route::group([
             'prefix' => 'pharmacy',
             'as' => 'pharmacy.',
             'middleware' => [
-                'role:'.Role::Pharmacist->value . '|' . Role::SuperAdmin->value . '|' . Role::Admin->value,
-                'permission:'.Permission::AccessPos->value,
+                'module.access:pharmacy',
             ],
         ], function () {
             // PROCESS SALE
             Route::get('/process-sale', PharmacyProcessSale::class)->name('process-sale');
+            Route::get('/sales/{sale}/receipt', ReceiptController::class)->defaults('module', 'pharmacy')->name('sales.receipt');
         });
 
         Route::group([
             'prefix' => 'grocery',
             'as' => 'grocery.',
             'middleware' => [
-                'role:'.Role::GroceryCashier->value . '|' . Role::SuperAdmin->value . '|' . Role::Admin->value,
-                'permission:'.Permission::AccessPos->value,
+                'module.access:grocery',
             ],
         ], function () {
             // PROCESS SALE
             Route::get('/process-sale', GroceryProcessSale::class)->name('process-sale');
+            Route::get('/sales/{sale}/receipt', ReceiptController::class)->defaults('module', 'grocery')->name('sales.receipt');
         });
 
         Route::group([
             'prefix' => 'motor-shop',
             'as' => 'motor-shop.',
             'middleware' => [
-                'role:'.Role::MotorShopCashier->value . '|' . Role::ChiefMechanic->value . '|' . Role::SuperAdmin->value . '|' . Role::Admin->value,
-                'permission:'.Permission::AccessPos->value,
+                'module.access:motor-shop',
             ],
         ], function () {
             // PROCESS SALE
             Route::get('/process-sale', MotorShopProcessSale::class)->name('process-sale');
+            Route::get('/sales/{sale}/receipt', ReceiptController::class)->defaults('module', 'motor-shop')->name('sales.receipt');
         });
     });
 });

@@ -236,17 +236,6 @@
                         <x-ui.error name="form.cost_price" />
                     </x-ui.field>
 
-                    {{-- Expiration Date --}}
-                    <x-ui.field>
-                        <x-ui.label>Expiration Date (Optional)</x-ui.label>
-                        <x-ui-date
-                            invalidate
-                            wire:model="form.expiration_date"
-                            :min-date="now()" format="MMMM DD, YYYY"
-                        />
-                        <p class="text-xs text-neutral-500 mt-1">Leave blank for motor parts without an expiration date.</p>
-                        <x-ui.error name="form.expiration_date" />
-                    </x-ui.field>
                 </div>
             </x-ui.card>
         </div>

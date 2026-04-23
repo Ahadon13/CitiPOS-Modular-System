@@ -43,7 +43,6 @@ final class ReceivePurchaseModal extends Component
             'receiveItems.*.actual_quantity' => ['required', 'numeric', 'min:0.01'],
             'receiveItems.*.actual_cost' => ['required', 'numeric', 'min:0'],
             'receiveItems.*.batch_number' => ['nullable', 'string', 'max:255'],
-            'receiveItems.*.expiration_date' => ['nullable', 'date', 'after:today'],
         ], [
             'receiveItems.required' => 'Please add at least one item to receive.',
             'receiveItems.*.actual_unit_id.required' => 'Please select the actual unit for all items.',
@@ -53,8 +52,6 @@ final class ReceivePurchaseModal extends Component
             'receiveItems.*.actual_cost.required' => 'Please enter the actual cost for all items.',
             'receiveItems.*.actual_cost.min' => 'The actual cost cannot be negative.',
             'receiveItems.*.batch_number.max' => 'The batch number is too long.',
-            'receiveItems.*.expiration_date.date' => 'Please enter a valid expiration date for all items.',
-            'receiveItems.*.expiration_date.after' => 'The expiration date must be a future date.',
         ]);
 
         $itemsData = collect($this->receiveItems)->map(function ($item) {
@@ -65,7 +62,7 @@ final class ReceivePurchaseModal extends Component
                 actual_quantity:  (float) $item['actual_quantity'],
                 actual_cost:      (int) round((float) $item['actual_cost'] * 100),
                 batch_number:     $item['batch_number'] ?? null,
-                expiration_date:  $item['expiration_date'] ?: null,
+                expiration_date:  null,
             );
         })->all();
 

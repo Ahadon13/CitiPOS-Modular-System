@@ -29,7 +29,6 @@ final class AdjustStockModal extends Component
 
     // Add fields
     public string $new_batch_number = '';
-    public string $new_expiry_date = '';
 
     #[On('open-adjust-stock-modal')]
     public function loadModal(int $id): void
@@ -59,12 +58,12 @@ final class AdjustStockModal extends Component
         return InventoryBatch::where('product_id', $this->adjust_product['id'])
             ->where('branch_id', $this->currentBranchId) // Use your current branch ID trait
             ->where('quantity_on_hand', '>', 0)
-            ->orderBy('expiration_date', 'asc')
+            ->orderBy('created_at', 'asc')
             ->get()
             ->map(function ($batch) {
                 return [
                     'value' => $batch->id, // Use 'value' to match your x-ui-select setup
-                    'label' => "Batch: {$batch->batch_number} - Exp: " . ($batch->expiration_date ? \Carbon\Carbon::parse($batch->expiration_date)->format('M d, Y') : 'No expiry') . " ({$batch->quantity_on_hand} left)",
+                    'label' => "Batch: {$batch->batch_number} - Received: " . $batch->created_at->format('M d, Y') . " ({$batch->quantity_on_hand} left)",
                 ];
             })->toArray();
     }
@@ -84,7 +83,6 @@ final class AdjustStockModal extends Component
             $rules['selected_batch_id'] = 'required|integer';
         } else {
             $rules['new_batch_number'] = 'required|string|max:255';
-            $rules['new_expiry_date'] = 'nullable|date';
         }
 
         $this->validate($rules);
@@ -97,7 +95,7 @@ final class AdjustStockModal extends Component
                 quantity: (float) $this->quantity,
                 batchId: $this->selected_batch_id,
                 batchNumber: $this->new_batch_number,
-                expiryDate: $this->new_expiry_date ?: null,
+                expiryDate: null,
             )){
                 $this->toastError('Stock adjustment failed. Please try again.');
                 return;
@@ -121,7 +119,6 @@ final class AdjustStockModal extends Component
         $this->reason = '';
         $this->selected_batch_id = null;
         $this->new_batch_number = 'ADJ-' . now()->format('Ymd');
-        $this->new_expiry_date = '';
         $this->resetValidation();
     }
 }

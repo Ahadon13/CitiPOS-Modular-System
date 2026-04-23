@@ -4,7 +4,7 @@
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
             <h1 class="text-2xl font-bold text-neutral-900 dark:text-white">Motor Shop Stocks</h1>
-            <p class="text-neutral-500 dark:text-neutral-400">Manage physical inventory batches and expiration dates</p>
+            <p class="text-neutral-500 dark:text-neutral-400">Manage physical inventory batches by oldest received stock first</p>
         </div>
         <div class="flex items-center gap-3 justify-end">
             <x-ui.button variant="outline" icon="arrow-path" wire:click="$refresh">
@@ -19,8 +19,6 @@
             @php
                 $tabs = [
                     'all' => 'Active Stocks',
-                    'expiring' => 'Expiring Soon',
-                    'expired' => 'Expired',
                     'out_of_stock' => 'Empty / Depleted Batches',
                 ];
             @endphp
@@ -85,9 +83,9 @@
                     <x-ui.icon name="exclamation-triangle" class="size-6 text-orange-600! dark:text-orange-400!" />
                 </div>
                 <div>
-                    <p class="text-xs font-medium text-orange-600/80 uppercase tracking-wide">Critical Expiries</p>
+                    <p class="text-xs font-medium text-orange-600/80 uppercase tracking-wide">Depleted Batches</p>
                     <h3 class="text-2xl font-bold text-orange-700 dark:text-orange-400">
-                        {{ number_format($this->criticalExpiryCount) }}
+                        {{ number_format($this->depletedBatchesCount) }}
                     </h3>
                 </div>
             </div>
@@ -125,16 +123,6 @@
                     />
                 </div>
 
-                <div class="w-full sm:w-56">
-                    <x-ui-date
-                        invalidate
-                        month-year-only
-                        wire:model.live="expirationDateFilter"
-                        placeholder="Filter by Expiry Date"
-                        format="MMMM DD, YYYY"
-                    />
-                </div>
-
                 <x-ui.button size="sm" variant="outline" icon="arrow-down-tray" wire:click="exportLedger" wire:loading.attr="disabled" wire:target="exportLedger">
                     Export in Excel
                 </x-ui.button>
@@ -151,7 +139,7 @@
                                 <th class="px-6 py-4">Base Unit</th>
                                 <th class="px-6 py-4">Batch Number</th>
                                 <th class="px-6 py-4 text-center">Available Qty</th>
-                                <th class="px-6 py-4 text-center">Expiration Date</th>
+                                <th class="px-6 py-4 text-center">Received Date</th>
                                 <th class="px-6 py-4 text-right">Unit Cost</th>
                                 <th class="px-6 py-4 text-center">Actions</th>
                             </tr>
@@ -159,16 +147,6 @@
 
                         <tbody class="divide-y divide-black/10 dark:divide-white/10 bg-neutral-50 dark:bg-[#060A23]">
                             @forelse ($this->inventoryBatches as $batch)
-                                @php
-                                // 1. Parse the date EXACTLY ONCE to save memory/processing speed
-                                $expirationDate = $batch->expiration_date ? \Carbon\Carbon::parse($batch->expiration_date)->endOfDay() : null;
-
-                                // 2. Is it entirely in the past? (endOfDay ensures it doesn't flag as expired at 8 AM on the exact day it expires)
-                                $isExpired = $expirationDate?->isPast() ?? false;
-
-                                // 3. Is it NOT expired, but the date is less than or equal to exactly 3 months from right now?
-                                $isExpiringSoon = $expirationDate && !$isExpired && $expirationDate->lte(now()->addMonths(3));
-                                @endphp
                                 <tr class="hover:bg-white/5 transition-colors group {{ $batch->quantity_on_hand <= 0 ? 'opacity-50' : '' }}">
                                     <td class="px-6 py-4">
                                         <span class="font-bold text-neutral-900 dark:text-white block">{{ $batch->product->brand_name }}</span>
@@ -191,19 +169,8 @@
                                     </td>
 
                                     <td class="px-6 py-4 text-center">
-                                        @if(! $expirationDate)
-                                            <span class="text-neutral-500 italic">No expiry date</span>
-                                        @elseif($isExpired)
-                                            <span class="inline-flex items-center gap-1 rounded-md bg-rose-50 px-2 py-1 text-xs font-bold text-rose-700 ring-1 ring-inset ring-rose-600/20 dark:bg-rose-900/20 dark:text-rose-400">
-                                                <x-ui.icon name="x-circle" class="size-4" /> Expired
-                                            </span>
-                                        @elseif($isExpiringSoon)
-                                            <span class="inline-flex items-center gap-1 rounded-md bg-orange-50 px-2 py-1 text-xs font-bold text-orange-700 ring-1 ring-inset ring-orange-600/20 dark:bg-orange-900/20 dark:text-orange-400">
-                                                <x-ui.icon name="exclamation-triangle" class="size-4" /> {{ \Carbon\Carbon::parse($batch->expiration_date)->format('M d, Y') }}
-                                            </span>
-                                        @else
-                                            <span class="text-neutral-700 dark:text-neutral-300">{{ \Carbon\Carbon::parse($batch->expiration_date)->format('M d, Y') }}</span>
-                                        @endif
+                                        <span class="text-neutral-700 dark:text-neutral-300">{{ $batch->created_at->format('M d, Y') }}</span>
+                                        <span class="block text-xs text-neutral-500">{{ $batch->created_at->diffForHumans() }}</span>
                                     </td>
 
                                     <td class="px-6 py-4 text-right font-medium text-neutral-900 dark:text-white">
@@ -276,12 +243,6 @@
                     <x-ui.label>Batch Number</x-ui.label>
                     <x-ui.input wire:model="form.batch_number" />
                     <x-ui.error name="form.batch_number" />
-                </x-ui.field>
-
-                <x-ui.field>
-                    <x-ui.label>Expiration Date (Optional)</x-ui.label>
-                    <x-ui.input type="date" wire:model="form.expiration_date" />
-                    <x-ui.error name="form.expiration_date" />
                 </x-ui.field>
 
                 <div class="grid grid-cols-2 gap-4">

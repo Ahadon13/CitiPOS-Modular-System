@@ -36,7 +36,7 @@ final class RecordPurchase extends Component
         // If direct, give them one blank row to start
         if ($this->form->receive_type === 'direct') {
             $this->form->orderItems = [
-                ['product_id' => '', 'unit_id' => '', 'quantity' => 1, 'cost' => 0, 'batch_number' => '', 'expiration_date' => '']
+                ['product_id' => '', 'unit_id' => '', 'quantity' => 1, 'cost' => 0, 'batch_number' => '']
             ];
         }
     }
@@ -63,7 +63,6 @@ final class RecordPurchase extends Component
                     'quantity'         => (float) $item->quantity_ordered,
                     'cost'             => (int) $item->getRawOriginal('cost_per_unit') / 100,
                     'batch_number'     => '',
-                    'expiration_date'  => '',
                 ];
             })->toArray();
         }

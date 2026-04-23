@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Enums\Role;
+use App\Support\ModuleAccess;
 use Exception;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,22 +25,27 @@ final class HomeRouteController extends Controller
             return redirect()->route('login');
         }
 
-        // 2. Redirect based on Role Enum
-        // We assume your User model casts 'role' to the Role Enum
-        return match ($user->role) {
+        if ($user->hasRole([Role::SuperAdmin->value, Role::Admin->value])) {
+            return redirect()->route('admin.hub');
+        }
 
-            // Specific Roles -> Specific Dashboards
-            Role::Pharmacist->value => redirect()->route('inventory.pharmacy.dashboard'),
-            Role::GroceryCashier->value => redirect()->route('inventory.grocery.dashboard'),
-            Role::MotorShopCashier->value,
-            Role::ChiefMechanic->value => redirect()->route('inventory.motor-shop.dashboard'),
+        $branches = ModuleAccess::accessibleBranches($user);
 
-            // Admin / SuperAdmin -> Main Dashboard (Overview)
-            Role::SuperAdmin->value,
-            Role::Admin->value => redirect()->route('admin.hub'),
+        if ($branches->count() > 1) {
+            return redirect()->route('select-work');
+        }
 
-            // Fallback for anyone else (e.g. Regular User)
-            default => redirect()->route('login'),
-        };
+        if ($branches->count() === 1) {
+            $branch = $branches->first();
+            ModuleAccess::setActiveBranch($user, $branch);
+
+            $route = ModuleAccess::dashboardRouteForModule(ModuleAccess::moduleForBranch($branch) ?? '');
+
+            if ($route) {
+                return redirect()->route($route);
+            }
+        }
+
+        return redirect()->route('login');
     }
 }

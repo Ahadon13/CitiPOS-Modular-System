@@ -69,33 +69,6 @@ final class Dashboard extends Component
     }
 
     #[Computed]
-    public function expiringSoonCount(): int
-    {
-        $query = InventoryBatch::query()
-            ->where('branch_id', $this->currentBranchId)
-            ->where('quantity_on_hand', '>', 0)
-            ->where('expiration_date', '>', Carbon::now()) // Must be in the future
-            ->where('expiration_date', '<=', Carbon::now()->addMonths(3));
-
-        $this->applyMotorShopScope($query, 'product.productCategory');
-
-        return $query->count();
-    }
-
-    #[Computed]
-    public function expiredCount(): int
-    {
-        $query = InventoryBatch::query()
-            ->where('branch_id', $this->currentBranchId)
-            ->where('quantity_on_hand', '>', 0)
-            ->where('expiration_date', '<=', Carbon::now()); // In the past
-
-        $this->applyMotorShopScope($query, 'product.productCategory');
-
-        return $query->count();
-    }
-
-    #[Computed]
     public function lowStockCount(): int
     {
         $query = Product::query()->where('branch_id', $this->currentBranchId)
@@ -111,7 +84,7 @@ final class Dashboard extends Component
     }
 
     #[Computed]
-    public function expiringBatches()
+    public function recentlyReceivedBatches()
     {
         $query = InventoryBatch::query()
             ->with(['product.productCategory', 'branch'])
@@ -120,11 +93,7 @@ final class Dashboard extends Component
 
         $this->applyMotorShopScope($query, 'product.productCategory');
 
-        // Only fetch items that are expiring soon, but haven't actually expired yet.
-        $query->where('expiration_date', '>', Carbon::now())
-              ->where('expiration_date', '<=', Carbon::now()->addMonths(3));
-
-        return $query->orderBy('expiration_date', 'asc')
+        return $query->latest('created_at')
             ->limit(20)
             ->get();
     }
@@ -177,21 +146,6 @@ final class Dashboard extends Component
             ->havingRaw('COALESCE(total_stock, 0) < products.reorder_level')
             ->orderBy('total_stock', 'asc')
             ->paginate($this->perPage, ['*'], 'low_stock_page');
-    }
-
-    #[Computed]
-    public function expiredBatches()
-    {
-        $query = InventoryBatch::query()
-            ->with(['product.productCategory', 'product.baseUnit'])
-            ->where('quantity_on_hand', '>', 0)
-            ->where('branch_id', $this->currentBranchId)
-            ->where('expiration_date', '<=', Carbon::now()); // In the past
-
-        $this->applyMotorShopScope($query, 'product.productCategory');
-
-        return $query->orderBy('expiration_date', 'asc')
-            ->paginate($this->perPage, ['*'], 'expired_page');
     }
 
     #[Computed]

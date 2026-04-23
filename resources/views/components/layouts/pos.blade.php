@@ -30,7 +30,9 @@
                 </span>
             </div>
 
-            <livewire:inventory.components.expiry-banner :module="$module" />
+            @if($module !== 'motor-shop')
+                <livewire:inventory.components.expiry-banner :module="$module" />
+            @endif
 
             <div class="ml-auto flex items-center gap-3 mr-1.5">
                 <x-calculator />

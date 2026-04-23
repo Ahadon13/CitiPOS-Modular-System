@@ -99,7 +99,7 @@
 
                 {{-- Only allow adding random products if it's a DIRECT receive --}}
                 <div x-show="receiveType === 'direct'" x-cloak>
-                    <x-ui.button type="button" size="sm" x-on:click="items.push({ product_id: '', unit_id: '', quantity: 1, cost: 0, batch_number: '', expiration_date: '' })" icon="plus">
+                    <x-ui.button type="button" size="sm" x-on:click="items.push({ product_id: '', unit_id: '', quantity: 1, cost: 0, batch_number: '' })" icon="plus">
                         Add Product
                     </x-ui.button>
                 </div>
@@ -157,15 +157,10 @@
                                 <x-ui.input type="number" step="any" min="0" x-model="item.cost" />
                             </x-ui.field>
 
-                            <div class="md:col-span-2 flex gap-3">
-                                <x-ui.field class="w-1/2">
+                            <div class="md:col-span-2">
+                                <x-ui.field>
                                     <x-ui.label>Batch No.</x-ui.label>
                                     <x-ui.input type="text" x-model="item.batch_number" placeholder="B-123" />
-                                </x-ui.field>
-
-                                <x-ui.field class="w-1/2">
-                                    <x-ui.label>Expiry Date (Optional)</x-ui.label>
-                                    <x-ui.input type="date" min="{{ now()->format('Y-m-d') }}" x-model="item.expiration_date" />
                                 </x-ui.field>
                             </div>
                         </div>

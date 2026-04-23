@@ -28,7 +28,6 @@ final class ProductMotorShopForm extends Form
     public float $reorder_level = 20;
     public float $quantity_on_hand = 0;
     public float $cost_price = 0;
-    public $expiration_date = '';
     public ?int $base_unit_id = null;
     public float $conversion = 1;
     public float $selling_price = 0;
@@ -53,7 +52,6 @@ final class ProductMotorShopForm extends Form
             'reorder_level' => ['required', 'numeric', 'min:0'],
             'quantity_on_hand' => ['required', 'numeric', 'min:0'],
             'cost_price' => ['required', 'numeric', 'min:0'],
-            'expiration_date' => ['nullable', 'date', 'after:today'],
             'conversion' => ['required', 'numeric', 'min:1'],
             'selling_price' => ['required', 'numeric', 'min:0'],
             'base_barcode' => ['nullable', 'string', 'max:255', 'unique:product_packagings,barcode'],
@@ -78,7 +76,6 @@ final class ProductMotorShopForm extends Form
             'quantity_on_hand.required' => 'Please specify the initial stock quantity.',
             'selling_price.required' => 'The selling price is required.',
             'cost_price.required' => 'Please specify the cost price.',
-            'expiration_date.after' => 'The expiration date must be a future date.',
             'base_barcode.unique' => 'This barcode is already registered in the system.',
             'packagings.*.unit_id.required' => 'Please select a unit.',
             'packagings.*.unit_id.different' => 'The packaging unit must be different from the base unit.',
@@ -131,7 +128,7 @@ final class ProductMotorShopForm extends Form
             'quantity_on_hand' => $this->quantity_on_hand,
             'cost_per_unit' => (int) round((float) $this->cost_price * 100),
             'batch_number' => $this->batch_number ?: null,
-            'expiration_date' => $this->expiration_date ?: null,
+            'expiration_date' => null,
         ]);
 
         return app(CreateProduct::class)->execute($productData, $batchData);

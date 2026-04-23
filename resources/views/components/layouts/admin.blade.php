@@ -29,6 +29,10 @@
                 <x-ui.navbar.item size="sm" icon="users" label="Users" href="{{ route('admin.users') }}" active="admin.users.*" />
                 @endcan
 
+                @hasrole('super-admin')
+                <x-ui.navbar.item size="sm" icon="key" label="Module Access" href="{{ route('admin.module-access') }}" active="admin.module-access.*" />
+                @endhasrole
+
                 @can('admin-reports')
                 <x-ui.navbar.item size="sm" icon="chart-pie" label="Reports" href="{{ route('admin.reports') }}" active="admin.reports.*" />
                 @endcan
@@ -80,6 +84,10 @@
                             @can('manage-users')
                             <x-ui.navlist.item size="sm" icon="users" label="Users" href="{{ route('admin.users') }}" active="admin.users.*" />
                             @endcan
+
+                            @hasrole('super-admin')
+                            <x-ui.navlist.item size="sm" icon="key" label="Module Access" href="{{ route('admin.module-access') }}" active="admin.module-access.*" />
+                            @endhasrole
 
                             @can('admin-reports')
                             <x-ui.navlist.item size="sm" icon="chart-pie" label="Reports" href="{{ route('admin.reports') }}" active="admin.reports.*" />

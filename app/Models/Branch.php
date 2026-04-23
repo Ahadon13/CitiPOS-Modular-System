@@ -15,6 +15,7 @@ use App\Traits\ChecksIfInUse;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 final class Branch extends Model
 {
@@ -40,6 +41,11 @@ final class Branch extends Model
     public function users(): HasMany
     {
         return $this->hasMany(User::class);
+    }
+
+    public function accessibleUsers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'branch_user')->withTimestamps();
     }
 
     public function inventoryBatches(): HasMany

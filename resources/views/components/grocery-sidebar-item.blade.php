@@ -7,9 +7,7 @@
     <x-ui.navlist.item size="sm" label="Admin Panel" icon="arrow-left" class="bg-[--alpha(var(--color-primary)_/70%)] !text-white [&_[data-slot=icon]]:!text-white hover:!bg-[--alpha(var(--color-primary)_/20%)] hover:!text-white [&_[data-slot=icon]]:hover:!text-white" href="{{ route('admin.dashboard') }}" />
     @endhasanyrole
 
-    @can('access-pos')
     <x-ui.navlist.item size="sm" label="POS" icon="shopping-cart" href="{{ route('pos.grocery.process-sale') }}" />
-    @endcan
 
     <x-ui.separator />
 

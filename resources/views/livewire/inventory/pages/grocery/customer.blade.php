@@ -282,7 +282,7 @@
             </x-ui.field>
 
             <div class="pt-4 flex justify-end gap-3 mt-4 border-t border-black/10 dark:border-white/10">
-                <x-ui.button type="button" variant="outline" wire:click="$set('showModal', false)">Cancel</x-ui.button>
+                <x-ui.button type="button" variant="outline" x-on:click="$dispatch('close-modal', { id: 'customer-form' })">Cancel</x-ui.button>
                 <x-ui.button type="submit" wire:loading.attr="disabled" wire:target="saveCustomer" icon="check">
                     {{ $editingCustomerId ? 'Save Changes' : 'Create Customer' }}
                 </x-ui.button>

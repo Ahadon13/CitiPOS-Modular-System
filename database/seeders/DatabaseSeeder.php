@@ -45,6 +45,7 @@ final class DatabaseSeeder extends Seeder
         ]);
 
         $cashier->assignRole(\App\Enums\Role::Pharmacist->value);
+        $cashier->accessibleBranches()->sync([$mainBranch->id]);
 
         $admin = User::create([
             'name' => 'Admin User',

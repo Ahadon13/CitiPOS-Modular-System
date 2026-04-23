@@ -59,23 +59,6 @@
             </div>
         </x-ui.card>
 
-        <x-ui.card hoverless size="full" class="border-l-4 border-l-orange-500!">
-            <div class="flex items-center gap-4">
-                <div class="p-3 bg-orange-100 dark:bg-orange-900/50 rounded-lg">
-                    <x-ui.icon name="exclamation-triangle" class="size-6 text-orange-600! dark:text-orange-400!" />
-                </div>
-                <div>
-                    <p class="text-sm font-medium uppercase text-orange-500">Expiring Soon</p>
-                    <div class="flex items-baseline gap-2">
-                        <h3 class="text-3xl font-bold text-orange-900 dark:text-orange-200">{{ number_format($this->expiringSoonCount) }}</h3>
-                        @if($this->expiringSoonCount > 0)
-                        <span class="text-xs text-orange-500 font-bold animate-pulse">Action Needed</span>
-                        @endif
-                    </div>
-                </div>
-            </div>
-        </x-ui.card>
-
         <x-ui.card hoverless size="full" class="border-l-4 border-l-red-500!">
             <div class="flex items-center gap-4">
                 <div class="p-3 bg-red-100 dark:bg-red-900/50 rounded-lg">
@@ -86,23 +69,6 @@
                     <h3 class="text-3xl font-bold text-red-900 dark:text-red-200">
                         {{ number_format($this->outOfStockCount, 0) }}
                     </h3>
-                </div>
-            </div>
-        </x-ui.card>
-
-        <x-ui.card hoverless size="full" class="border-l-4 border-l-rose-700!">
-            <div class="flex items-center gap-4">
-                <div class="p-3 bg-rose-100 dark:bg-rose-900/50 rounded-lg">
-                    <x-ui.icon name="archive-box-x-mark" class="size-6 text-rose-700! dark:text-rose-400!" />
-                </div>
-                <div>
-                    <p class="text-sm font-medium uppercase text-rose-600">Already Expired</p>
-                    <div class="flex items-baseline gap-2">
-                        <h3 class="text-3xl font-bold text-rose-900 dark:text-rose-200">{{ number_format($this->expiredCount) }}</h3>
-                        @if($this->expiredCount > 0)
-                        <span class="text-xs text-rose-600 font-bold animate-pulse">Pull from shelves</span>
-                        @endif
-                    </div>
                 </div>
             </div>
         </x-ui.card>
@@ -163,11 +129,11 @@
         <div class="lg:col-span-1">
             <x-ui.card hoverless size="full" class="min-h-100!">
                 <x-ui.heading level="h3" size="sm" class="mb-4 flex items-center justify-between">
-                    <span>Critical Expiry</span>
+                    <span>Recently Received</span>
                 </x-ui.heading>
 
                 <div class="space-y-4 overflow-y-scroll h-80 pr-2">
-                    @forelse($this->expiringBatches as $batch)
+                    @forelse($this->recentlyReceivedBatches as $batch)
                         <div class="flex items-start gap-3 pb-3 border-b border-white/10 last:border-0 last:pb-0">
                             <div class="flex-1 min-w-0">
                                 <p class="text-xs font-medium text-neutral-900 dark:text-white truncate">
@@ -184,18 +150,18 @@
                             </div>
 
                             <div class="text-right">
-                                <p class="text-xs font-bold text-red-600">
-                                    {{ \Carbon\Carbon::parse($batch->expiration_date)->format('M d') }}
+                                <p class="text-xs font-bold text-blue-600">
+                                    {{ $batch->created_at->format('M d') }}
                                 </p>
                                 <p class="text-[10px] text-neutral-400">
-                                    {{ \Carbon\Carbon::parse($batch->expiration_date)->diffForHumans() }}
+                                    {{ $batch->created_at->diffForHumans() }}
                                 </p>
                             </div>
                         </div>
                     @empty
                         <div class="text-center py-8">
                             <x-ui.icon name="check-circle" class="size-8 text-green-500! mx-auto mb-2" />
-                            <p class="text-sm text-green-500">Stocks are healthy!</p>
+                            <p class="text-sm text-green-500">No received stock yet.</p>
                         </div>
                     @endforelse
                 </div>
@@ -395,76 +361,4 @@
         </div>
     </x-ui.card>
 
-    <x-ui.card hoverless size="full" class="overflow-hidden p-0 border-rose-500/30">
-        <div class="px-6 py-5 border-b border-black/10 dark:border-white/10 flex items-center justify-between bg-rose-50/30 dark:bg-rose-900/10">
-            <div>
-                <x-ui.heading level="h3" size="sm" class="text-rose-700 dark:text-rose-400">Quarantine Required</x-ui.heading>
-                <p class="text-sm text-neutral-500 mt-1">These batches have officially passed their expiration date.</p>
-            </div>
-
-            <x-ui.button size="sm" variant="outline" icon="arrow-down-tray">
-                Print Report
-            </x-ui.button>
-        </div>
-
-        <div class="w-full">
-            <div class="w-full text-sm text-neutral-300">
-                <div class="w-full overflow-x-auto">
-                    <table class="w-full text-left">
-                        <thead>
-                            <tr class="border-b border-black/10 dark:border-white/10 dark:bg-[#0a1331] bg-neutral-100/10 text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                                <th class="px-6 py-4">Product Name</th>
-                                <th class="px-6 py-4">Batch Number</th>
-                                <th class="px-6 py-4 text-center">Date Expired</th>
-                                <th class="px-6 py-4 text-center">Quantity Lost</th>
-                                <th class="px-6 py-4 text-right">Cost Per Unit</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-black/10 dark:divide-white/10 bg-neutral-50 dark:bg-[#060A23]">
-                            @forelse ($this->expiredBatches as $batch)
-                            <tr class="hover:bg-rose-50/50 dark:hover:bg-rose-900/20 transition-colors group">
-                                <td class="px-6 py-4">
-                                    <div class="font-medium text-black dark:text-white">{{ $batch->product->brand_name ?? 'Unknown' }}</div>
-                                    <div class="text-xs text-neutral-500">{{ $batch->product->baseUnit->name ?? 'Base unit' }}</div>
-                                </td>
-                                <td class="px-6 py-4 font-mono text-neutral-400">
-                                    <span class="inline-flex items-center rounded-md bg-neutral-400/10 px-2 py-1 text-xs font-medium text-neutral-600 dark:text-neutral-400 ring-1 ring-inset ring-neutral-400/20">
-                                        {{ $batch->batch_number ?? 'N/A' }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 text-center">
-                                    <div class="font-bold text-rose-600 dark:text-rose-400">{{ \Carbon\Carbon::parse($batch->expiration_date)->format('M d, Y') }}</div>
-                                    <div class="text-xs text-neutral-500">{{ \Carbon\Carbon::parse($batch->expiration_date)->diffForHumans() }}</div>
-                                </td>
-                                <td class="px-6 py-4 text-center">
-                                    <span class="text-neutral-900 dark:text-white font-bold">{{ number_format($batch->quantity_on_hand, 2) }}</span>
-                                    <span class="text-xs text-neutral-500 ml-1">{{ $batch->product->baseUnit->abbreviation ?? 'pcs' }}</span>
-                                </td>
-                                <td class="px-6 py-4 text-right font-semibold text-black dark:text-white">
-                                    @money($batch->cost_per_unit ?? 0)
-                                </td>
-                            </tr>
-                            @empty
-                            <tr>
-                                <td colspan="5" class="px-6 py-16 text-center">
-                                    <div class="flex flex-col items-center justify-center">
-                                        <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-transparent ring-2 ring-green-400">
-                                            <x-ui.icon name="check" class="h-5 w-5 text-green-400!" />
-                                        </div>
-                                        <h3 class="text-sm font-semibold text-black dark:text-white">No expired inventory</h3>
-                                        <p class="mt-1 text-sm text-neutral-500">All current stock is safely within expiration dates.</p>
-                                    </div>
-                                </td>
-                            </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="border-t border-black/10 dark:border-white/10 pb-4 px-4 flex justify-center">
-                    <x-ui.pagination wire:model.live="perPage" :per-page-options="$perPageOptions" :data="$this->expiredBatches" />
-                </div>
-            </div>
-        </div>
-    </x-ui.card>
 </div>

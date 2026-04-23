@@ -68,11 +68,11 @@ final class InventoryStocksExport implements FromQuery, WithHeadings, WithMappin
         });
 
         // 4. Tabs Filter
-        if ($this->stockFilter === 'expiring') {
+        if (! $this->isMotorShop() && $this->stockFilter === 'expiring') {
             $query->where('quantity_on_hand', '>', 0)
                   ->where('expiration_date', '<=', Carbon::now()->addMonths(3))
                   ->where('expiration_date', '>', Carbon::now());
-        } elseif ($this->stockFilter === 'expired') {
+        } elseif (! $this->isMotorShop() && $this->stockFilter === 'expired') {
             $query->where('quantity_on_hand', '>', 0)
                   ->where('expiration_date', '<=', Carbon::now());
         } elseif ($this->stockFilter === 'out_of_stock') {
@@ -81,7 +81,7 @@ final class InventoryStocksExport implements FromQuery, WithHeadings, WithMappin
             $query->where('quantity_on_hand', '>', 0);
         }
 
-        return $query->orderBy('expiration_date', 'asc');
+        return $query->orderBy($this->isMotorShop() ? 'created_at' : 'expiration_date', 'asc');
     }
 
     public function headings(): array
@@ -92,7 +92,7 @@ final class InventoryStocksExport implements FromQuery, WithHeadings, WithMappin
             'Generic Name',
             'Dosage',
             'Batch Number',
-            'Expiration Date',
+            $this->isMotorShop() ? 'Received Date' : 'Expiration Date',
             'Quantity on Hand',
             'Unit',
             'Unit Cost (PHP)',
@@ -106,15 +106,15 @@ final class InventoryStocksExport implements FromQuery, WithHeadings, WithMappin
      */
     public function map($batch): array
     {
-        $expDate = Carbon::parse($batch->expiration_date)->startOfDay();
+        $expDate = $batch->expiration_date ? Carbon::parse($batch->expiration_date)->startOfDay() : null;
 
-        $isExpired = $expDate->isPast();
-        $isExpiringSoon = !$isExpired && $expDate->lessThanOrEqualTo(now()->addMonths(3));
+        $isExpired = $expDate?->isPast() ?? false;
+        $isExpiringSoon = $expDate && ! $isExpired && $expDate->lessThanOrEqualTo(now()->addMonths(3));
 
         $status = 'Active';
         if ($batch->quantity_on_hand <= 0) $status = 'Depleted';
-        elseif ($isExpired) $status = 'Expired';
-        elseif ($isExpiringSoon) $status = 'Expiring Soon';
+        elseif (! $this->isMotorShop() && $isExpired) $status = 'Expired';
+        elseif (! $this->isMotorShop() && $isExpiringSoon) $status = 'Expiring Soon';
 
         $unitCost = $batch->getRawOriginal('cost_per_unit') / 100;
         $totalValue = $unitCost * $batch->quantity_on_hand;
@@ -125,7 +125,9 @@ final class InventoryStocksExport implements FromQuery, WithHeadings, WithMappin
             $batch->product->generic_name,
             $batch->product->dosage,
             $batch->batch_number,
-            Carbon::parse($batch->expiration_date)->format('M d, Y'),
+            $this->isMotorShop()
+                ? $batch->created_at->format('M d, Y')
+                : ($expDate?->format('M d, Y') ?? 'N/A'),
             $batch->quantity_on_hand,
             $batch->product->baseUnit->abbreviation ?? 'pcs',
             number_format((float) $unitCost, 2, '.', ''), // Standard decimal for Excel
@@ -146,5 +148,10 @@ final class InventoryStocksExport implements FromQuery, WithHeadings, WithMappin
                 ]
             ],
         ];
+    }
+
+    private function isMotorShop(): bool
+    {
+        return in_array('motor-shop', $this->targetCategories, true);
     }
 }

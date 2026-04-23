@@ -10,6 +10,7 @@ enum Role: string
     case Admin = 'admin';
     case Distributor = 'distributor';
     case ChiefMechanic = 'chief-mechanic';
+    case Mechanic = 'mechanic';
     case MotorShopCashier = 'motor-shop-cashier';
     case GroceryCashier = 'grocery-cashier';
     case Pharmacist = 'pharmacist';
@@ -35,6 +36,7 @@ enum Role: string
             self::Distributor => 'Distributor',
             self::GroceryCashier => 'Grocery Cashier',
             self::ChiefMechanic => 'Chief Mechanic',
+            self::Mechanic => 'Mechanic',
             self::MotorShopCashier => 'Motor Shop Cashier',
             self::Pharmacist => 'Pharmacist',
         };

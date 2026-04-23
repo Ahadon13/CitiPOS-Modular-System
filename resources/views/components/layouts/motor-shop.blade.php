@@ -19,7 +19,6 @@
                         {{ now()->format('F j, Y') }}
                     </span>
                 </div>
-                <livewire:inventory.components.expiry-banner module="motor-shop" />
                 <!-- User menu, search, etc. -->
                 <div class="ml-auto flex items-center gap-3 mr-3 sm:mr-5">
                     <x-ui.theme-switcher.variants.inline />

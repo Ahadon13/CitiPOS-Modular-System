@@ -264,7 +264,7 @@ final class ProcessSale extends Component
                 throw new \Exception('Amount received is lower than the amount due.');
             }
 
-            app(ProcessSaleAction::class)->execute(new SaleData(
+            $sale = app(ProcessSaleAction::class)->execute(new SaleData(
                 branch_id: $this->currentBranchId,
                 user_id: $this->user->id,
                 payment_method_id: (int) $validated['payment_method_id'],
@@ -277,7 +277,7 @@ final class ProcessSale extends Component
                 status: Status::Completed
             ), $itemsData);
 
-            $this->dispatch('sale-completed');
+            $this->dispatch('sale-completed', receiptUrl: route('pos.grocery.sales.receipt', $sale));
             $this->toastSuccess('Payment processed successfully!');
         } catch (\Exception $e) {
             $this->toastError('Transaction failed: ' . $e->getMessage());

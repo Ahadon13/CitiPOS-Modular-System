@@ -98,11 +98,6 @@
                             </x-ui.field>
 
                             <x-ui.field>
-                                <x-ui.label>Expiration Date (Optional)</x-ui.label>
-                                <x-ui.input type="date" x-model="item.expiration_date" min="{{ now()->format('Y-m-d') }}" />
-                            </x-ui.field>
-
-                            <x-ui.field>
                                 <x-ui.label>Batch No.</x-ui.label>
                                 <x-ui.input type="text" x-model="item.batch_number" placeholder="B-1234" />
                             </x-ui.field>

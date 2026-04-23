@@ -4,6 +4,7 @@ namespace App\Livewire\Admin\Pages;
 
 use App\Enums\Sale\Status as SaleStatus;
 use App\Models\Branch;
+use App\Support\ModuleAccess;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
@@ -19,7 +20,7 @@ class OwnerHub extends Component
     #[Computed]
     public function branches()
     {
-        return Branch::query()
+        $query = Branch::query()
             ->with('productCategory')
             ->withCount([
                 'sales',
@@ -35,8 +36,15 @@ class OwnerHub extends Component
                 },
             ], 'grand_total')
             ->orderBy('created_at', 'desc')
-            ->orderBy('name')
-            ->get();
+            ->orderBy('name');
+
+        $user = Auth::user();
+
+        if ($user && ! ModuleAccess::isSuperAdmin($user)) {
+            $query->whereIn('id', ModuleAccess::accessibleBranches($user)->pluck('id'));
+        }
+
+        return $query->get();
     }
 
     /**
