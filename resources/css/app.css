@@ -166,7 +166,7 @@ button {
 }
 
 @layer utilities {
-    @media (min-width: 768px) and (max-width: 1023px) {
+    @media (max-width: 767px) {
         [data-slot="layout"],
         [data-slot="main"],
         [data-slot="main"] > *,

@@ -21,10 +21,10 @@
         </div>
     @endif
     @if ($data instanceof Illuminate\Pagination\LengthAwarePaginator)
-        <div class="xl:hidden mt-4">
+        <div class="lg:hidden mt-4">
             {{ $data->links('livewire::simple-tailwind') }}
         </div>
-        <div class="hidden xl:block mt-4">
+        <div class="hidden lg:block mt-4">
             {{ $data->links('livewire::tailwind') }}
         </div>
     @endif

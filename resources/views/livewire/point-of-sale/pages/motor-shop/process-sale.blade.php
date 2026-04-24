@@ -1,4 +1,4 @@
-<div class="flex flex-col lg:flex-row w-full min-h-full lg:h-full" x-data="motorShopPosApp(@js($this->activePaymentMethods), @js($this->customerTypesData), @entangle('customerMode').live, @entangle('customer_id').live, @js($this->customers), @js($this->mechanics))" @keydown.window="handleKeydown($event)">
+<div class="flex flex-col md:flex-row w-full min-h-full md:h-full" x-data="motorShopPosApp(@js($this->activePaymentMethods), @js($this->customerTypesData), @entangle('customerMode').live, @entangle('customer_id').live, @js($this->customers), @js($this->mechanics))" @keydown.window="handleKeydown($event)">
     <div class="flex-1 flex flex-col bg-white dark:bg-[#0a1331]/80 border border-black/10 dark:border-white/10 overflow-hidden shadow-sm min-w-0">
         <div class="p-3 h-16 border-b border-black/10 dark:border-white/10 flex flex-row items-center gap-3">
             <x-ui.button color="primary" variant="outline" icon="qr-code" class="shrink-0 hidden sm:inline-flex">
@@ -93,7 +93,7 @@
         </div>
     </div>
 
-    <div class="w-full lg:w-[380px] 2xl:w-[420px] flex flex-col bg-white dark:bg-[#0a1331]/80 border border-black/10 dark:border-white/10 overflow-hidden shadow-sm shrink-0">
+    <div class="w-full md:w-[380px] 2xl:w-[420px] flex flex-col bg-white dark:bg-[#0a1331]/80 border border-black/10 dark:border-white/10 overflow-hidden shadow-sm shrink-0">
         <div class="p-2 border-b border-black/10 dark:border-white/10 flex items-center justify-between bg-neutral-50/50 dark:bg-white/5">
             <div class="flex items-center gap-2">
                 <x-ui.icon name="shopping-cart" class="size-5 text-electric-blue" />
