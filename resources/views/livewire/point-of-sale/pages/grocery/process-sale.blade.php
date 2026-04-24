@@ -97,7 +97,9 @@
                 <h2 class="font-bold text-neutral-900 dark:text-white">Current Order</h2>
             </div>
             <div class="flex item-center gap-2">
-                <span x-show="cart.length > 0" x-cloak class="bg-electric-blue text-white text-xs font-bold px-2 py-0.5 rounded-full" x-text="cart.length + ' items'"></span>
+                <div class="flex justify-center items-center">
+                    <span x-show="cart.length > 0" x-cloak class="bg-electric-blue text-white text-xs font-bold px-2 py-0.5 rounded-full" x-text="cart.length + ' items'"></span>
+                </div>
                 <button @click="clearCart()" class="size-8 flex items-center justify-center rounded-lg text-neutral-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors" title="Clear Cart">
                     <x-ui.icon name="trash" class="size-4" />
                 </button>

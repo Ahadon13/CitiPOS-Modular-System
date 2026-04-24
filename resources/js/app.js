@@ -781,7 +781,7 @@ window.motorShopPosApp = (
             const price = parseFloat(this.serviceDraft.price) || 0;
 
             if (!serviceName || quantity <= 0 || price < 0) {
-                return;
+                return false;
             }
 
             this.serviceLines.push({
@@ -794,6 +794,7 @@ window.motorShopPosApp = (
             });
 
             this.resetServiceDraft();
+            return true;
         },
 
         removeServiceLine(cartId) {

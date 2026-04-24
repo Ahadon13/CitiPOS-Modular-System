@@ -5,6 +5,9 @@
                 Barcode Scan
                 <span class="ml-2 text-[10px] uppercase font-mono opacity-70 border border-electric-blue/30 rounded px-1.5 py-0.5">F1</span>
             </x-ui.button>
+            <x-ui.button color="primary" variant="outline" icon="wrench-screwdriver" class="shrink-0" x-on:click="$dispatch('open-modal', { id: 'service-form-modal' })">
+                Add Service
+            </x-ui.button>
             <div class="flex-1 min-w-[200px]">
                 <x-ui.input clearable leftIcon="magnifying-glass" placeholder="Search motor parts... (Ctrl+K)" wire:model.live.debounce.300ms="search" class="w-full bg-neutral-50 dark:bg-[#060A23]" />
             </div>
@@ -97,7 +100,9 @@
                 <h2 class="font-bold text-neutral-900 dark:text-white">Current Order</h2>
             </div>
             <div class="flex item-center gap-2">
-                <span x-show="orderLineCount > 0" x-cloak class="bg-electric-blue text-white text-xs font-bold px-2 py-0.5 rounded-full" x-text="orderLineCount + ' lines'"></span>
+                <div class="flex justify-center items-center">
+                    <span x-show="orderLineCount > 0" x-cloak class="bg-electric-blue text-white text-xs font-bold px-2 py-0.5 rounded-full" x-text="orderLineCount + ' lines'"></span>
+                </div>
                 <button @click="clearCart()" class="size-8 flex items-center justify-center rounded-lg text-neutral-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors" title="Clear Cart">
                     <x-ui.icon name="trash" class="size-4" />
                 </button>
@@ -137,32 +142,6 @@
                     <p class="text-sm text-neutral-500 dark:text-neutral-400 text-center mb-8">Select products to begin</p>
                 </div>
             </template>
-
-            <div class="p-2 border-b border-black/10 dark:border-white/10 bg-white dark:bg-[#0a1331]">
-                <div class="flex items-center gap-2 mb-2">
-                    <x-ui.icon name="wrench-screwdriver" class="size-4 text-electric-blue" />
-                    <p class="text-xs font-bold uppercase tracking-wider text-neutral-500">Shop Service</p>
-                </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <div class="col-span-2">
-                        <x-ui.input x-model="serviceDraft.service_name" placeholder="Service done, e.g. Change oil" />
-                    </div>
-                    <select x-model="serviceDraft.mechanic_id" class="col-span-2 rounded-md border-gray-300 dark:border-white/10 dark:bg-[#0a1331] shadow-xs text-sm focus:ring-electric-blue focus:border-electric-blue">
-                        <option value="">No mechanic selected</option>
-                        <template x-for="mechanic in mechanicsData" :key="mechanic.value">
-                            <option :value="mechanic.value" x-text="mechanic.label"></option>
-                        </template>
-                    </select>
-                    <x-ui.input type="number" step="0.01" min="0.01" x-model="serviceDraft.quantity" placeholder="Qty" />
-                    <x-ui.input type="number" step="0.01" min="0" x-model="serviceDraft.price" placeholder="Price" />
-                    <div class="col-span-2">
-                        <x-ui.textarea x-model="serviceDraft.description" rows="2" placeholder="Service notes (optional)" />
-                    </div>
-                    <x-ui.button type="button" size="sm" icon="plus" class="col-span-2 justify-center" x-on:click="addServiceLine()">
-                        Add Service
-                    </x-ui.button>
-                </div>
-            </div>
 
             <template x-if="cart.length > 0 || serviceLines.length > 0">
                 <div class="divide-y divide-black/5 dark:divide-white/10">
@@ -297,6 +276,51 @@
             <div class="pt-4 flex justify-end gap-3 mt-4 border-t border-black/10 dark:border-white/10">
                 <x-ui.button type="button" variant="outline" x-on:click="$dispatch('close-modal', { id: 'customer-form' })">Cancel</x-ui.button>
                 <x-ui.button type="submit" wire:loading.attr="disabled" wire:target="saveCustomer" icon="check">Create Customer</x-ui.button>
+            </div>
+        </form>
+    </x-ui.modal>
+
+    <x-ui.modal id="service-form-modal" width="lg" heading="Add Shop Service">
+        <form class="space-y-4" x-on:submit.prevent="if (addServiceLine()) $dispatch('close-modal', { id: 'service-form-modal' })">
+            <x-ui.field required>
+                <x-ui.label>Service</x-ui.label>
+                <x-ui.input x-model="serviceDraft.service_name" placeholder="Service done, e.g. Change oil" />
+            </x-ui.field>
+
+            <x-ui.field>
+                <x-ui.label>Mechanic</x-ui.label>
+                <select x-model="serviceDraft.mechanic_id" class="w-full rounded-md border-gray-300 dark:border-white/10 dark:bg-[#0a1331] shadow-xs text-sm focus:ring-electric-blue focus:border-electric-blue">
+                    <option value="">No mechanic selected</option>
+                    <template x-for="mechanic in mechanicsData" :key="mechanic.value">
+                        <option :value="mechanic.value" x-text="mechanic.label"></option>
+                    </template>
+                </select>
+            </x-ui.field>
+
+            <div class="grid grid-cols-2 gap-4">
+                <x-ui.field required>
+                    <x-ui.label>Quantity</x-ui.label>
+                    <x-ui.input type="number" step="0.01" min="0.01" x-model="serviceDraft.quantity" placeholder="Qty" />
+                </x-ui.field>
+
+                <x-ui.field required>
+                    <x-ui.label>Price</x-ui.label>
+                    <x-ui.input type="number" step="0.01" min="0" x-model="serviceDraft.price" placeholder="Price" />
+                </x-ui.field>
+            </div>
+
+            <x-ui.field>
+                <x-ui.label>Notes</x-ui.label>
+                <x-ui.textarea x-model="serviceDraft.description" rows="3" placeholder="Service notes (optional)" />
+            </x-ui.field>
+
+            <div class="pt-4 flex justify-end gap-3 mt-4 border-t border-black/10 dark:border-white/10">
+                <x-ui.button type="button" variant="outline" x-on:click="resetServiceDraft(); $dispatch('close-modal', { id: 'service-form-modal' })">
+                    Cancel
+                </x-ui.button>
+                <x-ui.button type="submit" color="primary" icon="plus">
+                    Add Service
+                </x-ui.button>
             </div>
         </form>
     </x-ui.modal>

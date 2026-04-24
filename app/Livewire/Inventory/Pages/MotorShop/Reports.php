@@ -4,12 +4,16 @@ namespace App\Livewire\Inventory\Pages\MotorShop;
 
 use App\Enums\Inventory\TransactionType;
 use App\Enums\Product\CategoryType;
+use App\Enums\Role;
+use App\Enums\Sale\Status;
 use App\Exports\StockMovementsExport;
 use App\Livewire\Concerns\HasToast;
 use App\Models\Expense;
 use App\Models\SaleItem;
 use App\Models\InventoryBatch;
 use App\Models\InventoryTransaction;
+use App\Models\MotorShopSaleService;
+use App\Models\User;
 use App\Traits\HasAuth;
 use App\Traits\HasDataTable;
 use Carbon\Carbon;
@@ -31,6 +35,8 @@ class Reports extends Component
     // Default to the last 30 days
     public array $dateRange = [];
     public ?string $stockMovementTypeFilter = null;
+    public string $serviceSearch = '';
+    public ?int $serviceMechanicFilter = null;
     protected array $targetCategories = ['motor-shop'];
 
     public function mount()
@@ -206,6 +212,7 @@ class Reports extends Component
     public function updatedDateRange()
     {
         $this->resetPage('stock_movements_page');
+        $this->resetPage('services_page');
 
         // Tell Alpine to re-render the charts with the new data
         $this->dispatch('update-trend-chart', data: [
@@ -220,6 +227,66 @@ class Reports extends Component
             'labels' => $this->expensePieData['labels'],
             'series' => $this->expensePieData['series'],
         ]);
+    }
+
+    #[Computed]
+    public function serviceStats(): array
+    {
+        $query = $this->serviceTransactionsQuery();
+        $totalServices = (clone $query)->count();
+        $totalQuantity = (float) (clone $query)->sum('quantity');
+        $serviceRevenue = (int) (clone $query)->sum('subtotal');
+        $serviceOrders = (clone $query)->distinct('sale_id')->count('sale_id');
+        $averageServiceValue = $totalServices > 0 ? (int) round($serviceRevenue / $totalServices) : 0;
+
+        return [
+            'total_services' => $totalServices,
+            'total_quantity' => $totalQuantity,
+            'service_orders' => $serviceOrders,
+            'service_revenue' => Money::PHP($serviceRevenue),
+            'average_service_value' => Money::PHP($averageServiceValue),
+        ];
+    }
+
+    #[Computed]
+    public function topServices()
+    {
+        return $this->serviceTransactionsQuery()
+            ->selectRaw('service_name, SUM(quantity) as total_quantity, SUM(subtotal) as total_revenue, COUNT(*) as service_count')
+            ->groupBy('service_name')
+            ->orderByDesc('total_revenue')
+            ->limit(5)
+            ->get();
+    }
+
+    #[Computed]
+    public function serviceTransactions()
+    {
+        return $this->serviceTransactionsQuery()
+            ->with(['sale.customer', 'sale.paymentMethod', 'mechanic'])
+            ->latest()
+            ->paginate($this->perPage, ['*'], 'services_page');
+    }
+
+    #[Computed]
+    public function serviceMechanicOptions(): array
+    {
+        return User::query()
+            ->whereHas('roles', fn (Builder $query) => $query->whereIn('name', [
+                Role::ChiefMechanic->value,
+                Role::Mechanic->value,
+            ]))
+            ->where(function (Builder $query) {
+                $query->where('branch_id', $this->currentBranchId)
+                    ->orWhereHas('accessibleBranches', fn (Builder $branchQuery) => $branchQuery->whereKey($this->currentBranchId));
+            })
+            ->orderBy('name')
+            ->get(['id', 'name'])
+            ->map(fn (User $user): array => [
+                'value' => $user->id,
+                'label' => $user->name,
+            ])
+            ->toArray();
     }
 
     #[Computed]
@@ -264,14 +331,61 @@ class Reports extends Component
         $this->resetPage('stock_movements_page');
     }
 
+    public function clearServiceFilters(): void
+    {
+        $this->serviceSearch = '';
+        $this->serviceMechanicFilter = null;
+        $this->resetPage('services_page');
+    }
+
     public function updatedStockMovementTypeFilter(): void
     {
         $this->resetPage('stock_movements_page');
     }
 
+    public function updatedServiceSearch(): void
+    {
+        $this->resetPage('services_page');
+    }
+
+    public function updatedServiceMechanicFilter(): void
+    {
+        $this->resetPage('services_page');
+    }
+
     protected function getAdditionalPageResetProperties(): array
     {
-        return ['dateRange', 'stockMovementTypeFilter'];
+        return ['dateRange', 'stockMovementTypeFilter', 'serviceSearch', 'serviceMechanicFilter'];
+    }
+
+    protected function serviceTransactionsQuery(): Builder
+    {
+        [$start, $end] = $this->getDates();
+
+        $query = MotorShopSaleService::query()
+            ->whereHas('sale', function (Builder $query) use ($start, $end) {
+                $query->where('branch_id', $this->currentBranchId)
+                    ->where('status', Status::Completed)
+                    ->whereBetween('created_at', [$start, $end]);
+            });
+
+        $query->when($this->serviceMechanicFilter, function (Builder $query) {
+            $query->where('mechanic_id', $this->serviceMechanicFilter);
+        });
+
+        $query->when($this->serviceSearch !== '', function (Builder $query) {
+            $searchTerm = '%' . trim($this->serviceSearch) . '%';
+
+            $query->where(function (Builder $query) use ($searchTerm) {
+                $query->where('service_name', 'like', $searchTerm)
+                    ->orWhere('description', 'like', $searchTerm)
+                    ->orWhereHas('mechanic', fn (Builder $mechanicQuery) => $mechanicQuery->where('name', 'like', $searchTerm))
+                    ->orWhereHas('sale', fn (Builder $saleQuery) => $saleQuery->where('payment_reference', 'like', $searchTerm))
+                    ->orWhereHas('sale.customer', fn (Builder $customerQuery) => $customerQuery->where('name', 'like', $searchTerm));
+            });
+        });
+
+        return $query;
     }
 
     protected function stockMovementQuery(): Builder
