@@ -76,80 +76,80 @@ final class DatabaseSeeder extends Seeder
         $unilab = Supplier::create(['name' => 'Unilab Phils', 'contact_info' => '09123456789']);
         $yamaha = Supplier::create(['name' => 'Yamaha Motor Phils', 'contact_info' => 'support@yamaha.com.ph']);
 
-        // ==========================================
-        // 6. COMPLEX PRODUCT: PHARMACY (Biogesic)
-        // ==========================================
-        $biogesic = Product::create([
-            'supplier_id' => $unilab->id,
-            'branch_id' => $mainBranch->id,
-            'product_category_id' => $catPharmacy->id, // Linked to ProductCategory
-            'base_unit_id' => $unitPiece->id,  // We count stock in "Pieces"
-            'product_code' => 'BIO-500MG-001', // Unique product code for easy reference
-            'name' => 'Biogesic 500mg',
-            'brand_name' => 'Unilab',
-            'generic_name' => 'Paracetamol',
-            'requires_prescription' => false,
-            'attributes' => ['dosage' => '500mg'], // Casts to JSON automatically
-        ]);
+        // // ==========================================
+        // // 6. COMPLEX PRODUCT: PHARMACY (Biogesic)
+        // // ==========================================
+        // $biogesic = Product::create([
+        //     'supplier_id' => $unilab->id,
+        //     'branch_id' => $mainBranch->id,
+        //     'product_category_id' => $catPharmacy->id, // Linked to ProductCategory
+        //     'base_unit_id' => $unitPiece->id,  // We count stock in "Pieces"
+        //     'product_code' => 'BIO-500MG-001', // Unique product code for easy reference
+        //     'name' => 'Biogesic 500mg',
+        //     'brand_name' => 'Unilab',
+        //     'generic_name' => 'Paracetamol',
+        //     'requires_prescription' => false,
+        //     'attributes' => ['dosage' => '500mg'], // Casts to JSON automatically
+        // ]);
 
-        // Define Packaging (The "Box" option)
-        // Note: We don't need to create the "Piece" unit here because it's already the Base Unit.
-        // We only create EXTRA packaging here.
-        ProductPackaging::create([
-            'product_id' => $biogesic->id,
-            'unit_id' => $unitBox->id,
-            'conversion_factor' => 500,
-            // CHANGED: 2300.00 becomes 230000 (cents)
-            'price' => 230000,
-            'barcode' => 'BIO-BOX-001',
-        ]);
+        // // Define Packaging (The "Box" option)
+        // // Note: We don't need to create the "Piece" unit here because it's already the Base Unit.
+        // // We only create EXTRA packaging here.
+        // ProductPackaging::create([
+        //     'product_id' => $biogesic->id,
+        //     'unit_id' => $unitBox->id,
+        //     'conversion_factor' => 500,
+        //     // CHANGED: 2300.00 becomes 230000 (cents)
+        //     'price' => 230000,
+        //     'barcode' => 'BIO-BOX-001',
+        // ]);
 
-        // Stock it up (Inventory is always in Base Unit -> Pieces)
-        InventoryBatch::create([
-            'branch_id' => $mainBranch->id,
-            'product_id' => $biogesic->id,
-            'batch_number' => 'BATCH-2025-A',
-            'expiration_date' => '2026-12-31',
-            'quantity_on_hand' => 1000, // 1000 pieces (which equals 2 Boxes)
-        ]);
+        // // Stock it up (Inventory is always in Base Unit -> Pieces)
+        // InventoryBatch::create([
+        //     'branch_id' => $mainBranch->id,
+        //     'product_id' => $biogesic->id,
+        //     'batch_number' => 'BATCH-2025-A',
+        //     'expiration_date' => '2026-12-31',
+        //     'quantity_on_hand' => 1000, // 1000 pieces (which equals 2 Boxes)
+        // ]);
 
-        // ==========================================
-        // 7. COMPLEX PRODUCT: MOTOR PART (Brake Pad)
-        // ==========================================
-        $brakePad = Product::create([
-            'supplier_id' => $yamaha->id,
-            'branch_id' => $mainBranch->id,
-            'product_category_id' => $catMotor->id,
-            'base_unit_id' => $unitSet->id, // We count stock in "Sets"
-            'product_code' => 'YP-BRAKE-001', // Unique product code for easy reference
-            'name' => 'Front Brake Pad',
-            'brand_name' => 'Yamaha Genuine',
-            'generic_name' => 'Brake Pad',
-            'attributes' => [
-                'compatible_models' => ['Mio i125', 'Mio Soul i', 'Mio Sporty'],
-                'part_number' => 'YP-BRAKE-001',
-            ],
-        ]);
+        // // ==========================================
+        // // 7. COMPLEX PRODUCT: MOTOR PART (Brake Pad)
+        // // ==========================================
+        // $brakePad = Product::create([
+        //     'supplier_id' => $yamaha->id,
+        //     'branch_id' => $mainBranch->id,
+        //     'product_category_id' => $catMotor->id,
+        //     'base_unit_id' => $unitSet->id, // We count stock in "Sets"
+        //     'product_code' => 'YP-BRAKE-001', // Unique product code for easy reference
+        //     'name' => 'Front Brake Pad',
+        //     'brand_name' => 'Yamaha Genuine',
+        //     'generic_name' => 'Brake Pad',
+        //     'attributes' => [
+        //         'compatible_models' => ['Mio i125', 'Mio Soul i', 'Mio Sporty'],
+        //         'part_number' => 'YP-BRAKE-001',
+        //     ],
+        // ]);
 
-        // Note: Since we sell this ONLY as a Set, and Set is the Base Unit,
-        // we don't strictly need a ProductPackaging row unless you have a "Box of Sets".
-        // However, if you want to attach a specific barcode or price to the Base Unit itself,
-        // you can add a packaging row for the Base Unit too (1:1 ratio).
+        // // Note: Since we sell this ONLY as a Set, and Set is the Base Unit,
+        // // we don't strictly need a ProductPackaging row unless you have a "Box of Sets".
+        // // However, if you want to attach a specific barcode or price to the Base Unit itself,
+        // // you can add a packaging row for the Base Unit too (1:1 ratio).
 
-        ProductPackaging::create([
-            'product_id' => $brakePad->id,
-            'unit_id' => $unitSet->id,
-            'conversion_factor' => 1,
-            // CHANGED: 350.00 becomes 35000 (cents)
-            'price' => 35000,
-            'barcode' => 'MIO-BRAKE-SET',
-        ]);
+        // ProductPackaging::create([
+        //     'product_id' => $brakePad->id,
+        //     'unit_id' => $unitSet->id,
+        //     'conversion_factor' => 1,
+        //     // CHANGED: 350.00 becomes 35000 (cents)
+        //     'price' => 35000,
+        //     'barcode' => 'MIO-BRAKE-SET',
+        // ]);
 
-        InventoryBatch::create([
-            'branch_id' => $mainBranch->id,
-            'product_id' => $brakePad->id,
-            'batch_number' => 'INV-001',
-            'quantity_on_hand' => 20, // 20 Sets
-        ]);
+        // InventoryBatch::create([
+        //     'branch_id' => $mainBranch->id,
+        //     'product_id' => $brakePad->id,
+        //     'batch_number' => 'INV-001',
+        //     'quantity_on_hand' => 20, // 20 Sets
+        // ]);
     }
 }
