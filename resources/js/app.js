@@ -457,7 +457,9 @@ window.posApp = (
     };
 };
 
-window.groceryPosApp = (
+window.groceryPosApp = window.posApp;
+
+window.motorShopPosApp = (
     paymentMethods = [],
     customerTypes = [],
     customerMode,
@@ -894,8 +896,6 @@ window.groceryPosApp = (
         },
     };
 };
-
-window.motorShopPosApp = window.groceryPosApp;
 
 window.transactionManager = () => {
     return {
