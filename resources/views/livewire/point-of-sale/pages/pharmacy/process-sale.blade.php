@@ -1,4 +1,4 @@
-<div class="flex flex-col md:flex-row w-full h-full" x-data="posApp(@js($this->activePaymentMethods), @js($this->customerTypesData), @entangle('customerMode').live, @entangle('customer_id').live, @js($this->customers))" @keydown.window="handleKeydown($event)">
+<div class="flex flex-col lg:flex-row w-full min-h-full lg:h-full" x-data="posApp(@js($this->activePaymentMethods), @js($this->customerTypesData), @entangle('customerMode').live, @entangle('customer_id').live, @js($this->customers))" @keydown.window="handleKeydown($event)">
     {{-- ========================================== --}}
     {{-- LEFT COLUMN: PRODUCT SELECTION (LIST ONLY) --}}
     {{-- ========================================== --}}
@@ -140,7 +140,7 @@
     {{-- ========================================== --}}
     {{-- RIGHT COLUMN: CART & CHECKOUT --}}
     {{-- ========================================== --}}
-    <div class="w-full md:w-[380px] 2xl:w-[420px] flex flex-col bg-white dark:bg-[#0a1331]/80 border border-black/10 dark:border-white/10 overflow-hidden shadow-sm shrink-0">
+    <div class="w-full lg:w-[380px] 2xl:w-[420px] flex flex-col bg-white dark:bg-[#0a1331]/80 border border-black/10 dark:border-white/10 overflow-hidden shadow-sm shrink-0">
 
         {{-- Header --}}
         <div class="p-2 border-b border-black/10 dark:border-white/10 flex items-center justify-between bg-neutral-50/50 dark:bg-white/5">

@@ -276,7 +276,7 @@
                     @endif
 
                     @class([
-                        'relative flex w-full flex-col bg-white shadow-xl ring-1 ring-neutral-900/5 bg-white dark:bg-card dark:ring-white/10',
+                        'relative flex w-full max-h-[calc(100dvh-2rem)] flex-col bg-white shadow-xl ring-1 ring-neutral-900/5 bg-white dark:bg-card dark:ring-white/10',
 
                         $widthClass,
                         'rounded-box' => !$slideover && $width !== 'screen',

@@ -23,7 +23,7 @@
     };
 
     $classes = [
-        'w-full bg-white dark:bg-card border border-black/10 dark:border-white/10 hover:bg-zinc-100 dark:hover:bg-accent',
+        'w-full min-w-0 bg-white dark:bg-card border border-black/10 dark:border-white/10 hover:bg-zinc-100 dark:hover:bg-accent',
         '[:where(&)]:p-4 [:where(&)]:rounded-lg',
         'dark:hover:bg-card! hover:bg-white!' => $hoverless,
         '!bg-transparent hover:!bg-transparent !shadow-none !border-none !p-0 !dark:hover:bg-transparent' => $clear,

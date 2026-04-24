@@ -5,7 +5,7 @@
     'perPageName' => 'Quantity',
 ])
 
-<div {{ $attributes->class('flex items-center w-full gap-4 justify-between') }}>
+<div {{ $attributes->class('flex flex-wrap items-center w-full gap-3 sm:gap-4 justify-center sm:justify-between') }}>
     @if (! $minimal)
         <div class="flex w-full max-w-36 items-center gap-2 mt-4 shrink-0">
             <x-ui.field>
@@ -21,10 +21,10 @@
         </div>
     @endif
     @if ($data instanceof Illuminate\Pagination\LengthAwarePaginator)
-        <div class="lg:hidden mt-4">
+        <div class="xl:hidden mt-4">
             {{ $data->links('livewire::simple-tailwind') }}
         </div>
-        <div class="hidden lg:block mt-4">
+        <div class="hidden xl:block mt-4">
             {{ $data->links('livewire::tailwind') }}
         </div>
     @endif

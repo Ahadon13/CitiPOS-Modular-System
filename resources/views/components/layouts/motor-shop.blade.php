@@ -36,7 +36,7 @@
             </x-ui.layout.header>
             @endif
             <!-- Your page content -->
-            <div class="m-3 sm:m-5">
+            <div class="m-3 sm:m-5 min-w-0 max-w-full">
                 {{ $slot }}
             </div>
         </x-ui.layout.main>

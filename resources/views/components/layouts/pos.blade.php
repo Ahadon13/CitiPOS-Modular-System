@@ -49,7 +49,7 @@
             </div>
         </x-ui.layout.header>
 
-        <div class="w-full h-[calc(100vh-57px)]">
+        <div class="w-full h-[calc(100vh-57px)] overflow-y-auto overflow-x-hidden">
             {{ $slot }}
         </div>
     </div>
