@@ -4,7 +4,7 @@
     </x-slot:brand>
 
     @if($this->branches->count() > 1)
-        <div class="px-3 pb-3">
+        <div class="px-3 pb-3 [:has([data-collapsed]_&)_&]:hidden">
             <x-ui.field class="mb-0">
                 <select
                     wire:change="switchBranch($event.target.value)"

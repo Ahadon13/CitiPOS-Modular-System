@@ -12,6 +12,10 @@
         <x-ui.layout.main>
             @if ($inventory)
             <x-ui.layout.header>
+                <div class="flex items-center md:hidden mr-1">
+                    <x-ui.button variant="ghost" icon="bars-3" x-on:click="toggle()" />
+                </div>
+
                 <!-- Realtime Date and Time -->
                 <div class="flex flex-col items-start ml-3 sm:ml-5" x-data="{ time: new Date().toLocaleTimeString() }" x-init="setInterval(() => time = new Date().toLocaleTimeString(), 1000)">
                     <span class="font-semibold" x-text="time"></span>
