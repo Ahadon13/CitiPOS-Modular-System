@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Forms\Inventory;
 
 use App\Enums\Product\CategoryType;
-use App\Imports\ProductsImport;
 use Illuminate\Support\Facades\Log;
-use Maatwebsite\Excel\Facades\Excel;
 use Throwable;
 
 final class ProductImportGroceryForm extends ProductImportPharmacyForm
@@ -34,12 +32,12 @@ final class ProductImportGroceryForm extends ProductImportPharmacyForm
         $this->importErrors = [];
 
         $this->validate([
-            'product_file' => ['required', 'file', 'mimes:csv,xls,xlsx', 'max:10240'],
+            'product_file' => ['required', 'file', 'mimes:csv,xls,xlsx', 'max:102400'],
         ], [
             'product_file.required' => 'Please upload a file.',
             'product_file.file' => 'The upload must be a file.',
             'product_file.mimes' => 'Invalid file type. Only CSV, XLS, and XLSX are allowed.',
-            'product_file.max' => 'File size exceeds the maximum limit of 10MB.',
+            'product_file.max' => 'File size exceeds the maximum limit of 100MB.',
         ]);
 
         if (! $this->validateHeadersOnly($this->product_file)) {
@@ -48,17 +46,8 @@ final class ProductImportGroceryForm extends ProductImportPharmacyForm
             return false;
         }
 
-        if (! $this->validateRowsBeforeQueue($this->product_file)) {
-            $this->addError('product_file', 'Invalid data. Please review the row errors below.');
-
-            return false;
-        }
-
         try {
-            Excel::import(
-                new ProductsImport($branch_id, $user_id, CategoryType::Grocery),
-                $this->product_file
-            );
+            $this->queueImport($branch_id, $user_id, CategoryType::Grocery);
 
             $this->product_file = null;
 

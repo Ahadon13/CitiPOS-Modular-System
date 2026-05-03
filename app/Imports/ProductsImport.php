@@ -11,8 +11,6 @@ use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\Supplier;
 use App\Models\Unit;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -24,17 +22,15 @@ use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 use RuntimeException;
 use Throwable;
 
-final class ProductsImport implements ShouldQueue, ToCollection, WithChunkReading, WithHeadingRow
+final class ProductsImport implements ToCollection, WithChunkReading, WithHeadingRow
 {
-    use SerializesModels;
+    private int $branchId;
 
-    protected int $branchId;
+    private int $userId;
 
-    protected int $userId;
+    private int $productCategoryId;
 
-    protected int $productCategoryId;
-
-    protected CategoryType $productCategoryType;
+    private CategoryType $productCategoryType;
 
     public function __construct(int $branchId, int $userId, CategoryType $productCategoryType = CategoryType::Pharmacy)
     {
@@ -364,7 +360,7 @@ final class ProductsImport implements ShouldQueue, ToCollection, WithChunkReadin
         return 1000;
     }
 
-    protected function normalizeRow($row): array
+    private function normalizeRow($row): array
     {
         $row = is_array($row) ? $row : $row->toArray();
 

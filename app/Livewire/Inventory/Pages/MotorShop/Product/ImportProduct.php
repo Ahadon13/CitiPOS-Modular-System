@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Livewire\Inventory\Pages\MotorShop\Product;
 
 use App\Livewire\Concerns\HasToast;
@@ -14,7 +16,7 @@ use Spatie\LivewireFilepond\WithFilePond;
 #[Layout('components.layouts.motor-shop', ['title' => 'Import Product', 'inventory' => true])]
 class ImportProduct extends Component
 {
-    use WithFilePond, HasToast, HasAuth;
+    use HasAuth, HasToast, WithFilePond;
 
     public ProductImportMotorShopForm $form;
 
@@ -29,6 +31,7 @@ class ImportProduct extends Component
         if ($this->form->import($this->currentBranchId, $this->user->id)) {
             $this->dispatch('filepond-reset-form.product_file');
             $this->toastSuccess('File accepted. Products are now being imported in the background.');
+
             return;
         }
 
