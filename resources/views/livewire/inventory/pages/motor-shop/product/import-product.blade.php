@@ -87,7 +87,7 @@
                 <h2 class="text-lg font-semibold">How to format your file</h2>
             </div>
             <div class="flex gap-3">
-                <x-ui.button variant="outline" size="sm" icon="arrow-down-tray" href="{{ asset('storage/import/sample_template.xlsx') }}">
+                <x-ui.button variant="outline" size="sm" icon="arrow-down-tray" href="{{ asset('storage/import/motor_shop_product_import_template.xlsx') }}">
                     Download Template
                 </x-ui.button>
             </div>
