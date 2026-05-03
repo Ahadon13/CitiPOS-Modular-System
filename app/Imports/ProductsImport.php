@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Imports;
 
 use App\Enums\Product\CategoryType;
-use App\Models\Category;
 use App\Models\Branch;
+use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\Supplier;
@@ -21,14 +21,19 @@ use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
+use RuntimeException;
+use Throwable;
 
-class ProductsImport implements ToCollection, WithHeadingRow, WithChunkReading, ShouldQueue
+final class ProductsImport implements ShouldQueue, ToCollection, WithChunkReading, WithHeadingRow
 {
     use SerializesModels;
 
     protected int $branchId;
+
     protected int $userId;
+
     protected int $productCategoryId;
+
     protected CategoryType $productCategoryType;
 
     public function __construct(int $branchId, int $userId, CategoryType $productCategoryType = CategoryType::Pharmacy)
@@ -48,25 +53,25 @@ class ProductsImport implements ToCollection, WithHeadingRow, WithChunkReading, 
             $now = now()->toDateTimeString();
 
             $productCategory = ProductCategory::where('name', $this->productCategoryType->value)->first();
-            if (!$productCategory) {
-                throw new \RuntimeException($this->productCategoryType->label() . ' product category was not found.');
+            if (! $productCategory) {
+                throw new RuntimeException($this->productCategoryType->label().' product category was not found.');
             }
 
             $this->productCategoryId = $productCategory->id;
 
             $branchProductCategoryId = Branch::whereKey($this->branchId)->value('product_category_id');
             if ((int) $branchProductCategoryId !== (int) $this->productCategoryId) {
-                throw new \RuntimeException("The selected branch is not assigned to the {$this->productCategoryType->label()} module.");
+                throw new RuntimeException("The selected branch is not assigned to the {$this->productCategoryType->label()} module.");
             }
 
             $suppliersMap = Supplier::select('id', 'name')
                 ->get()
-                ->mapWithKeys(fn ($row) => [strtolower(trim($row->name)) => $row->id])
+                ->mapWithKeys(fn ($row) => [mb_strtolower(mb_trim($row->name)) => $row->id])
                 ->toArray();
 
             $categoriesMap = Category::select('id', 'name')
                 ->get()
-                ->mapWithKeys(fn ($row) => [strtolower(trim($row->name)) => $row->id])
+                ->mapWithKeys(fn ($row) => [mb_strtolower(mb_trim($row->name)) => $row->id])
                 ->toArray();
 
             $unitsMap = Unit::select('id', 'name', 'abbreviation')
@@ -74,11 +79,12 @@ class ProductsImport implements ToCollection, WithHeadingRow, WithChunkReading, 
                 ->flatMap(function ($u) {
                     $map = [];
                     if ($u->name) {
-                        $map[strtolower(trim($u->name))] = $u->id;
+                        $map[mb_strtolower(mb_trim($u->name))] = $u->id;
                     }
                     if ($u->abbreviation) {
-                        $map[strtolower(trim($u->abbreviation))] = $u->id;
+                        $map[mb_strtolower(mb_trim($u->abbreviation))] = $u->id;
                     }
+
                     return $map;
                 })
                 ->toArray();
@@ -87,6 +93,7 @@ class ProductsImport implements ToCollection, WithHeadingRow, WithChunkReading, 
 
             foreach ($rows as $row) {
                 $normalized = $this->normalizeRow($row);
+                $isBaseRow = (float) ($normalized['conversion'] ?? 1) === 1.0;
 
                 $validator = Validator::make($normalized, [
                     'product_code' => ['required', 'string', 'max:255'],
@@ -95,7 +102,7 @@ class ProductsImport implements ToCollection, WithHeadingRow, WithChunkReading, 
                     'dosage' => ['nullable', 'string', 'max:255'],
                     'form' => ['nullable', 'string', 'max:255'],
                     'category' => ['nullable', 'string', 'max:255'],
-                    'supplier' => ['required', 'string', 'max:255'],
+                    'supplier' => [$isBaseRow ? 'required' : 'nullable', 'string', 'max:255'],
                     'unit' => ['required', 'string'],
                     'conversion' => ['required', 'numeric', 'min:1'],
                     'cost_price' => ['nullable', 'numeric', 'min:0'],
@@ -119,15 +126,17 @@ class ProductsImport implements ToCollection, WithHeadingRow, WithChunkReading, 
                         'product_code' => $normalized['product_code'] ?? null,
                         'errors' => $validator->errors()->all(),
                     ]);
+
                     continue;
                 }
 
-                $unitKey = strtolower(trim((string) ($normalized['unit'] ?? '')));
-                if (!isset($unitsMap[$unitKey])) {
+                $unitKey = mb_strtolower(mb_trim((string) ($normalized['unit'] ?? '')));
+                if (! isset($unitsMap[$unitKey])) {
                     Log::warning('Skipping row due to unknown unit', [
                         'product_code' => $normalized['product_code'] ?? null,
                         'unit' => $normalized['unit'] ?? null,
                     ]);
+
                     continue;
                 }
 
@@ -135,20 +144,31 @@ class ProductsImport implements ToCollection, WithHeadingRow, WithChunkReading, 
             }
 
             if (empty($validRows)) {
-                return;
+                throw new RuntimeException('No valid product rows were found in the import file.');
+            }
+
+            $invalidProductGroups = collect($validRows)
+                ->groupBy(fn (array $row) => mb_trim((string) $row['product_code']))
+                ->filter(fn (Collection $group) => ! $group->contains(fn (array $row) => (float) ($row['conversion'] ?? 1) === 1.0))
+                ->keys();
+
+            if ($invalidProductGroups->isNotEmpty()) {
+                throw new RuntimeException(
+                    'These product codes are missing a base row with conversion 1: '.$invalidProductGroups->implode(', ')
+                );
             }
 
             $supplierNames = collect($validRows)
                 ->pluck('supplier')
                 ->filter()
-                ->map(fn ($v) => trim((string) $v))
+                ->map(fn ($v) => mb_trim((string) $v))
                 ->unique()
                 ->values();
 
             $newSuppliers = [];
             foreach ($supplierNames as $name) {
-                $key = strtolower($name);
-                if (!isset($suppliersMap[$key])) {
+                $key = mb_strtolower($name);
+                if (! isset($suppliersMap[$key])) {
                     $newSuppliers[] = [
                         'name' => $name,
                         'created_at' => $now,
@@ -158,26 +178,26 @@ class ProductsImport implements ToCollection, WithHeadingRow, WithChunkReading, 
                 }
             }
 
-            if (!empty($newSuppliers)) {
+            if (! empty($newSuppliers)) {
                 Supplier::insertOrIgnore($newSuppliers);
 
                 $suppliersMap = Supplier::select('id', 'name')
                     ->get()
-                    ->mapWithKeys(fn ($row) => [strtolower(trim($row->name)) => $row->id])
+                    ->mapWithKeys(fn ($row) => [mb_strtolower(mb_trim($row->name)) => $row->id])
                     ->toArray();
             }
 
             $categoryNames = collect($validRows)
                 ->pluck('category')
                 ->filter()
-                ->map(fn ($v) => trim((string) $v))
+                ->map(fn ($v) => mb_trim((string) $v))
                 ->unique()
                 ->values();
 
             $newCategories = [];
             foreach ($categoryNames as $name) {
-                $key = strtolower($name);
-                if (!isset($categoriesMap[$key])) {
+                $key = mb_strtolower($name);
+                if (! isset($categoriesMap[$key])) {
                     $newCategories[] = [
                         'name' => $name,
                         'created_at' => $now,
@@ -187,12 +207,12 @@ class ProductsImport implements ToCollection, WithHeadingRow, WithChunkReading, 
                 }
             }
 
-            if (!empty($newCategories)) {
+            if (! empty($newCategories)) {
                 Category::insertOrIgnore($newCategories);
 
                 $categoriesMap = Category::select('id', 'name')
                     ->get()
-                    ->mapWithKeys(fn ($row) => [strtolower(trim($row->name)) => $row->id])
+                    ->mapWithKeys(fn ($row) => [mb_strtolower(mb_trim($row->name)) => $row->id])
                     ->toArray();
             }
 
@@ -213,8 +233,8 @@ class ProductsImport implements ToCollection, WithHeadingRow, WithChunkReading, 
                 ->values();
 
             if ($conflictingProducts->isNotEmpty()) {
-                throw new \RuntimeException(
-                    'These product codes already belong to another branch or module: ' . $conflictingProducts->implode(', ')
+                throw new RuntimeException(
+                    'These product codes already belong to another branch or module: '.$conflictingProducts->implode(', ')
                 );
             }
 
@@ -224,19 +244,19 @@ class ProductsImport implements ToCollection, WithHeadingRow, WithChunkReading, 
 
             $productsToInsert = [];
             $productBaseRows = collect($validRows)
-                ->groupBy(fn (array $row) => trim((string) $row['product_code']))
+                ->groupBy(fn (array $row) => mb_trim((string) $row['product_code']))
                 ->map(function (Collection $group) {
                     return $group->first(fn (array $row) => (float) ($row['conversion'] ?? 1) === 1.0)
                         ?? $group->first();
                 });
 
             foreach ($productBaseRows as $row) {
-                $code = trim((string) $row['product_code']);
+                $code = mb_trim((string) $row['product_code']);
 
-                if (!isset($existingProducts[$code]) && !isset($productsToInsert[$code])) {
-                    $supplierKey = strtolower(trim((string) ($row['supplier'] ?? '')));
-                    $categoryKey = strtolower(trim((string) ($row['category'] ?? '')));
-                    $unitKey = strtolower(trim((string) $row['unit']));
+                if (! isset($existingProducts[$code]) && ! isset($productsToInsert[$code])) {
+                    $supplierKey = mb_strtolower(mb_trim((string) ($row['supplier'] ?? '')));
+                    $categoryKey = mb_strtolower(mb_trim((string) ($row['category'] ?? '')));
+                    $unitKey = mb_strtolower(mb_trim((string) $row['unit']));
 
                     $productsToInsert[$code] = [
                         'supplier_id' => $suppliersMap[$supplierKey] ?? null,
@@ -250,7 +270,7 @@ class ProductsImport implements ToCollection, WithHeadingRow, WithChunkReading, 
                         'generic_name' => $this->productCategoryType === CategoryType::Pharmacy ? ($row['generic_name'] ?? null) : null,
                         'dosage' => $this->productCategoryType === CategoryType::Pharmacy ? ($row['dosage'] ?? null) : 'N/A',
                         'form' => $row['form'] ?? null,
-                        'requires_prescription' => $this->productCategoryType === CategoryType::Pharmacy && strtolower(trim((string) ($row['requires_prescription'] ?? ''))) === 'yes',
+                        'requires_prescription' => $this->productCategoryType === CategoryType::Pharmacy && mb_strtolower(mb_trim((string) ($row['requires_prescription'] ?? ''))) === 'yes',
                         'reorder_level' => (float) ($row['reorder_level'] ?? 20),
                         'attributes' => json_encode([
                             'description' => $row['description'] ?? null,
@@ -266,7 +286,7 @@ class ProductsImport implements ToCollection, WithHeadingRow, WithChunkReading, 
                 }
             }
 
-            if (!empty($productsToInsert)) {
+            if (! empty($productsToInsert)) {
                 Product::insertOrIgnore(array_values($productsToInsert));
 
                 $existingProducts = Product::whereIn('product_code', $productCodes)
@@ -280,14 +300,14 @@ class ProductsImport implements ToCollection, WithHeadingRow, WithChunkReading, 
             $batchesToInsert = [];
 
             foreach ($validRows as $row) {
-                $code = trim((string) $row['product_code']);
+                $code = mb_trim((string) $row['product_code']);
                 $productId = $existingProducts[$code] ?? null;
 
-                if (!$productId) {
+                if (! $productId) {
                     continue;
                 }
 
-                $unitKey = strtolower(trim((string) $row['unit']));
+                $unitKey = mb_strtolower(mb_trim((string) $row['unit']));
                 $unitId = $unitsMap[$unitKey] ?? null;
                 $conversion = (float) ($row['conversion'] ?? 1);
 
@@ -296,7 +316,7 @@ class ProductsImport implements ToCollection, WithHeadingRow, WithChunkReading, 
                     'unit_id' => $unitId,
                     'conversion_factor' => $conversion,
                     'price' => (int) round((float) ($row['selling_price'] ?? 0) * 100),
-                    'barcode' => !empty($row['barcode']) ? $row['barcode'] : null,
+                    'barcode' => ! empty($row['barcode']) ? $row['barcode'] : null,
                     'created_at' => $now,
                     'updated_at' => $now,
                 ];
@@ -310,7 +330,7 @@ class ProductsImport implements ToCollection, WithHeadingRow, WithChunkReading, 
                             'branch_id' => $this->branchId,
                             'quantity_on_hand' => $qty,
                             'cost_per_unit' => (int) round((float) ($row['cost_price'] ?? 0) * 100),
-                            'batch_number' => !empty($row['batch_number']) ? $row['batch_number'] : null,
+                            'batch_number' => ! empty($row['batch_number']) ? $row['batch_number'] : null,
                             'expiration_date' => $this->productCategoryType === CategoryType::MotorShop
                                 ? null
                                 : ($row['expiration_date'] ?? null),
@@ -321,14 +341,14 @@ class ProductsImport implements ToCollection, WithHeadingRow, WithChunkReading, 
                 }
             }
 
-            if (!empty($packagingsToInsert)) {
+            if (! empty($packagingsToInsert)) {
                 DB::table('product_packagings')->insertOrIgnore($packagingsToInsert);
             }
 
-            if (!empty($batchesToInsert)) {
+            if (! empty($batchesToInsert)) {
                 DB::table('inventory_batches')->insert($batchesToInsert);
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::error('Import failed', [
                 'message' => $e->getMessage(),
                 'line' => $e->getLine(),
@@ -339,11 +359,42 @@ class ProductsImport implements ToCollection, WithHeadingRow, WithChunkReading, 
         }
     }
 
+    public function chunkSize(): int
+    {
+        return 1000;
+    }
+
     protected function normalizeRow($row): array
     {
         $row = is_array($row) ? $row : $row->toArray();
 
-        if (!empty($row['expiration_date'])) {
+        $stringFields = [
+            'product_code',
+            'brand_name',
+            'generic_name',
+            'dosage',
+            'form',
+            'category',
+            'supplier',
+            'unit',
+            'barcode',
+            'requires_prescription',
+            'batch_number',
+            'description',
+            'part_number',
+            'vehicle_model',
+            'engine_type',
+            'year_range',
+            'oem_number',
+        ];
+
+        foreach ($stringFields as $field) {
+            if (array_key_exists($field, $row) && ! empty($row[$field])) {
+                $row[$field] = mb_trim((string) $row[$field]);
+            }
+        }
+
+        if (! empty($row['expiration_date'])) {
             $rawDate = $row['expiration_date'];
 
             try {
@@ -352,16 +403,11 @@ class ProductsImport implements ToCollection, WithHeadingRow, WithChunkReading, 
                 } elseif (is_string($rawDate)) {
                     $row['expiration_date'] = \Carbon\Carbon::parse($rawDate)->format('Y-m-d');
                 }
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 $row['expiration_date'] = null;
             }
         }
 
         return $row;
-    }
-
-    public function chunkSize(): int
-    {
-        return 1000;
     }
 }

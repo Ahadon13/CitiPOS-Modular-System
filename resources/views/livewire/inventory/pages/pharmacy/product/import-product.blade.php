@@ -131,7 +131,7 @@
                         <td class="px-4 py-3">500mg</td>
                         <td class="px-4 py-3">Pain Relievers</td>
                         <td class="px-4 py-3">Acme Pharma</td>
-                        <td class="px-4 py-3">tablet</td>
+                        <td class="px-4 py-3">pc</td>
                         <td class="px-4 py-3">1</td>
                         <td class="px-4 py-3">5.00</td>
                         <td class="px-4 py-3">7.00</td>

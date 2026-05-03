@@ -8,6 +8,7 @@ use App\Enums\Product\CategoryType;
 use App\Imports\ProductsImport;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
+use Throwable;
 
 final class ProductImportGroceryForm extends ProductImportPharmacyForm
 {
@@ -43,6 +44,13 @@ final class ProductImportGroceryForm extends ProductImportPharmacyForm
 
         if (! $this->validateHeadersOnly($this->product_file)) {
             $this->addError('product_file', 'Invalid template. Please review the missing or misnamed columns.');
+
+            return false;
+        }
+
+        if (! $this->validateRowsBeforeQueue($this->product_file)) {
+            $this->addError('product_file', 'Invalid data. Please review the row errors below.');
+
             return false;
         }
 
@@ -55,7 +63,7 @@ final class ProductImportGroceryForm extends ProductImportPharmacyForm
             $this->product_file = null;
 
             return true;
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::error('Grocery Product Import Failed', [
                 'message' => $e->getMessage(),
                 'file' => method_exists($this->product_file, 'getClientOriginalName')
