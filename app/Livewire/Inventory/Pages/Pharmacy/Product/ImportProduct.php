@@ -14,7 +14,7 @@ use Livewire\Component;
 use Spatie\LivewireFilepond\WithFilePond;
 
 #[Layout('components.layouts.app', ['title' => 'Import Product', 'inventory' => true])]
-class ImportProduct extends Component
+final class ImportProduct extends Component
 {
     use HasAuth, HasToast, WithFilePond;
 
@@ -30,7 +30,7 @@ class ImportProduct extends Component
     {
         if ($this->form->import($this->currentBranchId, $this->user->id)) {
             $this->dispatch('filepond-reset-form.product_file');
-            $this->toastSuccess('File accepted. Products are now being imported in the background.');
+            $this->toastSuccess('Products imported successfully.');
 
             return;
         }

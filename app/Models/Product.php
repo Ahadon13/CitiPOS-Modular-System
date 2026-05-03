@@ -5,15 +5,6 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\Product\CategoryType;
-use App\Models\ProductCategory;
-use App\Models\Category;
-use App\Models\ProductPackaging;
-use App\Models\InventoryBatch;
-use App\Models\InventoryTransaction;
-use App\Models\PurchaseItem;
-use App\Models\SaleItem;
-use App\Models\Supplier;
-use App\Models\Unit;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -52,7 +43,7 @@ final class Product extends Model
 
     public function scopeSearch(Builder $query, string $term): void
     {
-        $term = mb_trim($term);
+        $term = preg_replace('/^\s+|\s+$/u', '', $term) ?? $term;
 
         if (empty($term)) {
             return;
@@ -153,9 +144,9 @@ final class Product extends Model
         $this->save();
     }
 
-     /**
-      * Scope a query to only include products in the Pharmacy category.
-      *
+    /**
+     * Scope a query to only include products in the Pharmacy category.
+     *
      * @param  Builder<Product>  $query
      * @return Builder<Product>
      */

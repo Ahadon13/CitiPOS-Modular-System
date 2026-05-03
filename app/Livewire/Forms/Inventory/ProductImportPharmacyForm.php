@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace App\Livewire\Forms\Inventory;
 
 use App\Enums\Product\CategoryType;
-use App\Jobs\ImportProductsJob;
+use App\Imports\ProductsImport;
 use App\Models\Unit;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Livewire\Form;
@@ -16,9 +17,10 @@ use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Facades\Excel;
 use Maatwebsite\Excel\HeadingRowImport;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
+use RuntimeException;
 use Throwable;
 
-class ProductImportPharmacyForm extends Form
+final class ProductImportPharmacyForm extends Form
 {
     public $product_file;
 
@@ -67,6 +69,12 @@ class ProductImportPharmacyForm extends Form
             return false;
         }
 
+        if (! $this->validateRowsBeforeQueue($this->product_file)) {
+            $this->addError('product_file', 'Invalid rows found. Please review the row errors below.');
+
+            return false;
+        }
+
         try {
             $this->queueImport($branch_id, $user_id, CategoryType::Pharmacy);
 
@@ -104,11 +112,11 @@ class ProductImportPharmacyForm extends Form
                     $values = [];
 
                     if ($unit->name) {
-                        $values[] = mb_strtolower(mb_trim($unit->name));
+                        $values[] = $this->key($unit->name);
                     }
 
                     if ($unit->abbreviation) {
-                        $values[] = mb_strtolower(mb_trim($unit->abbreviation));
+                        $values[] = $this->key($unit->abbreviation);
                     }
 
                     return $values;
@@ -135,7 +143,7 @@ class ProductImportPharmacyForm extends Form
                     continue;
                 }
 
-                $unitKey = mb_strtolower(mb_trim((string) ($row['unit'] ?? '')));
+                $unitKey = $this->key($row['unit'] ?? '');
 
                 if (! $unitsMap->has($unitKey)) {
                     $this->importErrors[] = 'Row '.$rowNumber.': Unknown unit "'.($row['unit'] ?? '').'". Please use an existing unit name or abbreviation.';
@@ -148,7 +156,7 @@ class ProductImportPharmacyForm extends Form
             }
 
             collect($validRows)
-                ->groupBy(fn (array $row) => mb_trim((string) ($row['product_code'] ?? '')))
+                ->groupBy(fn (array $row) => $this->trim($row['product_code'] ?? ''))
                 ->each(function (Collection $group, string $productCode) {
                     $hasBaseRow = $group->contains(fn (array $row) => (float) ($row['conversion'] ?? 1) === 1.0);
 
@@ -227,13 +235,22 @@ class ProductImportPharmacyForm extends Form
         $storedFileName = (string) Str::uuid().'.'.$extension;
         $storedPath = $this->product_file->storeAs('imports/products', $storedFileName, 'local');
 
-        ImportProductsJob::dispatch(
-            $storedPath,
-            $branch_id,
-            $user_id,
-            $categoryType->value,
-            $originalFileName,
-        );
+        if (! $storedPath) {
+            throw new RuntimeException('The uploaded file could not be stored for import.');
+        }
+
+        try {
+            Excel::import(
+                new ProductsImport(
+                    $branch_id,
+                    $user_id,
+                    $categoryType,
+                ),
+                Storage::disk('local')->path($storedPath),
+            );
+        } finally {
+            Storage::disk('local')->delete($storedPath);
+        }
     }
 
     protected function rowValidationRules(array $row = []): array
@@ -302,7 +319,7 @@ class ProductImportPharmacyForm extends Form
 
         foreach ($stringFields as $field) {
             if (array_key_exists($field, $row) && ! blank($row[$field])) {
-                $row[$field] = mb_trim((string) $row[$field]);
+                $row[$field] = $this->trim($row[$field]);
             }
         }
 
@@ -319,5 +336,17 @@ class ProductImportPharmacyForm extends Form
         }
 
         return $row;
+    }
+
+    protected function key(mixed $value): string
+    {
+        return mb_strtolower($this->trim($value));
+    }
+
+    protected function trim(mixed $value): string
+    {
+        $value = (string) $value;
+
+        return preg_replace('/^\s+|\s+$/u', '', $value) ?? $value;
     }
 }

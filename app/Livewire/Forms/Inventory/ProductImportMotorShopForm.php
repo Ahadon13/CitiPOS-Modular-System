@@ -45,6 +45,12 @@ final class ProductImportMotorShopForm extends ProductImportPharmacyForm
             return false;
         }
 
+        if (! $this->validateRowsBeforeQueue($this->product_file)) {
+            $this->addError('product_file', 'Invalid rows found. Please review the row errors below.');
+
+            return false;
+        }
+
         try {
             $this->queueImport($branch_id, $user_id, CategoryType::MotorShop);
 

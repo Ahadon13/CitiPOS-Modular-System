@@ -62,12 +62,12 @@ final class ProductsImport implements ToCollection, WithChunkReading, WithHeadin
 
             $suppliersMap = Supplier::select('id', 'name')
                 ->get()
-                ->mapWithKeys(fn ($row) => [mb_strtolower(mb_trim($row->name)) => $row->id])
+                ->mapWithKeys(fn ($row) => [$this->key($row->name) => $row->id])
                 ->toArray();
 
             $categoriesMap = Category::select('id', 'name')
                 ->get()
-                ->mapWithKeys(fn ($row) => [mb_strtolower(mb_trim($row->name)) => $row->id])
+                ->mapWithKeys(fn ($row) => [$this->key($row->name) => $row->id])
                 ->toArray();
 
             $unitsMap = Unit::select('id', 'name', 'abbreviation')
@@ -75,10 +75,10 @@ final class ProductsImport implements ToCollection, WithChunkReading, WithHeadin
                 ->flatMap(function ($u) {
                     $map = [];
                     if ($u->name) {
-                        $map[mb_strtolower(mb_trim($u->name))] = $u->id;
+                        $map[$this->key($u->name)] = $u->id;
                     }
                     if ($u->abbreviation) {
-                        $map[mb_strtolower(mb_trim($u->abbreviation))] = $u->id;
+                        $map[$this->key($u->abbreviation)] = $u->id;
                     }
 
                     return $map;
@@ -126,7 +126,7 @@ final class ProductsImport implements ToCollection, WithChunkReading, WithHeadin
                     continue;
                 }
 
-                $unitKey = mb_strtolower(mb_trim((string) ($normalized['unit'] ?? '')));
+                $unitKey = $this->key($normalized['unit'] ?? '');
                 if (! isset($unitsMap[$unitKey])) {
                     Log::warning('Skipping row due to unknown unit', [
                         'product_code' => $normalized['product_code'] ?? null,
@@ -144,7 +144,7 @@ final class ProductsImport implements ToCollection, WithChunkReading, WithHeadin
             }
 
             $invalidProductGroups = collect($validRows)
-                ->groupBy(fn (array $row) => mb_trim((string) $row['product_code']))
+                ->groupBy(fn (array $row) => $this->trim($row['product_code']))
                 ->filter(fn (Collection $group) => ! $group->contains(fn (array $row) => (float) ($row['conversion'] ?? 1) === 1.0))
                 ->keys();
 
@@ -157,13 +157,13 @@ final class ProductsImport implements ToCollection, WithChunkReading, WithHeadin
             $supplierNames = collect($validRows)
                 ->pluck('supplier')
                 ->filter()
-                ->map(fn ($v) => mb_trim((string) $v))
+                ->map(fn ($v) => $this->trim($v))
                 ->unique()
                 ->values();
 
             $newSuppliers = [];
             foreach ($supplierNames as $name) {
-                $key = mb_strtolower($name);
+                $key = $this->key($name);
                 if (! isset($suppliersMap[$key])) {
                     $newSuppliers[] = [
                         'name' => $name,
@@ -179,20 +179,20 @@ final class ProductsImport implements ToCollection, WithChunkReading, WithHeadin
 
                 $suppliersMap = Supplier::select('id', 'name')
                     ->get()
-                    ->mapWithKeys(fn ($row) => [mb_strtolower(mb_trim($row->name)) => $row->id])
+                    ->mapWithKeys(fn ($row) => [$this->key($row->name) => $row->id])
                     ->toArray();
             }
 
             $categoryNames = collect($validRows)
                 ->pluck('category')
                 ->filter()
-                ->map(fn ($v) => mb_trim((string) $v))
+                ->map(fn ($v) => $this->trim($v))
                 ->unique()
                 ->values();
 
             $newCategories = [];
             foreach ($categoryNames as $name) {
-                $key = mb_strtolower($name);
+                $key = $this->key($name);
                 if (! isset($categoriesMap[$key])) {
                     $newCategories[] = [
                         'name' => $name,
@@ -208,7 +208,7 @@ final class ProductsImport implements ToCollection, WithChunkReading, WithHeadin
 
                 $categoriesMap = Category::select('id', 'name')
                     ->get()
-                    ->mapWithKeys(fn ($row) => [mb_strtolower(mb_trim($row->name)) => $row->id])
+                    ->mapWithKeys(fn ($row) => [$this->key($row->name) => $row->id])
                     ->toArray();
             }
 
@@ -240,19 +240,19 @@ final class ProductsImport implements ToCollection, WithChunkReading, WithHeadin
 
             $productsToInsert = [];
             $productBaseRows = collect($validRows)
-                ->groupBy(fn (array $row) => mb_trim((string) $row['product_code']))
+                ->groupBy(fn (array $row) => $this->trim($row['product_code']))
                 ->map(function (Collection $group) {
                     return $group->first(fn (array $row) => (float) ($row['conversion'] ?? 1) === 1.0)
                         ?? $group->first();
                 });
 
             foreach ($productBaseRows as $row) {
-                $code = mb_trim((string) $row['product_code']);
+                $code = $this->trim($row['product_code']);
 
                 if (! isset($existingProducts[$code]) && ! isset($productsToInsert[$code])) {
-                    $supplierKey = mb_strtolower(mb_trim((string) ($row['supplier'] ?? '')));
-                    $categoryKey = mb_strtolower(mb_trim((string) ($row['category'] ?? '')));
-                    $unitKey = mb_strtolower(mb_trim((string) $row['unit']));
+                    $supplierKey = $this->key($row['supplier'] ?? '');
+                    $categoryKey = $this->key($row['category'] ?? '');
+                    $unitKey = $this->key($row['unit']);
 
                     $productsToInsert[$code] = [
                         'supplier_id' => $suppliersMap[$supplierKey] ?? null,
@@ -266,7 +266,7 @@ final class ProductsImport implements ToCollection, WithChunkReading, WithHeadin
                         'generic_name' => $this->productCategoryType === CategoryType::Pharmacy ? ($row['generic_name'] ?? null) : null,
                         'dosage' => $this->productCategoryType === CategoryType::Pharmacy ? ($row['dosage'] ?? null) : 'N/A',
                         'form' => $row['form'] ?? null,
-                        'requires_prescription' => $this->productCategoryType === CategoryType::Pharmacy && mb_strtolower(mb_trim((string) ($row['requires_prescription'] ?? ''))) === 'yes',
+                        'requires_prescription' => $this->productCategoryType === CategoryType::Pharmacy && $this->key($row['requires_prescription'] ?? '') === 'yes',
                         'reorder_level' => (float) ($row['reorder_level'] ?? 20),
                         'attributes' => json_encode([
                             'description' => $row['description'] ?? null,
@@ -296,14 +296,14 @@ final class ProductsImport implements ToCollection, WithChunkReading, WithHeadin
             $batchesToInsert = [];
 
             foreach ($validRows as $row) {
-                $code = mb_trim((string) $row['product_code']);
+                $code = $this->trim($row['product_code']);
                 $productId = $existingProducts[$code] ?? null;
 
                 if (! $productId) {
                     continue;
                 }
 
-                $unitKey = mb_strtolower(mb_trim((string) $row['unit']));
+                $unitKey = $this->key($row['unit']);
                 $unitId = $unitsMap[$unitKey] ?? null;
                 $conversion = (float) ($row['conversion'] ?? 1);
 
@@ -386,7 +386,7 @@ final class ProductsImport implements ToCollection, WithChunkReading, WithHeadin
 
         foreach ($stringFields as $field) {
             if (array_key_exists($field, $row) && ! empty($row[$field])) {
-                $row[$field] = mb_trim((string) $row[$field]);
+                $row[$field] = $this->trim($row[$field]);
             }
         }
 
@@ -405,5 +405,17 @@ final class ProductsImport implements ToCollection, WithChunkReading, WithHeadin
         }
 
         return $row;
+    }
+
+    private function key(mixed $value): string
+    {
+        return mb_strtolower($this->trim($value));
+    }
+
+    private function trim(mixed $value): string
+    {
+        $value = (string) $value;
+
+        return preg_replace('/^\s+|\s+$/u', '', $value) ?? $value;
     }
 }
