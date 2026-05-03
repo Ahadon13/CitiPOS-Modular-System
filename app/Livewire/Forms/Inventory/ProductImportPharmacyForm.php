@@ -20,7 +20,7 @@ use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 use RuntimeException;
 use Throwable;
 
-final class ProductImportPharmacyForm extends Form
+class ProductImportPharmacyForm extends Form
 {
     public $product_file;
 
