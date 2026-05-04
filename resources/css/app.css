@@ -83,21 +83,48 @@
 
     /* Chromium / WebKit */
     ::-webkit-scrollbar {
-        width: 6px;
-        height: 6px;
+        width: 10px;
+        height: 10px;
+    }
+
+    ::-webkit-scrollbar:vertical {
+        width: 10px;
+    }
+
+    ::-webkit-scrollbar:horizontal {
+        height: 10px;
     }
 
     ::-webkit-scrollbar-track {
-        background-color: #f3f4f6; /* Gray-100 */
+        background-color: transparent;
+    }
+
+    ::-webkit-scrollbar-track-piece {
+        background-color: transparent;
     }
 
     ::-webkit-scrollbar-thumb {
         background-color: #d1d5db; /* Gray-300 */
-        border-radius: 10px;
+        background-clip: content-box;
+        border: 3px solid transparent;
+        border-radius: 999px;
+    }
+
+    ::-webkit-scrollbar-thumb:vertical {
+        min-height: 36px;
+    }
+
+    ::-webkit-scrollbar-thumb:horizontal {
+        min-width: 36px;
     }
 
     ::-webkit-scrollbar-thumb:hover {
         background-color: #9ca3af; /* Gray-400 */
+        border-width: 2px;
+    }
+
+    ::-webkit-scrollbar-corner {
+        background-color: transparent;
     }
 
 
@@ -113,17 +140,82 @@
 
     /* Chromium / WebKit - Scope to .dark class */
     .dark ::-webkit-scrollbar-track {
-        background-color: #060A23;
+        background-color: transparent;
     }
 
     .dark ::-webkit-scrollbar-thumb {
         background-color: #2580ff;
-        border-radius: 10px;
+        background-clip: content-box;
+        border: 3px solid transparent;
+        border-radius: 999px;
     }
 
     .dark ::-webkit-scrollbar-thumb:hover {
         background-color: #1c6ce6;
+        border-width: 2px;
     }
+}
+
+.custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+    width: 10px !important;
+    height: 10px !important;
+}
+
+.custom-scrollbar::-webkit-scrollbar:vertical {
+    width: 10px !important;
+}
+
+.custom-scrollbar::-webkit-scrollbar:horizontal {
+    height: 10px !important;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track,
+.custom-scrollbar::-webkit-scrollbar-track-piece {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #d1d5db !important;
+    background-clip: content-box !important;
+    border: 3px solid transparent !important;
+    border-radius: 999px !important;
+    box-shadow: none !important;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:vertical {
+    min-height: 36px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:horizontal {
+    min-width: 36px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: #9ca3af !important;
+    border-width: 2px !important;
+}
+
+.custom-scrollbar::-webkit-scrollbar-corner {
+    background: transparent !important;
+}
+
+.dark .custom-scrollbar {
+    scrollbar-color: #2580ff transparent;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #2580ff !important;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: #1c6ce6 !important;
 }
 
 @theme {
