@@ -2,6 +2,7 @@
 
 namespace App\Actions\Inventory;
 
+use App\Enums\CustomerOrder\Status as CustomerOrderStatus;
 use App\Enums\Inventory\TransactionType;
 use App\Models\InventoryTransaction;
 use App\Data\Inventory\ReceiveItemData;
@@ -87,6 +88,25 @@ class ReceivePurchaseOrder
                     'batch_number'      => $receivedData->batch_number,
                     'expiration_date'   => $receivedData->expiration_date,
                 ]);
+
+                if ($item->customerOrderItem) {
+                    $item->customerOrderItem->update([
+                        'status' => CustomerOrderStatus::Received,
+                        'received_at' => now(),
+                    ]);
+
+                    $customerOrder = $item->customerOrderItem->customerOrder;
+                    $hasOpenItems = $customerOrder->items()
+                        ->whereNotIn('status', [
+                            CustomerOrderStatus::Received->value,
+                            CustomerOrderStatus::Released->value,
+                        ])
+                        ->exists();
+
+                    if (! $hasOpenItems) {
+                        $customerOrder->update(['status' => CustomerOrderStatus::Received]);
+                    }
+                }
 
                 // Add to the new actual grand total
                 $newGrandTotal += (int) round($receivedData->actual_quantity * $receivedData->actual_cost);

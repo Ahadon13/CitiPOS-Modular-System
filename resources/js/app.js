@@ -269,6 +269,8 @@ window.posApp = (
         },
 
         getMaxQuantityForItem(item) {
+            if (item.specialOrder) return 999999;
+
             const remainingBase =
                 item.productStock -
                 this.getUsedBaseStock(item.product_id, item.cartId);
@@ -311,6 +313,7 @@ window.posApp = (
 
             const conversionFactor = parseFloat(pkg.conversion_factor) || 1;
             const productStock = parseFloat(product.stock) || 0;
+            const specialOrder = product.stock_type === "special_order";
             let cartId = product.id + "_" + pkg.id; // Unique ID based on product + packaging
             const remainingBase =
                 productStock - this.getUsedBaseStock(product.id, cartId);
@@ -322,8 +325,8 @@ window.posApp = (
             let item = this.cart.find((i) => i.cartId === cartId);
 
             if (item) {
-                if (item.quantity < maxAvailable) item.quantity++;
-            } else if (maxAvailable > 0) {
+                if (specialOrder || item.quantity < maxAvailable) item.quantity++;
+            } else if (specialOrder || maxAvailable > 0) {
                 this.cart.push({
                     cartId: cartId,
                     product_id: product.id,
@@ -337,6 +340,7 @@ window.posApp = (
                     quantity: 1,
                     maxStock: maxAvailable,
                     productStock: productStock,
+                    specialOrder: specialOrder,
                     conversionFactor: conversionFactor,
                     unit: pkg.unit,
                     packaging: pkg,
@@ -395,6 +399,7 @@ window.posApp = (
                     packaging_id: item.packaging_id,
                     quantity: item.quantity,
                     name: item.name,
+                    special_order: item.specialOrder,
                 })),
                 payment_method_id: this.checkoutState.payment_method_id,
                 amount_received: parseFloat(this.checkoutState.amount_received),
@@ -657,6 +662,8 @@ window.motorShopPosApp = (
         },
 
         getMaxQuantityForItem(item) {
+            if (item.specialOrder) return 999999;
+
             const remainingBase =
                 item.productStock -
                 this.getUsedBaseStock(item.product_id, item.cartId);
@@ -703,6 +710,7 @@ window.motorShopPosApp = (
 
             const conversionFactor = parseFloat(pkg.conversion_factor) || 1;
             const productStock = parseFloat(product.stock) || 0;
+            const specialOrder = product.stock_type === "special_order";
             const cartId = product.id + "_" + pkg.id;
             const allowDecimal = Boolean(pkg.allow_decimal);
             const remainingBase =
@@ -714,8 +722,10 @@ window.motorShopPosApp = (
             const item = this.cart.find((i) => i.cartId === cartId);
 
             if (item) {
-                item.quantity = Math.min(maxAvailable, item.quantity + step);
-            } else if (maxAvailable > 0) {
+                item.quantity = specialOrder
+                    ? Math.round((item.quantity + step) * 100) / 100
+                    : Math.min(maxAvailable, item.quantity + step);
+            } else if (specialOrder || maxAvailable > 0) {
                 this.cart.push({
                     cartId: cartId,
                     product_id: product.id,
@@ -724,6 +734,7 @@ window.motorShopPosApp = (
                     price: this.getPackagePrice(pkg),
                     quantity: step,
                     productStock: productStock,
+                    specialOrder: specialOrder,
                     conversionFactor: conversionFactor,
                     unit: pkg.unit,
                     packaging: pkg,
@@ -848,6 +859,7 @@ window.motorShopPosApp = (
                     packaging_id: item.packaging_id,
                     quantity: item.quantity,
                     name: item.name,
+                    special_order: item.specialOrder,
                 })),
                 services: this.serviceLines.map((item) => ({
                     service_name: item.service_name,

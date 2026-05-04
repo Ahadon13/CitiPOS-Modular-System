@@ -177,6 +177,15 @@
                 <x-ui.heading level="h3" size="md" class="mb-4">Inventory</x-ui.heading>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <x-ui.field required>
+                        <x-ui.label>Stock Type</x-ui.label>
+                        <select wire:model="form.stock_type" class="w-full h-10 px-3 rounded-md border border-neutral-200 bg-white text-sm dark:border-white/10 dark:bg-card dark:text-white focus:border-blue-500 focus:ring-blue-500">
+                            <option value="regular">Regular Stock Product</option>
+                            <option value="special_order">Special Order / Order Basis Product</option>
+                        </select>
+                        <x-ui.error name="form.stock_type" />
+                    </x-ui.field>
+
                     {{-- Branch --}}
                     <x-ui.field>
                         <x-ui.label>Branch (Default)</x-ui.label>

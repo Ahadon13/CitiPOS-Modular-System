@@ -50,6 +50,11 @@ final class Purchase extends Model
         return $this->hasMany(PurchaseItem::class);
     }
 
+    public function customerOrders()
+    {
+        return $this->hasMany(CustomerOrder::class);
+    }
+
     /**
      * Get all inventory movements triggered by receiving this purchase order.
      */

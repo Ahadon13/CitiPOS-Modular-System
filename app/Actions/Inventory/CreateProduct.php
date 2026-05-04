@@ -32,6 +32,7 @@ final class CreateProduct
                 'form' => $productData->form,
                 'requires_prescription' => $productData->requires_prescription,
                 'reorder_level' => $productData->reorder_level,
+                'stock_type' => $productData->stock_type,
                 'attributes' => $productData->attributes,
             ]);
 

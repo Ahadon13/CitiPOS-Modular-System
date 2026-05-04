@@ -19,6 +19,7 @@ final class ProductGroceryForm extends Form
     public string $product_code = '';
     public ?int $category_id = null;
     public ?string $description = null;
+    public string $stock_type = 'regular';
     public string $batch_number = '';
     public float $reorder_level = 20;
     public float $quantity_on_hand = 0;
@@ -39,6 +40,7 @@ final class ProductGroceryForm extends Form
             'product_code' => ['required', 'string', 'max:255', 'unique:products,product_code'],
             'brand_name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:1000'],
+            'stock_type' => ['required', 'in:regular,special_order'],
             'batch_number' => ['nullable', 'string', 'max:255'],
             'reorder_level' => ['required', 'numeric', 'min:0'],
             'quantity_on_hand' => ['required', 'numeric', 'min:0'],
@@ -101,6 +103,7 @@ final class ProductGroceryForm extends Form
             'dosage' => 'N/A',
             'form' => null,
             'requires_prescription' => false,
+            'stock_type' => $this->stock_type,
             'reorder_level' => $this->reorder_level,
             'conversion' => $this->conversion,
             'base_price' => (int) round((float) $this->selling_price * 100),

@@ -219,10 +219,19 @@
                         <x-ui.error name="form.base_unit_id" />
                     </x-ui.field>
 
-                    <x-ui.field required>
-                        <x-ui.label>Low Stock Alert Level</x-ui.label>
-                        <x-ui.input type="number" step="any" wire:model="form.reorder_level" placeholder="e.g 50.00" />
-                        <x-ui.error name="form.reorder_level" />
+                        <x-ui.field required>
+                            <x-ui.label>Stock Type</x-ui.label>
+                            <select wire:model="form.stock_type" class="w-full h-10 px-3 rounded-md border border-neutral-200 bg-white text-sm dark:border-white/10 dark:bg-card dark:text-white focus:border-blue-500 focus:ring-blue-500">
+                                <option value="regular">Regular Stock Product</option>
+                                <option value="special_order">Special Order / Order Basis Product</option>
+                            </select>
+                            <x-ui.error name="form.stock_type" />
+                        </x-ui.field>
+
+                        <x-ui.field required>
+                            <x-ui.label>Low Stock Alert Level</x-ui.label>
+                            <x-ui.input type="number" step="any" wire:model="form.reorder_level" placeholder="e.g 50.00" />
+                            <x-ui.error name="form.reorder_level" />
                     </x-ui.field>
                 </div>
             </x-ui.card>

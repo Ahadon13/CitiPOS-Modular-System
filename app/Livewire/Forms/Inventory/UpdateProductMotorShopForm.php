@@ -24,6 +24,7 @@ final class UpdateProductMotorShopForm extends Form
     public ?string $engine_type = '';
     public ?string $year_range = '';
     public ?string $oem_number = '';
+    public string $stock_type = 'regular';
     public float $reorder_level = 0;
     public ?int $base_unit_id = null;
     public array $packagings = [];
@@ -41,6 +42,7 @@ final class UpdateProductMotorShopForm extends Form
         $this->engine_type = $product->attributes['engine_type'] ?? '';
         $this->year_range = $product->attributes['year_range'] ?? '';
         $this->oem_number = $product->attributes['oem_number'] ?? '';
+        $this->stock_type = $product->stock_type?->value ?? 'regular';
         $this->reorder_level = (float) $product->reorder_level;
         $this->base_unit_id = $product->base_unit_id;
         $this->packagings = $product->productPackagings()
@@ -69,6 +71,7 @@ final class UpdateProductMotorShopForm extends Form
             'engine_type' => ['nullable', 'string', 'max:255'],
             'year_range' => ['nullable', 'string', 'max:255'],
             'oem_number' => ['nullable', 'string', 'max:255'],
+            'stock_type' => ['required', 'in:regular,special_order'],
             'packagings' => ['required', 'array', 'min:1'],
             'packagings.*.unit_id' => ['required', 'exists:units,id'],
             'packagings.*.conversion_factor' => ['required', 'numeric', 'min:1'],
@@ -99,6 +102,7 @@ final class UpdateProductMotorShopForm extends Form
                     'oem_number' => $this->oem_number,
                 ]),
                 'requires_prescription' => false,
+                'stock_type' => $this->stock_type,
                 'reorder_level' => $this->reorder_level,
                 'base_unit_id' => $this->base_unit_id,
             ]);

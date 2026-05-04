@@ -12,6 +12,9 @@
             <x-ui.button href="{{ route('inventory.grocery.products.create') }}" icon="plus">
                 Add Product
             </x-ui.button>
+            <x-ui.button variant="outline" icon="clipboard-document-list" wire:click="markSelectedAsSpecialOrder" wire:loading.attr="disabled" wire:target="markSelectedAsSpecialOrder">
+                Mark Selected Special Order
+            </x-ui.button>
         </div>
     </div>
 
@@ -150,11 +153,13 @@
                     <table class="w-full text-left">
                         <thead>
                             <tr class="border-b border-black/10 dark:border-white/10 dark:bg-[#0a1331] bg-neutral-100/10 text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                                <th class="px-6 py-4"></th>
                                 <th class="px-6 py-4">Name</th>
                                 <th class="px-6 py-4">Barcode</th>
                                 <th class="px-6 py-4">Product Code</th>
                                 <th class="px-6 py-4">Product Category</th>
                                 {{-- <th class="px-6 py-4 text-right">Expiration Date</th> --}}
+                                <th class="px-6 py-4 text-center">Stock Type</th>
                                 <th class="px-6 py-4 text-center">Stock</th>
                                 <th class="px-6 py-4 text-center">Reorder Level</th>
                                 <th class="px-6 py-4 text-center">Status</th>
@@ -175,6 +180,10 @@
 
                             <tr class="hover:bg-white/5 transition-colors group">
                                 <td class="px-6 py-4">
+                                    <input type="checkbox" wire:model.live="selectedProductIds" value="{{ $product->id }}" class="rounded border-neutral-300 text-electric-blue focus:ring-electric-blue dark:border-white/20 dark:bg-[#060A23]" />
+                                </td>
+
+                                <td class="px-6 py-4">
                                     <div class="font-medium text-neutral-900 dark:text-white">{{ $product->brand_name }}</div>
                                     <div class="flex gap-2 text-xs text-neutral-500">
                                         <span>{{ $product->supplier->name ?? 'No supplier' }}</span>
@@ -194,6 +203,14 @@
                                     <span class="inline-flex items-center rounded-md bg-purple-400/10 px-2 py-1 text-xs font-medium text-purple-600 dark:text-purple-400 ring-1 ring-inset ring-purple-400/20">
                                         {{ $product->category->name ?? 'Uncategorized' }}
                                     </span>
+                                </td>
+
+                                <td class="px-6 py-4 text-center">
+                                    @if($product->stock_type === \App\Enums\Product\StockType::SpecialOrder)
+                                        <span class="inline-flex items-center rounded-md bg-sky-400/10 px-2 py-1 text-xs font-medium text-sky-600 dark:text-sky-400 ring-1 ring-inset ring-sky-400/20">Special Order</span>
+                                    @else
+                                        <span class="inline-flex items-center rounded-md bg-emerald-400/10 px-2 py-1 text-xs font-medium text-emerald-600 dark:text-emerald-400 ring-1 ring-inset ring-emerald-400/20">Regular Stock</span>
+                                    @endif
                                 </td>
 
                                 {{-- <td class="px-6 py-4 text-right">
@@ -220,7 +237,9 @@
                                 <td class="px-6 py-4 text-center">
                                     @php $stock = $product->total_stock ?? 0; @endphp
 
-                                    @if($stock <= 0) <span class="inline-flex items-center rounded-md whitespace-nowrap bg-red-400/10 px-2 py-1 text-xs font-medium text-red-600 dark:text-red-400 ring-1 ring-inset ring-red-400/20">
+                                    @if($product->stock_type === \App\Enums\Product\StockType::SpecialOrder)
+                                        <span class="inline-flex items-center rounded-md whitespace-nowrap bg-sky-400/10 px-2 py-1 text-xs font-medium text-sky-600 dark:text-sky-400 ring-1 ring-inset ring-sky-400/20">Order Basis</span>
+                                    @elseif($stock <= 0) <span class="inline-flex items-center rounded-md whitespace-nowrap bg-red-400/10 px-2 py-1 text-xs font-medium text-red-600 dark:text-red-400 ring-1 ring-inset ring-red-400/20">
                                         Out of Stock
                                         </span>
                                         @elseif($stock < $product->reorder_level)

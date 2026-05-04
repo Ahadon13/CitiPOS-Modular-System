@@ -22,8 +22,12 @@
         </div>
 
         {{-- Categories Filter Bar --}}
-        <div class="px-4 py-2.5 border-b border-black/10 dark:border-white/10 flex flex-wrap items-center gap-2 bg-neutral-50/50 dark:bg-white/5 shrink-0">
-            <x-ui.icon name="funnel" class="size-4 text-neutral-400 shrink-0 mr-1" />
+        <div class="px-4 py-2.5 border-b border-black/10 dark:border-white/10 bg-neutral-50/50 dark:bg-white/5 shrink-0">
+            <div class="flex items-center gap-2 mb-2">
+                <x-ui.icon name="funnel" class="size-4 text-neutral-400 shrink-0" />
+                <x-ui.input clearable leftIcon="magnifying-glass" placeholder="Search categories..." wire:model.live.debounce.300ms="categorySearch" class="w-full max-w-xs h-8 text-xs" />
+            </div>
+            <div class="max-h-24 overflow-y-auto custom-scrollbar flex flex-wrap items-center gap-2 pr-1">
 
             {{-- 'All Products' Button --}}
             <button wire:click="setCategory(null)" class="whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm flex items-center gap-1.5 transition-transform active:scale-95 {{ $activeCategory === null ? 'bg-electric-blue text-white' : 'bg-neutral-100 dark:bg-[#060A23] border border-black/5 dark:border-white/10 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10' }}">
@@ -36,6 +40,7 @@
                 {{ $category->name }}
             </button>
             @endforeach
+            </div>
         </div>
 
         {{-- Product List Area --}}
@@ -52,7 +57,7 @@
                 <div
                     x-data="{ product: @js($product), selectedPkgId: @js($product->packagings[0]['id'] ?? null) }"
                     x-on:click="addProductToCart(product, selectedPkgId)"
-                    class="cursor-pointer flex items-center justify-between p-3 rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#0a1331] hover:border-electric-blue dark:hover:border-electric-blue transition-all hover:shadow-sm active:scale-[0.99] {{ $product->stock <= 0 || count($product->packagings) === 0 ? 'opacity-60 grayscale pointer-events-none' : '' }}"
+                    class="cursor-pointer flex items-center justify-between p-3 rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#0a1331] hover:border-electric-blue dark:hover:border-electric-blue transition-all hover:shadow-sm active:scale-[0.99] {{ ($product->stock_type !== 'special_order' && $product->stock <= 0) || count($product->packagings) === 0 ? 'opacity-60 grayscale pointer-events-none' : '' }}"
                 >
                     {{-- Left: Details --}}
                     <div class="flex items-center gap-3 overflow-hidden">
@@ -66,6 +71,12 @@
                             </div>
 
                             <div class="flex items-center gap-2 mt-1">
+                                @if($product->description)
+                                    <span class="text-xs text-neutral-500 dark:text-neutral-400 max-w-md truncate">{{ $product->description }}</span>
+                                @endif
+                                @if($product->dosage || $product->form)
+                                    <span class="text-xs text-neutral-500 dark:text-neutral-400">{{ trim(($product->dosage ?? '').' '.($product->form ?? '')) }}</span>
+                                @endif
                                 {{-- PACKAGING SELECTOR --}}
                                 @if(count($product->packagings) > 1)
                                 <select x-model="selectedPkgId" @click.stop class=" w-40 text-sm py-0.5 px-1.5 rounded border border-black/10 dark:border-white/10 bg-neutral-50 dark:bg-[#060A23] font-medium text-neutral-600 dark:text-neutral-300 focus:ring-0 focus:border-electric-blue">
@@ -92,7 +103,11 @@
                                 </template>
 
                                 {{-- STOCK INDICATOR --}}
-                                @if($product->stock <= 0)
+                                @if($product->stock_type === 'special_order')
+                                    <span class="px-1.5 py-0.5 rounded text-sm font-bold bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400 border border-sky-200 dark:border-sky-500/20 uppercase tracking-wider">
+                                        Special Order
+                                    </span>
+                                @elseif($product->stock <= 0)
                                     <span class="px-1.5 py-0.5 rounded text-sm font-bold bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400 border border-red-200 dark:border-red-500/20 uppercase tracking-wider">
                                         Out of Stock
                                     </span>

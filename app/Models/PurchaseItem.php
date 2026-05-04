@@ -20,6 +20,7 @@ final class PurchaseItem extends Model
     protected $fillable = [
         'purchase_id',
         'product_id',
+        'customer_order_item_id',
         'unit_id',           // E.g., The ID for "Box"
         'quantity_ordered',  // How many we asked for
         'quantity_received', // How many actually arrived
@@ -43,6 +44,11 @@ final class PurchaseItem extends Model
         return $this->belongsTo(Unit::class);
     }
 
+    public function customerOrderItem()
+    {
+        return $this->belongsTo(CustomerOrderItem::class);
+    }
+
     /**
      * Get the attributes that should be cast.
      *
@@ -54,6 +60,7 @@ final class PurchaseItem extends Model
             'id' => 'integer',
             'purchase_id' => 'integer',
             'product_id' => 'integer',
+            'customer_order_item_id' => 'integer',
             'unit_id' => 'integer',
             'quantity_ordered' => 'decimal:4',
             'quantity_received' => 'decimal:4',

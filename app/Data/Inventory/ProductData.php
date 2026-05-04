@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Data\Inventory;
 
+use App\Enums\Product\StockType;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Support\Validation\ValidationContext;
 
@@ -21,6 +22,7 @@ final class ProductData extends Data
         public array $packagings,
         public int $category_id,
         public string $dosage,
+        public StockType $stock_type,
         public ?array $attributes,
         public ?string $base_barcode,
         public ?string $name,
@@ -45,6 +47,7 @@ final class ProductData extends Data
             'form' => ['nullable', 'string', 'max:255'],
             'requires_prescription' => ['boolean'],
             'reorder_level' => ['required', 'numeric', 'min:0'],
+            'stock_type' => ['required', 'string', 'in:regular,special_order'],
             'attributes' => ['nullable', 'array'],
             'attributes.description' => ['nullable', 'string'],
 

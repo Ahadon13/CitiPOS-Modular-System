@@ -24,6 +24,7 @@ final class ProductMotorShopForm extends Form
     public ?string $engine_type = null;
     public ?string $year_range = null;
     public ?string $oem_number = null;
+    public string $stock_type = 'regular';
     public string $batch_number = '';
     public float $reorder_level = 20;
     public float $quantity_on_hand = 0;
@@ -48,6 +49,7 @@ final class ProductMotorShopForm extends Form
             'engine_type' => ['nullable', 'string', 'max:255'],
             'year_range' => ['nullable', 'string', 'max:255'],
             'oem_number' => ['nullable', 'string', 'max:255'],
+            'stock_type' => ['required', 'in:regular,special_order'],
             'batch_number' => ['nullable', 'string', 'max:255'],
             'reorder_level' => ['required', 'numeric', 'min:0'],
             'quantity_on_hand' => ['required', 'numeric', 'min:0'],
@@ -108,6 +110,7 @@ final class ProductMotorShopForm extends Form
             'dosage' => 'N/A',
             'form' => null,
             'requires_prescription' => false,
+            'stock_type' => $this->stock_type,
             'reorder_level' => $this->reorder_level,
             'conversion' => $this->conversion,
             'base_price' => (int) round((float) $this->selling_price * 100),

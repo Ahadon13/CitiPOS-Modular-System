@@ -23,6 +23,7 @@ final class UpdateProductPharmacyForm extends Form
     public string $product_code = '';
     public ?string $description = '';
     public bool $requires_prescription = false;
+    public string $stock_type = 'regular';
     public float $reorder_level = 0;
 
     // The master unit for tracking inventory
@@ -44,6 +45,7 @@ final class UpdateProductPharmacyForm extends Form
         $this->category_id = $product->category_id;
         $this->description = $product->attributes['description'] ?? '';
         $this->requires_prescription = $product->requires_prescription;
+        $this->stock_type = $product->stock_type?->value ?? 'regular';
         $this->reorder_level = (float) $product->reorder_level;
         $this->base_unit_id = $product->base_unit_id;
         // Fetch ALL packagings (including the base unit) into the array
@@ -74,6 +76,7 @@ final class UpdateProductPharmacyForm extends Form
             'form' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:1000'],
             'requires_prescription' => 'boolean',
+            'stock_type' => ['required', 'in:regular,special_order'],
 
             // Packagings validations
             'packagings' => 'required|array|min:1',
@@ -125,6 +128,7 @@ final class UpdateProductPharmacyForm extends Form
                 'form' => $this->form,
                 'attributes' => array_merge($this->product->attributes ?? [], ['description' => $this->description]),
                 'requires_prescription' => $this->requires_prescription,
+                'stock_type' => $this->stock_type,
                 'reorder_level' => $this->reorder_level,
                 'base_unit_id' => $this->base_unit_id,
             ]);

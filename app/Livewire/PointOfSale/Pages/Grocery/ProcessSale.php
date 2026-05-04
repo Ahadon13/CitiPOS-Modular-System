@@ -8,6 +8,7 @@ use App\Actions\POS\ProcessSale as ProcessSaleAction;
 use App\Data\ProcessSale\SaleData;
 use App\Data\ProcessSale\SaleItemData;
 use App\Enums\Sale\Status;
+use App\Enums\Product\StockType;
 use App\Livewire\Concerns\HasToast;
 use App\Models\Category;
 use App\Models\Customer;
@@ -31,6 +32,7 @@ final class ProcessSale extends Component
     use HasAuth, HasToast, HasDataTable, WithPagination;
 
     public ?int $activeCategory = null;
+    public string $categorySearch = '';
     public string $customerMode = 'walk_in';
     public ?int $customer_id = null;
     public string $name = '';
@@ -63,7 +65,9 @@ final class ProcessSale extends Component
             $query->where('branch_id', $this->currentBranchId)
                 ->where('is_active', true)
                 ->isGrocery();
-        })->orderBy('name')->get();
+        })
+            ->when($this->categorySearch !== '', fn (Builder $query) => $query->where('name', 'like', "%{$this->categorySearch}%"))
+            ->orderBy('name')->get();
     }
 
     #[Computed]
@@ -101,6 +105,8 @@ final class ProcessSale extends Component
                 return (object) [
                     'id' => $product->id,
                     'name' => $product->brand_name,
+                    'stock_type' => $product->stock_type->value,
+                    'description' => $product->attributes['description'] ?? null,
                     'stock' => (float) ($product->total_stock ?? 0),
                     'barcode' => $product->product_code ?? null,
                     'base_unit' => $product->baseUnit->abbreviation ?? 'pcs',
@@ -215,6 +221,23 @@ final class ProcessSale extends Component
                 $unitId = $packaging->unit_id;
                 $conversionFactor = (float) $packaging->conversion_factor;
                 $priceCents = (int) $packaging->getRawOriginal('price');
+
+                if ($packaging->product->stock_type === StockType::SpecialOrder) {
+                    $itemsData[] = new SaleItemData(
+                        product_id: (int) $cartItem['product_id'],
+                        inventory_batch_id: null,
+                        unit_id: $unitId,
+                        quantity: $remainingToDeduct,
+                        price_at_moment: $priceCents,
+                        cost_at_moment: 0,
+                        subtotal: (int) round($remainingToDeduct * $priceCents),
+                        product_packaging_id: $packaging->id,
+                        regular_price_at_moment: $priceCents,
+                        is_special_order: true,
+                    );
+
+                    continue;
+                }
 
                 $batches = InventoryBatch::where('product_id', $cartItem['product_id'])
                     ->where('branch_id', $this->currentBranchId)

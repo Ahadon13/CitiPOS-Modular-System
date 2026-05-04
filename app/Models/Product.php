@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\Product\CategoryType;
+use App\Enums\Product\StockType;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -38,6 +39,7 @@ final class Product extends Model
         'reorder_level',
         'requires_prescription',
         'is_active',
+        'stock_type',
         'attributes',
     ];
 
@@ -137,6 +139,16 @@ final class Product extends Model
         return $this->hasMany(InventoryTransaction::class);
     }
 
+    public function customerOrderItems(): HasMany
+    {
+        return $this->hasMany(CustomerOrderItem::class);
+    }
+
+    public function isSpecialOrder(): bool
+    {
+        return $this->stock_type === StockType::SpecialOrder;
+    }
+
     // Helper for toggling active status
     public function toggleActive(): void
     {
@@ -199,6 +211,7 @@ final class Product extends Model
             'base_unit_id' => 'integer',
             'requires_prescription' => 'boolean',
             'is_active' => 'boolean',
+            'stock_type' => StockType::class,
             'attributes' => 'array',
         ];
     }

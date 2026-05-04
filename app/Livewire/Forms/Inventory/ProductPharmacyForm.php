@@ -27,6 +27,7 @@ final class ProductPharmacyForm extends Form
     public ?int $category_id = null;
 
     public bool $requires_prescription = false;
+    public string $stock_type = 'regular';
 
     public ?string $description = null;
 
@@ -66,6 +67,7 @@ final class ProductPharmacyForm extends Form
             'dosage' => ['required', 'string', 'max:255'],
             'form' => ['nullable', 'string', 'max:255'],
             'requires_prescription' => ['boolean'],
+            'stock_type' => ['required', 'in:regular,special_order'],
             'description' => ['nullable', 'string', 'max:1000'],
 
             // Inventory (UI validates as numeric/decimals)
@@ -160,6 +162,7 @@ final class ProductPharmacyForm extends Form
             'dosage' => $this->dosage,
             'form' => $this->form ?: null,
             'requires_prescription' => $this->requires_prescription,
+            'stock_type' => $this->stock_type,
             'reorder_level' => $this->reorder_level,
             'conversion' => $this->conversion,
             'base_price' => (int) round((float) $this->selling_price * 100),

@@ -8,6 +8,7 @@ use App\Actions\POS\ProcessSale as ProcessSaleAction;
 use App\Data\ProcessSale\SaleData;
 use App\Data\ProcessSale\SaleItemData;
 use App\Enums\Sale\Status;
+use App\Enums\Product\StockType;
 use App\Livewire\Concerns\HasToast;
 use App\Models\Customer;
 use App\Models\CustomerType;
@@ -36,6 +37,7 @@ final class ProcessSale extends Component
     // UI State
     public string $customerMode = 'walk_in';
     public string $pricingMode = 'retail';
+    public string $categorySearch = '';
     public ?int $customer_id = null;
     public string $name = '';
     public ?int $customer_type_id = null;
@@ -70,7 +72,9 @@ final class ProcessSale extends Component
         // Fetch all categories that have at least one active pharmacy product
         return Category::whereHas('products', function ($query) {
             $query->isPharmacy();
-        })->orderBy('name')->get();
+        })
+            ->when($this->categorySearch !== '', fn ($query) => $query->where('name', 'like', "%{$this->categorySearch}%"))
+            ->orderBy('name')->get();
     }
 
     #[Computed]
@@ -126,6 +130,10 @@ final class ProcessSale extends Component
                     'name' => $product->brand_name,
                     'generic_name' => $product->generic_name,
                     'required_prescription' => $product->requires_prescription,
+                    'stock_type' => $product->stock_type->value,
+                    'description' => $product->attributes['description'] ?? null,
+                    'dosage' => $product->dosage,
+                    'form' => $product->form,
                     'stock' => (float) ($product->total_stock ?? 0),
                     'barcode' => $product->product_code ?? null,
                     'packagings' => $packagings, // Pass array of options
@@ -263,6 +271,25 @@ final class ProcessSale extends Component
                     ? (int) $partnership->getRawOriginal('special_price')
                     : $regularPriceCents;
                 $priceSource = $partnership ? 'partnership' : 'regular';
+
+                if ($packaging->product->stock_type === StockType::SpecialOrder) {
+                    $itemsData[] = new SaleItemData(
+                        product_id: (int) $cartItem['product_id'],
+                        inventory_batch_id: null,
+                        unit_id: $unitId,
+                        quantity: $remainingToDeduct,
+                        price_at_moment: $priceCents,
+                        cost_at_moment: 0,
+                        subtotal: (int) round($remainingToDeduct * $priceCents),
+                        product_packaging_id: $packaging->id,
+                        regular_price_at_moment: $regularPriceCents,
+                        price_source: $priceSource,
+                        partnership_id: $partnership?->id,
+                        is_special_order: true,
+                    );
+
+                    continue;
+                }
 
                 // Fetch available inventory batches (FIFO: Oldest first)
                 $batches = InventoryBatch::where('product_id', $cartItem['product_id'])

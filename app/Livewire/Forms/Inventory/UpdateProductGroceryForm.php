@@ -19,6 +19,7 @@ final class UpdateProductGroceryForm extends Form
     public ?int $category_id = null;
     public string $product_code = '';
     public ?string $description = '';
+    public string $stock_type = 'regular';
     public float $reorder_level = 0;
     public ?int $base_unit_id = null;
     public array $packagings = [];
@@ -31,6 +32,7 @@ final class UpdateProductGroceryForm extends Form
         $this->product_code = $product->product_code;
         $this->category_id = $product->category_id;
         $this->description = $product->attributes['description'] ?? '';
+        $this->stock_type = $product->stock_type?->value ?? 'regular';
         $this->reorder_level = (float) $product->reorder_level;
         $this->base_unit_id = $product->base_unit_id;
         $this->packagings = $product->productPackagings()
@@ -54,6 +56,7 @@ final class UpdateProductGroceryForm extends Form
             'base_unit_id' => ['required', 'exists:units,id'],
             'reorder_level' => ['required', 'numeric', 'min:0'],
             'description' => ['nullable', 'string', 'max:1000'],
+            'stock_type' => ['required', 'in:regular,special_order'],
             'packagings' => ['required', 'array', 'min:1'],
             'packagings.*.unit_id' => ['required', 'exists:units,id'],
             'packagings.*.conversion_factor' => ['required', 'numeric', 'min:1'],
@@ -77,6 +80,7 @@ final class UpdateProductGroceryForm extends Form
                 'form' => null,
                 'attributes' => array_merge($this->product->attributes ?? [], ['description' => $this->description]),
                 'requires_prescription' => false,
+                'stock_type' => $this->stock_type,
                 'reorder_level' => $this->reorder_level,
                 'base_unit_id' => $this->base_unit_id,
             ]);

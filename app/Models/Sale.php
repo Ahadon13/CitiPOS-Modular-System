@@ -77,6 +77,11 @@ final class Sale extends Model
         return $this->hasMany(MotorShopSaleService::class);
     }
 
+    public function customerOrders(): HasMany
+    {
+        return $this->hasMany(CustomerOrder::class);
+    }
+
     /**
      * Get all inventory movements triggered by this specific sale receipt.
      */

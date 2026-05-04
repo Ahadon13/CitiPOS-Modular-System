@@ -10,7 +10,7 @@ final class SaleItemData extends Data
 {
     public function __construct(
         public int $product_id,
-        public int $inventory_batch_id,
+        public ?int $inventory_batch_id,
         public int $unit_id,
         public float $quantity,
         public int $price_at_moment, // In cents (e.g., 1550 for $15.50)
@@ -20,6 +20,7 @@ final class SaleItemData extends Data
         public ?int $regular_price_at_moment = null,
         public string $price_source = 'regular',
         public ?int $partnership_id = null,
+        public bool $is_special_order = false,
     ) {}
 
     public function modelAttributes(): array

@@ -105,6 +105,7 @@ final class ProductsImport implements ToCollection, WithChunkReading, WithHeadin
                     'selling_price' => ['required', 'numeric', 'min:1'],
                     'quantity_on_hand' => ['nullable', 'numeric', 'min:0'],
                     'reorder_level' => ['nullable', 'numeric', 'min:1'],
+                    'stock_type' => ['nullable', 'string', 'in:regular,special_order,special order,order basis,order_basis'],
                     'expiration_date' => ['nullable', 'date'],
                     'barcode' => ['nullable', 'string', 'max:255'],
                     'requires_prescription' => ['nullable', 'string'],
@@ -268,6 +269,7 @@ final class ProductsImport implements ToCollection, WithChunkReading, WithHeadin
                         'form' => $row['form'] ?? null,
                         'requires_prescription' => $this->productCategoryType === CategoryType::Pharmacy && $this->key($row['requires_prescription'] ?? '') === 'yes',
                         'reorder_level' => (float) ($row['reorder_level'] ?? 20),
+                        'stock_type' => $this->normalizeStockType($row['stock_type'] ?? null),
                         'attributes' => json_encode([
                             'description' => $row['description'] ?? null,
                             'part_number' => $row['part_number'] ?? null,
@@ -375,6 +377,7 @@ final class ProductsImport implements ToCollection, WithChunkReading, WithHeadin
             'unit',
             'barcode',
             'requires_prescription',
+            'stock_type',
             'batch_number',
             'description',
             'part_number',
@@ -410,6 +413,15 @@ final class ProductsImport implements ToCollection, WithChunkReading, WithHeadin
     private function key(mixed $value): string
     {
         return mb_strtolower($this->trim($value));
+    }
+
+    private function normalizeStockType(mixed $value): string
+    {
+        $key = $this->key($value ?? '');
+
+        return in_array($key, ['special_order', 'special order', 'order_basis', 'order basis'], true)
+            ? 'special_order'
+            : 'regular';
     }
 
     private function trim(mixed $value): string
