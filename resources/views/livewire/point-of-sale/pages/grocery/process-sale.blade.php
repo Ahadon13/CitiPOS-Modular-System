@@ -1,4 +1,4 @@
-<div class="flex flex-col md:flex-row w-full min-h-full md:h-full" x-data="groceryPosApp(@js($this->activePaymentMethods), @js($this->customerTypesData), @entangle('customerMode').live, @entangle('customer_id').live, @js($this->customers))" @keydown.window="handleKeydown($event)">
+<div class="flex flex-col lg:flex-row w-full min-h-full lg:h-full" x-data="groceryPosApp(@js($this->activePaymentMethods), @js($this->customerTypesData), @entangle('customerMode').live, @entangle('customer_id').live, @js($this->customers))" @keydown.window="handleKeydown($event)">
     <div class="flex-1 flex flex-col bg-white dark:bg-[#0a1331]/80 border border-black/10 dark:border-white/10 overflow-hidden shadow-sm min-w-0">
         <div class="p-3 h-16 border-b border-black/10 dark:border-white/10 flex flex-row items-center gap-3">
             <x-ui.button color="primary" variant="outline" icon="qr-code" class="shrink-0 hidden sm:inline-flex">
@@ -10,20 +10,22 @@
             </div>
         </div>
 
-        <div class="px-4 py-2.5 border-b border-black/10 dark:border-white/10 bg-neutral-50/50 dark:bg-white/5 shrink-0">
-            <div class="flex items-center gap-2 mb-2">
+        <div class="px-3 py-2 border-b border-black/10 dark:border-white/10 bg-neutral-50/50 dark:bg-white/5 shrink-0">
+            <div class="flex items-center gap-2">
                 <x-ui.icon name="funnel" class="size-4 text-neutral-400 shrink-0" />
-                <x-ui.input clearable leftIcon="magnifying-glass" placeholder="Search categories..." wire:model.live.debounce.300ms="categorySearch" class="w-full max-w-xs h-8 text-xs" />
-            </div>
-            <div class="max-h-24 overflow-y-auto custom-scrollbar flex flex-wrap items-center gap-2 pr-1">
-            <button wire:click="setCategory(null)" class="whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm flex items-center gap-1.5 transition-transform active:scale-95 {{ $activeCategory === null ? 'bg-electric-blue text-white' : 'bg-neutral-100 dark:bg-[#060A23] border border-black/5 dark:border-white/10 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10' }}">
+                <x-ui.input clearable leftIcon="magnifying-glass" placeholder="Categories..." wire:model.live.debounce.300ms="categorySearch" class="w-40 sm:w-52 lg:w-64 h-8 text-xs shrink-0" />
+                <div class="min-w-0 flex-1 overflow-x-auto overflow-y-hidden custom-scrollbar">
+                    <div class="h-9 flex items-center gap-2 pr-2">
+            <button wire:click="setCategory(null)" class="h-8 whitespace-nowrap px-3 rounded-full text-xs font-semibold shadow-sm flex items-center gap-1.5 transition-transform active:scale-95 {{ $activeCategory === null ? 'bg-electric-blue text-white' : 'bg-neutral-100 dark:bg-[#060A23] border border-black/5 dark:border-white/10 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10' }}">
                 All Products
             </button>
             @foreach($this->categories as $category)
-                <button wire:click="setCategory({{ $category->id }})" class="whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 transition-colors active:scale-95 shadow-sm {{ $activeCategory === $category->id ? 'bg-electric-blue text-white shadow-sm font-semibold' : 'bg-neutral-100 dark:bg-[#060A23] border border-black/5 dark:border-white/10 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10' }}">
+                <button wire:click="setCategory({{ $category->id }})" class="h-8 whitespace-nowrap px-3 rounded-full text-xs font-medium flex items-center gap-1.5 transition-colors active:scale-95 shadow-sm {{ $activeCategory === $category->id ? 'bg-electric-blue text-white shadow-sm font-semibold' : 'bg-neutral-100 dark:bg-[#060A23] border border-black/5 dark:border-white/10 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10' }}">
                     {{ $category->name }}
                 </button>
             @endforeach
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -102,7 +104,7 @@
         </div>
     </div>
 
-    <div class="w-full md:w-[380px] 2xl:w-[420px] flex flex-col bg-white dark:bg-[#0a1331]/80 border border-black/10 dark:border-white/10 overflow-hidden shadow-sm shrink-0">
+    <div class="w-full lg:w-[380px] 2xl:w-[420px] flex flex-col bg-white dark:bg-[#0a1331]/80 border border-black/10 dark:border-white/10 overflow-hidden shadow-sm shrink-0">
         <div class="p-2 border-b border-black/10 dark:border-white/10 flex items-center justify-between bg-neutral-50/50 dark:bg-white/5">
             <div class="flex items-center gap-2">
                 <x-ui.icon name="shopping-cart" class="size-5 text-electric-blue" />
