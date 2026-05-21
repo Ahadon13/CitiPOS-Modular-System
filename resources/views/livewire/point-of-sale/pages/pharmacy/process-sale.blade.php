@@ -57,6 +57,7 @@
             <div class="flex flex-col gap-2">
                 @foreach($this->products as $product)
                 <div
+                    wire:key="pos-pharmacy-product-{{ $product->id }}"
                     x-data="{ product: @js($product), selectedPkgId: @js($product->packagings[0]['id'] ?? null) }"
                     x-on:click="addProductToCart(product, selectedPkgId)"
                     class="cursor-pointer flex items-center justify-between p-3 rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#0a1331] hover:border-electric-blue dark:hover:border-electric-blue transition-all hover:shadow-sm active:scale-[0.99] {{ ($product->stock_type !== 'special_order' && $product->stock <= 0) || count($product->packagings) === 0 ? 'opacity-60 grayscale pointer-events-none' : '' }}"
