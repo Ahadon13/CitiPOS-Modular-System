@@ -6,6 +6,7 @@ use App\Enums\Inventory\TransactionType;
 use App\Enums\Product\CategoryType;
 use App\Enums\Sale\Status;
 use App\Exports\InventoryLedgerExport;
+use App\Exports\SalesReportExport;
 use App\Models\Branch;
 use App\Models\Expense;
 use App\Models\InventoryBatch;
@@ -292,6 +293,27 @@ class Reports extends Component
                 $this->search ?? '',
                 $start,
                 $end
+            ),
+            $fileName
+        );
+    }
+
+    public function exportSalesReport()
+    {
+        [$start, $end] = $this->getParsedDates();
+        $categoryName = $this->categoryId
+            ? ProductCategory::find($this->categoryId)?->name
+            : null;
+        $includeServices = $categoryName === null || $categoryName === CategoryType::MotorShop->value;
+
+        $fileName = 'Sales_Report_' . now()->format('Y_m_d_Hi') . '.xlsx';
+
+        return Excel::download(
+            new SalesReportExport(
+                branchId: $this->branchId,
+                dateRange: [$start->format('Y-m-d'), $end->format('Y-m-d')],
+                productCategoryId: $this->categoryId,
+                includeServices: $includeServices,
             ),
             $fileName
         );

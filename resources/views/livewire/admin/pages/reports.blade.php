@@ -7,7 +7,7 @@
             <p class="text-sm text-neutral-500 dark:text-neutral-400">Analyze your financial health and team performance</p>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-3 xl:flex xl:items-end gap-3 w-full xl:w-auto">
+        <div class="grid grid-cols-1 sm:grid-cols-4 xl:flex xl:items-end gap-3 w-full xl:w-auto">
 
             {{-- Branch Filter --}}
             <div class="w-full xl:w-48">
@@ -42,6 +42,11 @@
                     <x-ui-date range wire:model.live="dateRange" format="YYYY-MM-DD" placeholder="Last 30 Days (Default)" />
                 </x-ui.field>
             </div>
+
+            <x-ui.button wire:click="exportSalesReport" wire:loading.attr="disabled" wire:target="exportSalesReport" icon="chart-bar" class="w-full xl:w-auto justify-center">
+                <span wire:loading.remove wire:target="exportSalesReport">Sales Report</span>
+                <span wire:loading wire:target="exportSalesReport">Generating...</span>
+            </x-ui.button>
         </div>
     </div>
 

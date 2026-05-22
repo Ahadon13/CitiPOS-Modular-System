@@ -3,6 +3,7 @@
 namespace App\Livewire\Inventory\Pages\MotorShop;
 
 use App\Enums\Product\CategoryType;
+use App\Exports\SalesReportExport;
 use App\Exports\TransactionsExport;
 use App\Exports\DemandProductsExport;
 use App\Livewire\Concerns\HasToast;
@@ -19,7 +20,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Maatwebsite\Excel\Facades\Excel;
 use Money\Money;
 
-#[Layout('components.layouts.motor-shop', ['title' => 'Inventory Transactions', 'inventory' => true])]
+#[Layout('components.layouts.motor-shop', ['title' => 'Inventory Sales', 'inventory' => true])]
 class Transaction extends Component
 {
     use HasAuth, HasDataTable, HasToast, WithPagination;
@@ -197,7 +198,7 @@ class Transaction extends Component
 
         try {
             if ($this->exportTarget === 'transactions') {
-                $fileName = 'Motor Shop_Transactions_Report_' . $startDate . '_to_' . $endDate . '.xlsx';
+                $fileName = 'Motor Shop_Sales_Ledger_' . $startDate . '_to_' . $endDate . '.xlsx';
                 return Excel::download(
                     new TransactionsExport(
                         branchId: $this->currentBranchId,
@@ -205,6 +206,20 @@ class Transaction extends Component
                         paymentMethodFilter: $this->paymentMethodFilter,
                         search: $this->search ?? '',
                         targetCategories: [CategoryType::MotorShop->value]
+                    ),
+                    $fileName
+                );
+            }
+
+            if ($this->exportTarget === 'sales-report') {
+                $fileName = 'Motor Shop_Sales_Report_' . $startDate . '_to_' . $endDate . '.xlsx';
+
+                return Excel::download(
+                    new SalesReportExport(
+                        branchId: $this->currentBranchId,
+                        dateRange: [$startDate, $endDate],
+                        targetCategories: [CategoryType::MotorShop->value],
+                        includeServices: true,
                     ),
                     $fileName
                 );

@@ -2,6 +2,8 @@
 
 namespace App\Livewire\Inventory\Pages\Pharmacy;
 
+use App\Enums\Product\CategoryType;
+use App\Exports\SalesReportExport;
 use App\Exports\TransactionsExport;
 use App\Exports\DemandProductsExport;
 use App\Livewire\Concerns\HasToast;
@@ -18,7 +20,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Maatwebsite\Excel\Facades\Excel;
 use Money\Money;
 
-#[Layout('components.layouts.app', ['title' => 'Inventory Transactions', 'inventory' => true])]
+#[Layout('components.layouts.app', ['title' => 'Inventory Sales', 'inventory' => true])]
 class Transaction extends Component
 {
     use HasAuth, HasDataTable, HasToast, WithPagination;
@@ -196,13 +198,26 @@ class Transaction extends Component
 
         try {
             if ($this->exportTarget === 'transactions') {
-                $fileName = 'Transactions_Report_' . $startDate . '_to_' . $endDate . '.xlsx';
+                $fileName = 'Sales_Ledger_' . $startDate . '_to_' . $endDate . '.xlsx';
                 return Excel::download(
                     new TransactionsExport(
                         branchId: $this->currentBranchId,
                         dateRange: [$startDate, $endDate],
                         paymentMethodFilter: $this->paymentMethodFilter,
                         search: $this->search ?? ''
+                    ),
+                    $fileName
+                );
+            }
+
+            if ($this->exportTarget === 'sales-report') {
+                $fileName = 'Sales_Report_' . $startDate . '_to_' . $endDate . '.xlsx';
+
+                return Excel::download(
+                    new SalesReportExport(
+                        branchId: $this->currentBranchId,
+                        dateRange: [$startDate, $endDate],
+                        targetCategories: [CategoryType::Pharmacy->value],
                     ),
                     $fileName
                 );

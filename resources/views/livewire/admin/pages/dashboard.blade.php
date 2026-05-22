@@ -175,13 +175,13 @@
     </div>
 
     {{-- ========================================== --}}
-    {{-- BOTTOM GRIDS: TRANSACTIONS & LEADERBOARD   --}}
+    {{-- BOTTOM GRIDS: SALES & LEADERBOARD          --}}
     {{-- ========================================== --}}
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        {{-- Recent Transactions (Spans 2 columns) --}}
+        {{-- Recent Sales (Spans 2 columns) --}}
         <div class="lg:col-span-2 space-y-4">
-            <h2 class="text-lg font-bold text-neutral-900 dark:text-white">Recent Transactions</h2>
+            <h2 class="text-lg font-bold text-neutral-900 dark:text-white">Recent Sales</h2>
 
             <x-ui.card size="full" hoverless class="p-0 overflow-hidden">
                 <div class="overflow-x-auto custom-scrollbar">
@@ -216,7 +216,7 @@
                                             <x-ui.icon name="document-text" class="size-6 text-neutral-400" />
                                         </x-ui.empty.media>
                                         <x-ui.empty.contents>
-                                            <x-ui.heading>No transactions found</x-ui.heading>
+                                            <x-ui.heading>No sales found</x-ui.heading>
                                             <x-ui.text>There are no sales matching these filters.</x-ui.text>
                                         </x-ui.empty.contents>
                                     </x-ui.empty>
@@ -611,7 +611,7 @@
                             <tr>
                                 <th class="px-6 py-3">Rank</th>
                                 <th class="px-6 py-3">Staff Name</th>
-                                <th class="px-6 py-3 text-center">Transactions Processed</th>
+                                <th class="px-6 py-3 text-center">Sales Processed</th>
                                 <th class="px-6 py-3 text-right">Revenue Generated</th>
                             </tr>
                         </thead>
@@ -643,7 +643,7 @@
                                         </x-ui.empty.media>
                                         <x-ui.empty.contents>
                                             <x-ui.heading>No staff data available.</x-ui.heading>
-                                            <x-ui.text>Check back after some transactions have been processed.</x-ui.text>
+                                            <x-ui.text>Check back after some sales have been processed.</x-ui.text>
                                         </x-ui.empty.contents>
                                     </x-ui.empty>
                                 </td>

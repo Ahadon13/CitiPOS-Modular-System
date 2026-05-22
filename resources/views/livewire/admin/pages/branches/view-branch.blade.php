@@ -97,7 +97,7 @@
         <x-ui.card hoverless size="full" class="border-l-4 border-l-blue-500!">
             <p class="text-xs font-bold text-neutral-500 uppercase tracking-wider">Gross Revenue</p>
             <h3 class="text-2xl font-black text-neutral-900 dark:text-white mt-1">@money($this->stats['revenue'])</h3>
-            <p class="text-xs text-neutral-400 mt-1">{{ number_format($this->stats['orders_count']) }} transactions</p>
+            <p class="text-xs text-neutral-400 mt-1">{{ number_format($this->stats['orders_count']) }} sales</p>
         </x-ui.card>
 
         {{-- Expenses --}}
@@ -153,9 +153,14 @@
         <div class="space-y-4 flex flex-col">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <h2 class="text-lg font-bold text-neutral-900 dark:text-white">Recent Sales</h2>
-                <x-ui.button size="sm" variant="outline" icon="arrow-down-tray" class="w-full sm:w-auto justify-center" wire:click="exportSales" wire:loading.attr="disabled" wire:target="exportSales">
-                    Export
-                </x-ui.button>
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <x-ui.button size="sm" variant="outline" icon="arrow-down-tray" class="w-full sm:w-auto justify-center" wire:click="exportSales" wire:loading.attr="disabled" wire:target="exportSales">
+                        Export Ledger
+                    </x-ui.button>
+                    <x-ui.button size="sm" icon="chart-bar" class="w-full sm:w-auto justify-center" wire:click="openSalesReportModal" wire:loading.attr="disabled" wire:target="openSalesReportModal">
+                        Sales Report
+                    </x-ui.button>
+                </div>
             </div>
 
             <x-ui.card hoverless size="full" class="p-0 overflow-hidden flex-1 flex flex-col">
@@ -552,6 +557,30 @@
             />
         </div>
     </x-ui.card>
+
+    {{-- Sales Report Modal --}}
+    <x-ui.modal id="admin-branch-sales-report-modal" width="sm" heading="Export Sales Report">
+        <form wire:submit.prevent="exportSalesReport" class="space-y-4">
+            <p class="text-sm text-neutral-500">
+                Select the date range for the formatted product and service sales report.
+            </p>
+
+            <x-ui.field required>
+                <x-ui.label>Date Range</x-ui.label>
+                <x-ui-date range wire:model="salesReportDateRange" format="YYYY-MM-DD" />
+                <x-ui.error name="salesReportDateRange" />
+            </x-ui.field>
+
+            <div class="pt-4 flex justify-end gap-3 mt-4 border-t border-black/10 dark:border-white/10">
+                <x-ui.button type="button" variant="outline" wire:click="$dispatch('close-modal', { id: 'admin-branch-sales-report-modal' })">
+                    Cancel
+                </x-ui.button>
+                <x-ui.button type="submit" wire:loading.attr="disabled" wire:target="exportSalesReport" icon="arrow-down-tray">
+                    Export Report
+                </x-ui.button>
+            </div>
+        </form>
+    </x-ui.modal>
 
     {{-- View/Print Modal --}}
     <livewire:admin.common.view-purchase-modal wire:model="view_purchase" />

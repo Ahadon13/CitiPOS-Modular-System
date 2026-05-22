@@ -1,7 +1,7 @@
 <div class="max-w-7xl mx-auto space-y-6" x-data="transactionManager()">
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-bold text-neutral-900 dark:text-white">Transactions</h1>
+            <h1 class="text-2xl font-bold text-neutral-900 dark:text-white">Sales</h1>
             <p class="text-neutral-500 dark:text-neutral-400">Monitor your daily sales and revenue</p>
         </div>
         <div class="flex items-center gap-3 justify-end">
@@ -103,14 +103,14 @@
 
     {{-- Stats Cards --}}
     <div class="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {{-- 1. Total Transactions --}}
+        {{-- 1. Total Sales --}}
         <x-ui.card hoverless size="full" class="border-l-4 border-l-blue-500! flex flex-col justify-center">
             <div class="flex items-center gap-3">
                 <div class="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
                     <x-ui.icon name="document-text" class="size-6 text-blue-600! dark:text-blue-400!" />
                 </div>
                 <div>
-                    <p class="text-xs font-medium text-blue-500 uppercase tracking-wide">Total Transactions</p>
+                    <p class="text-xs font-medium text-blue-500 uppercase tracking-wide">Total Sales</p>
                     <h3 class="text-2xl font-bold text-blue-900 dark:text-blue-400">
                         {{ number_format($this->stats['total_count']) }}
                     </h3>
@@ -164,7 +164,7 @@
         </x-ui.card>
     </div>
 
-    {{-- Transactions Table --}}
+    {{-- Sales Table --}}
     <x-ui.card hoverless size="full" class="p-0">
         <div class="px-6 py-5 border-b border-black/10 dark:border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div class="w-full md:w-72">
@@ -175,7 +175,7 @@
                     class="w-full"
                 />
             </div>
-            <div class="flex items-center justify-between gap-3">
+            <div class="flex flex-wrap items-center justify-between gap-3">
                  <x-ui.field class="w-70!">
                     <x-ui-select.styled
                         wire:model.live="paymentMethodFilter"
@@ -191,7 +191,15 @@
                     wire:loading.attr="disabled"
                     wire:click="openExportModal('transactions')"
                 >
-                    Export in Excel
+                    Export Ledger
+                </x-ui.button>
+                <x-ui.button
+                    size="sm"
+                    icon="chart-bar"
+                    wire:loading.attr="disabled"
+                    wire:click="openExportModal('sales-report')"
+                >
+                    Sales Report
                 </x-ui.button>
             </div>
         </div>
@@ -276,9 +284,9 @@
                                             </x-ui.empty.media>
 
                                             <x-ui.empty.contents>
-                                                <x-ui.heading>No transactions found</x-ui.heading>
+                                                <x-ui.heading>No sales found</x-ui.heading>
                                                 <x-ui.text class="opacity-70">
-                                                    Start selling at your POS to see transactions appear here.
+                                                    Start selling at your POS to see sales appear here.
                                                 </x-ui.text>
 
                                                 <x-ui.button icon="shopping-cart" size="sm" class="mt-3" href="{{ route('pos.pharmacy.process-sale') }}">
@@ -309,7 +317,7 @@
         <form wire:submit.prevent="downloadDailyReport" class="space-y-4">
 
             <p class="text-sm text-neutral-500">
-                Select a specific date to instantly generate a complete transaction ledger for that day.
+                Select a specific date to instantly generate a complete sales ledger for that day.
             </p>
 
             <x-ui.field required>
@@ -333,7 +341,7 @@
     {{-- ========================================== --}}
     {{--        VIEW TRANSACTION MODAL (ALPINE)     --}}
     {{-- ========================================== --}}
-    <x-ui.modal id="view-transaction-modal" width="3xl" heading="Transaction Details">
+    <x-ui.modal id="view-transaction-modal" width="3xl" heading="Sale Details">
         <template x-if="selectedTx">
             <div class="space-y-6">
 

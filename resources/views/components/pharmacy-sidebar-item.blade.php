@@ -16,7 +16,7 @@
     @endcan
 
     @can('manage-transactions')
-    <x-ui.navlist.item size="sm" label="Transactions" icon="document-text" href="{{ route('inventory.pharmacy.transactions') }}" active="inventory.pharmacy.transactions.*" />
+    <x-ui.navlist.item size="sm" label="Sales" icon="document-text" href="{{ route('inventory.pharmacy.transactions') }}" active="inventory.pharmacy.transactions.*" />
     @endcan
 
     @can('manage-products')

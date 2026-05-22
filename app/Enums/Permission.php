@@ -64,7 +64,7 @@ enum Permission: string
             // Store Labels
             self::StoreDashboard => 'Access Store Dashboard',
             self::AccessPos => 'Access Point of Sale (POS)',
-            self::ManageTransactions => 'Manage Transactions',
+            self::ManageTransactions => 'Manage Sales',
             self::ManageProducts => 'Manage Products',
             self::ManageStocks => 'Manage Stocks',
             self::ManagePurchases => 'Manage Purchase Orders',

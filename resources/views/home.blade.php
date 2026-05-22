@@ -158,7 +158,7 @@
                             <x-ui.icon name="shopping-cart" class="size-7 text-blue-400" />
                         </div>
                         <h3 class="text-xl font-bold text-white mb-2">Fast Point of Sale</h3>
-                        <p class="text-sm text-neutral-400 leading-relaxed">Streamlined transaction ledger optimized for speed. Process sales instantly and print receipts on demand.</p>
+                        <p class="text-sm text-neutral-400 leading-relaxed">Streamlined sales ledger optimized for speed. Process sales instantly and print receipts on demand.</p>
                     </div>
 
                     {{-- Feature 2: Inventory --}}

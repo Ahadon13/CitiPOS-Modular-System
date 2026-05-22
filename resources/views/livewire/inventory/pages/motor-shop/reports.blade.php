@@ -157,7 +157,7 @@
             <x-ui.card hoverless class="border-l-4 border-l-violet-500!">
                 <p class="text-xs font-bold text-neutral-500 uppercase tracking-wider">Service Orders</p>
                 <h3 class="text-2xl font-black text-violet-600 dark:text-violet-400 mt-1">{{ number_format($this->serviceStats['service_orders']) }}</h3>
-                <p class="text-xs text-neutral-400 mt-2">Transactions with services</p>
+                <p class="text-xs text-neutral-400 mt-2">Sales with services</p>
             </x-ui.card>
 
             <x-ui.card hoverless class="border-l-4 border-l-amber-500!">
@@ -208,7 +208,7 @@
                 <x-ui.card hoverless size="full" class="p-0">
                     <div class="px-6 py-5 border-b border-black/10 dark:border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div>
-                            <x-ui.heading level="h3" size="sm">Service Transactions</x-ui.heading>
+                            <x-ui.heading level="h3" size="sm">Service Sales</x-ui.heading>
                             <p class="text-sm text-neutral-500 dark:text-neutral-400">All completed service lines with searchable customer, mechanic, reference, and service details.</p>
                         </div>
                         <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
@@ -284,7 +284,7 @@
                                                     <x-ui.icon name="wrench-screwdriver" class="size-6 text-neutral-400" />
                                                 </x-ui.empty.media>
                                                 <x-ui.empty.contents>
-                                                    <x-ui.heading>No service transactions found</x-ui.heading>
+                                                    <x-ui.heading>No service sales found</x-ui.heading>
                                                     <x-ui.text class="opacity-70">Try adjusting the date range, service search, or mechanic filter.</x-ui.text>
                                                 </x-ui.empty.contents>
                                             </x-ui.empty>

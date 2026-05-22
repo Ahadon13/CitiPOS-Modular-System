@@ -16,6 +16,7 @@ use App\Exports\BranchSalesExport;
 use App\Exports\BranchPurchasesExport;
 use App\Models\Category;
 use App\Enums\Inventory\TransactionType;
+use App\Exports\SalesReportExport;
 use App\Traits\HasDataTable;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -42,6 +43,7 @@ class ViewBranch extends Component
     public bool $nearExpiryOnly = false;
     public bool $expiredOnly = false;
     public string $inventoryMovementTypeFilter = '';
+    public array $salesReportDateRange = [];
 
     #[Computed]
     public function moduleLabel(): string
@@ -351,6 +353,45 @@ class ViewBranch extends Component
         return Excel::download(new BranchSalesExport($this->branch->id, $start, $end), $fileName);
     }
 
+    public function openSalesReportModal(): void
+    {
+        [$start, $end] = $this->getDateRange();
+
+        $this->salesReportDateRange = [
+            $start->format('Y-m-d'),
+            $end->format('Y-m-d'),
+        ];
+
+        $this->dispatch('open-modal', id: 'admin-branch-sales-report-modal');
+    }
+
+    public function exportSalesReport()
+    {
+        $this->validate([
+            'salesReportDateRange' => 'required|array|size:2',
+            'salesReportDateRange.0' => 'required|date',
+            'salesReportDateRange.1' => 'required|date|after_or_equal:salesReportDateRange.0',
+        ]);
+
+        $startDate = $this->salesReportDateRange[0];
+        $endDate = $this->salesReportDateRange[1];
+        $targetCategory = $this->branch->productCategory?->name;
+
+        $this->dispatch('close-modal', id: 'admin-branch-sales-report-modal');
+
+        $fileName = 'Branch_Sales_Report_' . $this->branch->id . '_' . $startDate . '_to_' . $endDate . '.xlsx';
+
+        return Excel::download(
+            new SalesReportExport(
+                branchId: $this->branch->id,
+                dateRange: [$startDate, $endDate],
+                targetCategories: $targetCategory ? [$targetCategory] : [],
+                includeServices: $this->isMotorShopBranch,
+            ),
+            $fileName
+        );
+    }
+
     public function exportPurchases()
     {
         [$start, $end] = $this->getDateRange();
@@ -360,6 +401,6 @@ class ViewBranch extends Component
 
     protected function getAdditionalPageResetProperties(): array
     {
-        return ['branchId', 'dateRange', 'view_purchase', 'lowStockOnly', 'outOfStockOnly', 'requirePrescription', 'active', 'disabled', 'productCategories', 'expiryFilter', 'nearExpiryOnly', 'expiredOnly', 'inventoryMovementTypeFilter'];
+        return ['branchId', 'dateRange', 'view_purchase', 'lowStockOnly', 'outOfStockOnly', 'requirePrescription', 'active', 'disabled', 'productCategories', 'expiryFilter', 'nearExpiryOnly', 'expiredOnly', 'inventoryMovementTypeFilter', 'salesReportDateRange'];
     }
 }

@@ -55,7 +55,7 @@ final class CustomerExport implements FromQuery, WithHeadings, WithMapping, Shou
             'ID Card Number',
             'Booklet Number',
             'Address',
-            'Total Transactions',
+            'Total Sales',
         ];
     }
 

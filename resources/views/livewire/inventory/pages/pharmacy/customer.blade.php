@@ -123,7 +123,7 @@
                                 <th class="px-6 py-4">Customer Details</th>
                                 <th class="px-6 py-4">Type & Discount</th>
                                 <th class="px-6 py-4">Identification</th>
-                                <th class="px-6 py-4 text-center">Transactions</th>
+                                <th class="px-6 py-4 text-center">Sales</th>
                                 <th class="px-6 py-4 text-center">Actions</th>
                             </tr>
                         </thead>
