@@ -124,7 +124,7 @@ final class InventoryStocksExport implements FromQuery, WithHeadings, WithMappin
             $batch->product->brand_name,
             $batch->product->generic_name,
             $batch->product->dosage,
-            $batch->batch_number,
+            filled($batch->batch_number) ? $batch->batch_number : 'N/A',
             $this->isMotorShop()
                 ? $batch->created_at->format('M d, Y')
                 : ($expDate?->format('M d, Y') ?? 'N/A'),

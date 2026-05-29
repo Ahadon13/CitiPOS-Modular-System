@@ -224,7 +224,7 @@
                                     @if($currentBatch)
                                         <div class="flex flex-col items-end">
                                             <span class="text-sm font-medium text-neutral-900 dark:text-white">
-                                                {{ $currentBatch->batch_number ?: 'Unnumbered batch' }}
+                                                {{ filled($currentBatch->batch_number) ? $currentBatch->batch_number : 'N/A' }}
                                             </span>
                                             <span class="text-[10px] uppercase text-green-500">
                                                 Received {{ $currentBatch->created_at->format('M d, Y') }}

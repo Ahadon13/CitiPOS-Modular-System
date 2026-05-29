@@ -913,6 +913,12 @@ window.motorShopPosApp = (
 window.transactionManager = () => {
     return {
         selectedTx: null,
+        receiptRouteTemplate: "",
+
+        init() {
+            this.receiptRouteTemplate =
+                this.$el.dataset.receiptRouteTemplate || "";
+        },
 
         viewTx(transaction) {
             this.selectedTx = transaction;
@@ -922,6 +928,22 @@ window.transactionManager = () => {
                     detail: { id: "view-transaction-modal" },
                 }),
             );
+        },
+
+        receiptUrl() {
+            if (!this.selectedTx?.id || !this.receiptRouteTemplate) return null;
+
+            return this.receiptRouteTemplate.replace(
+                "__SALE_ID__",
+                encodeURIComponent(this.selectedTx.id),
+            );
+        },
+
+        printReceipt() {
+            const url = this.receiptUrl();
+            if (!url) return;
+
+            window.open(url, "_blank", "noopener,noreferrer");
         },
 
         formatMoney(cents) {

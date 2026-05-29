@@ -504,7 +504,7 @@
                                     </span>
                                 </td>
                                 <td class="px-4 py-3 text-neutral-500">{{ $batch->branch->name ?? 'N/A' }}</td>
-                                <td class="px-4 py-3 font-mono text-neutral-500">{{ $batch->batch_number }}</td>
+                                <td class="px-4 py-3 font-mono text-neutral-500">{{ filled($batch->batch_number) ? $batch->batch_number : 'N/A' }}</td>
                                 <td class="px-4 py-3 text-center font-bold">{{ number_format($batch->quantity_on_hand, 2) }}</td>
                                 <td class="px-4 py-3 font-bold text-amber-600 dark:text-amber-400">
                                     {{ $batch->expiration_date->format('M d, Y') }}
@@ -567,7 +567,7 @@
                                     </span>
                                 </td>
                                 <td class="px-4 py-3 text-neutral-500">{{ $batch->branch->name ?? 'N/A' }}</td>
-                                <td class="px-4 py-3 font-mono text-neutral-500">{{ $batch->batch_number }}</td>
+                                <td class="px-4 py-3 font-mono text-neutral-500">{{ filled($batch->batch_number) ? $batch->batch_number : 'N/A' }}</td>
                                 <td class="px-4 py-3 text-center font-bold">{{ number_format($batch->quantity_on_hand, 2) }}</td>
                                 <td class="px-4 py-3 font-bold text-red-600 dark:text-red-400">
                                     {{ $batch->expiration_date->format('M d, Y') }}

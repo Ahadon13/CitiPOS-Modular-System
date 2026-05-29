@@ -12,7 +12,7 @@ final class UpdateBatchForm extends Form
 {
     public ?InventoryBatch $batch = null;
 
-    public string $batch_number = '';
+    public ?string $batch_number = '';
     public ?string $expiration_date = '';
     public float $quantity = 0;
     public float $cost = 0;
@@ -20,7 +20,7 @@ final class UpdateBatchForm extends Form
     public function setBatch(InventoryBatch $batch): void
     {
         $this->batch = $batch;
-        $this->batch_number = $batch->batch_number;
+        $this->batch_number = $batch->batch_number ?? '';
         $this->expiration_date = $batch->expiration_date
             ? Carbon::parse($batch->expiration_date)->format('Y-m-d')
             : null;
@@ -31,7 +31,7 @@ final class UpdateBatchForm extends Form
     public function update(): void
     {
         $this->validate([
-            'batch_number' => 'sometimes|string|max:255',
+            'batch_number' => 'nullable|string|max:255',
             'expiration_date' => 'nullable|date',
             'quantity' => 'required|numeric|min:0',
             'cost' => 'required|numeric|min:0',
@@ -43,8 +43,10 @@ final class UpdateBatchForm extends Form
             'cost.required' => 'Cost per unit is required.',
         ]);
 
+        $batchNumber = is_string($this->batch_number) ? trim($this->batch_number) : null;
+
         $this->batch->update([
-            'batch_number' => $this->batch_number,
+            'batch_number' => $batchNumber !== '' ? $batchNumber : null,
             'expiration_date' => $this->expiration_date ?: null,
             'quantity_on_hand' => $this->quantity,
             'cost_per_unit' => (int) round($this->cost * 100),

@@ -1,4 +1,4 @@
-<div class="max-w-7xl mx-auto space-y-6" x-data="transactionManager()">
+<div class="max-w-7xl mx-auto space-y-6" x-data="transactionManager()" data-receipt-route-template="{{ route('pos.grocery.sales.receipt', ['sale' => '__SALE_ID__']) }}">
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
             <h1 class="text-2xl font-bold text-neutral-900 dark:text-white">Sales</h1>
@@ -464,7 +464,7 @@
             <x-ui.button variant="outline" type="button" x-on:click="$dispatch('close-modal', { id: 'view-transaction-modal' })">
                 Close
             </x-ui.button>
-            <x-ui.button color="primary" icon="printer">
+            <x-ui.button color="primary" icon="printer" type="button" x-on:click="printReceipt()" x-bind:disabled="!selectedTx">
                 Print Receipt
             </x-ui.button>
         </div>

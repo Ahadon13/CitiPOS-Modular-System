@@ -157,7 +157,7 @@
                                     </td>
                                     <td class="px-6 py-4">
                                         <span class="font-mono inline-flex items-center rounded-md bg-neutral-100 dark:bg-white/5 px-2 py-1 text-xs font-medium text-neutral-700 dark:text-neutral-300 ring-1 ring-inset ring-neutral-500/20">
-                                            {{ $batch->batch_number }}
+                                            {{ filled($batch->batch_number) ? $batch->batch_number : 'N/A' }}
                                         </span>
                                     </td>
 
@@ -194,7 +194,7 @@
                                                 icon="trash"
                                                 color="red"
                                                 wire:click="deleteBatch({{ $batch->id }})"
-                                                wire:custom-confirm="Permanently delete the product {{ $batch->product->brand_name }} batch {{ $batch->batch_number }}?"
+                                                wire:custom-confirm="Permanently delete the product {{ $batch->product->brand_name }} batch {{ filled($batch->batch_number) ? $batch->batch_number : 'N/A' }}?"
                                                 title="Delete Batch"
                                             />
                                         </div>

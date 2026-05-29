@@ -140,7 +140,7 @@
                                     {{ $batch->product->brand_name }}
                                 </p>
                                 <p class="text-xxs text-neutral-500 dark:text-neutral-400 truncate">
-                                    {{ $batch->batch_number }} • {{ number_format($batch->quantity_on_hand, 2) }} left
+                                    {{ filled($batch->batch_number) ? $batch->batch_number : 'N/A' }} • {{ number_format($batch->quantity_on_hand, 2) }} left
                                 </p>
                                 @if($this->isSuperAdmin)
                                     <p class="text-xxs text-blue-600 mt-1 uppercase tracking-wide">

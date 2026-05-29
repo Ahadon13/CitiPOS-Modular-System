@@ -77,7 +77,7 @@
                         <div class="mt-3 flex flex-wrap gap-2">
                             @foreach($this->expiredStockBannerItems as $batch)
                                 <span class="inline-flex items-center rounded-md bg-white px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-red-200 dark:bg-red-950 dark:text-red-200 dark:ring-red-800">
-                                    {{ $batch->product->brand_name ?? 'Unknown' }} / {{ $batch->batch_number ?? 'No batch' }}
+                                    {{ $batch->product->brand_name ?? 'Unknown' }} / {{ filled($batch->batch_number) ? $batch->batch_number : 'N/A' }}
                                 </span>
                             @endforeach
                         </div>

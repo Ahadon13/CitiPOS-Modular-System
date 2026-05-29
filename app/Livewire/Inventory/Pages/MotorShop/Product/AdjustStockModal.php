@@ -61,9 +61,11 @@ final class AdjustStockModal extends Component
             ->orderBy('created_at', 'asc')
             ->get()
             ->map(function ($batch) {
+                $batchNumber = filled($batch->batch_number) ? $batch->batch_number : 'N/A';
+
                 return [
                     'value' => $batch->id, // Use 'value' to match your x-ui-select setup
-                    'label' => "Batch: {$batch->batch_number} - Received: " . $batch->created_at->format('M d, Y') . " ({$batch->quantity_on_hand} left)",
+                    'label' => "Batch: {$batchNumber} - Received: " . $batch->created_at->format('M d, Y') . " ({$batch->quantity_on_hand} left)",
                 ];
             })->toArray();
     }
