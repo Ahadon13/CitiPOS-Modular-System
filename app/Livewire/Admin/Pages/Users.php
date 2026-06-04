@@ -1,13 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Livewire\Admin\Pages;
 
+use App\Enums\Permission;
 use App\Livewire\Concerns\HasToast;
 use App\Models\Branch;
 use App\Models\User;
-use App\Enums\Permission;
 use App\Traits\HasAuth;
 use App\Traits\HasDataTable;
+use Exception;
 use Illuminate\Support\Facades\Hash;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
@@ -16,20 +19,31 @@ use Livewire\WithPagination;
 use Spatie\Permission\Models\Role;
 
 #[Layout('components.layouts.admin', ['title' => 'Users'])]
-class Users extends Component
+final class Users extends Component
 {
-    use HasAuth, HasToast, HasDataTable, WithPagination;
+    use HasAuth, HasDataTable, HasToast, WithPagination;
 
     // Form Properties
     public ?int $user_id = null;
+
     public array $batchUsers = [];
+
     public ?int $branch_id = null;
+
     public string $name = '';
+
     public string $username = '';
+
     public string $password = '';
+
     public string $role = '';
+
     public string $roleFilter = '';
+
+    public ?int $branchFilter = null;
+
     public array $branch_ids = [];
+
     public array $permissions = [];
 
     public function mount(): void
@@ -41,7 +55,7 @@ class Users extends Component
     {
         return [
             'name' => 'required|string|max:255',
-            'username' => 'required|string|max:255|unique:users,username,' . $this->user_id,
+            'username' => 'required|string|max:255|unique:users,username,'.$this->user_id,
             'password' => $this->user_id ? 'nullable|min:6' : 'required|min:6',
             'branch_id' => 'nullable|exists:branches,id',
             'branch_ids' => 'array',
@@ -60,13 +74,23 @@ class Users extends Component
                 $q->whereNotIn('name', [\App\Enums\Role::SuperAdmin->value]);
             })
             ->when($this->search, function ($query) {
-                $term = '%' . trim($this->search) . '%';
-                $query->where('name', 'like', $term)
-                      ->orWhere('username', 'like', $term);
+                $term = '%'.mb_trim($this->search).'%';
+                $query->where(function ($q) use ($term) {
+                    $q->where('name', 'like', $term)
+                        ->orWhere('username', 'like', $term);
+                });
             })
             ->when($this->roleFilter, function ($query) {
                 $query->whereHas('roles', function ($q) {
                     $q->where('name', $this->roleFilter);
+                });
+            })
+            ->when($this->branchFilter, function ($query) {
+                $branchId = (int) $this->branchFilter;
+
+                $query->where(function ($q) use ($branchId) {
+                    $q->where('branch_id', $branchId)
+                        ->orWhereHas('accessibleBranches', fn ($branchQuery) => $branchQuery->whereKey($branchId));
                 });
             })
             ->orderBy('name')
@@ -79,9 +103,9 @@ class Users extends Component
         return Branch::orderBy('name')
             ->with('productCategory')
             ->get()
-            ->map(fn($b) => [
+            ->map(fn ($b) => [
                 'value' => $b->id,
-                'label' => $b->name . ' (' . ($b->productCategory->name ?? 'No module') . ')',
+                'label' => $b->name.' ('.($b->productCategory->name ?? 'No module').')',
             ])
             ->toArray();
     }
@@ -91,7 +115,7 @@ class Users extends Component
     {
         return Role::orderBy('name')
             ->get()
-            ->map(fn($r) => ['value' => $r->name, 'label' => ucfirst(str_replace('-', ' ', $r->name))])
+            ->map(fn ($r) => ['value' => $r->name, 'label' => ucfirst(str_replace('-', ' ', $r->name))])
             ->toArray();
     }
 
@@ -102,11 +126,12 @@ class Users extends Component
     {
         $grouped = [];
         foreach (Permission::groupedPermissions() as $groupName => $cases) {
-            $grouped[$groupName] = array_map(fn($case) => [
+            $grouped[$groupName] = array_map(fn ($case) => [
                 'value' => $case->value,
-                'label' => $case->label()
+                'label' => $case->label(),
             ], $cases);
         }
+
         return $grouped;
     }
 
@@ -126,8 +151,8 @@ class Users extends Component
             } else {
                 $this->saveBatchUsers();
             }
-        } catch (\Exception $e) {
-            $this->toastError('Failed to save user: ' . $e->getMessage());
+        } catch (Exception $e) {
+            $this->toastError('Failed to save user: '.$e->getMessage());
         }
     }
 
@@ -177,6 +202,7 @@ class Users extends Component
     {
         if (count($this->batchUsers) === 1) {
             $this->batchUsers = [$this->emptyUserRow()];
+
             return;
         }
 
@@ -188,17 +214,18 @@ class Users extends Component
     {
         try {
             if (auth()->id() === $id) {
-                $this->toastError("You cannot delete your own account.");
+                $this->toastError('You cannot delete your own account.');
+
                 return;
             }
 
             User::findOrFail($id)->delete();
-            $this->toastSuccess("User deleted successfully!");
+            $this->toastSuccess('User deleted successfully!');
 
             if ($this->user_id === $id) {
                 $this->resetForm();
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->toastError('Failed to delete user.');
         }
     }
@@ -212,7 +239,7 @@ class Users extends Component
 
     protected function getAdditionalPageResetProperties(): array
     {
-        return ['roleFilter'];
+        return ['roleFilter', 'branchFilter'];
     }
 
     private function saveSingleUser(): void
@@ -292,7 +319,7 @@ class Users extends Component
 
         $summary = count($createdUsers) === 1
             ? "User '{$createdUsers[0]}' created successfully!"
-            : count($createdUsers) . ' users created successfully!';
+            : count($createdUsers).' users created successfully!';
 
         $this->toastSuccess($summary);
         $this->resetForm();

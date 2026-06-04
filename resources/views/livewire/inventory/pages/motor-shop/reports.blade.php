@@ -206,7 +206,7 @@
 
             <div class="lg:col-span-2">
                 <x-ui.card hoverless size="full" class="p-0">
-                    <div class="px-6 py-5 border-b border-black/10 dark:border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div class="px-6 py-5 border-b border-black/10 dark:border-white/10 flex flex-col justify-between gap-4">
                         <div>
                             <x-ui.heading level="h3" size="sm">Service Sales</x-ui.heading>
                             <p class="text-sm text-neutral-500 dark:text-neutral-400">All completed service lines with searchable customer, mechanic, reference, and service details.</p>

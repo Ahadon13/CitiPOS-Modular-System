@@ -16,20 +16,33 @@
 
     {{-- Users Table --}}
     <x-ui.card hoverless size="full" class="p-0">
-        <div class="px-3 sm:px-6 py-4 sm:py-5 border-b border-black/10 dark:border-white/10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div class="px-3 sm:px-6 py-4 sm:py-5 border-b border-black/10 dark:border-white/10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
             <div class="w-full md:w-72">
                 <x-ui.input wire:model.live.debounce.300ms="search" leftIcon="magnifying-glass" clearable placeholder="Search name or username..." class="w-full" />
             </div>
 
-            <div class="w-full sm:w-48">
-                <x-ui.field class="mb-0 w-full">
-                    <select wire:model.live="roleFilter" class="w-full text-sm rounded-lg border-neutral-300 dark:border-neutral-700 dark:bg-card text-neutral-700 dark:text-neutral-200 focus:ring-blue-500">
-                        <option value="">All Roles</option>
-                        @foreach($this->roles as $roleOption)
-                        <option value="{{ $roleOption['value'] }}">{{ $roleOption['label'] }}</option>
-                        @endforeach
-                    </select>
-                </x-ui.field>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full lg:w-auto">
+                <div class="w-full sm:w-48">
+                    <x-ui.field class="mb-0 w-full">
+                        <select wire:model.live="branchFilter" class="w-full text-sm rounded-lg border-neutral-300 dark:border-neutral-700 dark:bg-card text-neutral-700 dark:text-neutral-200 focus:ring-blue-500">
+                            <option value="">All Branches</option>
+                            @foreach($this->branches as $branchOption)
+                            <option value="{{ $branchOption['value'] }}">{{ $branchOption['label'] }}</option>
+                            @endforeach
+                        </select>
+                    </x-ui.field>
+                </div>
+
+                <div class="w-full sm:w-48">
+                    <x-ui.field class="mb-0 w-full">
+                        <select wire:model.live="roleFilter" class="w-full text-sm rounded-lg border-neutral-300 dark:border-neutral-700 dark:bg-card text-neutral-700 dark:text-neutral-200 focus:ring-blue-500">
+                            <option value="">All Roles</option>
+                            @foreach($this->roles as $roleOption)
+                            <option value="{{ $roleOption['value'] }}">{{ $roleOption['label'] }}</option>
+                            @endforeach
+                        </select>
+                    </x-ui.field>
+                </div>
             </div>
         </div>
 

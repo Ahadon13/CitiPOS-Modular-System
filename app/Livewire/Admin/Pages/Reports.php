@@ -1,18 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Livewire\Admin\Pages;
 
 use App\Enums\Inventory\TransactionType;
 use App\Enums\Product\CategoryType;
-use App\Enums\Sale\Status;
 use App\Exports\InventoryLedgerExport;
 use App\Exports\SalesReportExport;
 use App\Models\Branch;
 use App\Models\Expense;
 use App\Models\InventoryBatch;
-use App\Models\ProductCategory;
-use App\Models\SaleItem;
 use App\Models\InventoryTransaction;
+use App\Models\ProductCategory;
+use App\Support\SalesFinancials;
 use App\Traits\HasAuth;
 use App\Traits\HasDataTable;
 use Carbon\Carbon;
@@ -26,14 +27,17 @@ use Maatwebsite\Excel\Facades\Excel;
 use Money\Money;
 
 #[Layout('components.layouts.admin', ['title' => 'Reports'])]
-class Reports extends Component
+final class Reports extends Component
 {
-    use WithPagination, HasDataTable, HasAuth;
+    use HasAuth, HasDataTable, WithPagination;
 
     // Filters
     public ?int $branchId = null;
+
     public ?int $categoryId = null;
+
     public string $transactionType = '';
+
     public ?array $dateRange = [];
 
     // Trigger chart updates when filters change
@@ -53,23 +57,23 @@ class Reports extends Component
     public function transactionTypes(): array
     {
         // Fetch all enum cases for the dropdown
-        return array_map(fn($case) => [
+        return array_map(fn ($case) => [
             'value' => $case->value,
-            'label' => $case->label()
+            'label' => $case->label(),
         ], TransactionType::cases());
     }
 
     #[Computed]
     public function branches(): array
     {
-        return Branch::orderBy('name')->get()->map(fn($b) => ['value' => $b->id, 'label' => $b->name])->toArray();
+        return Branch::orderBy('name')->get()->map(fn ($b) => ['value' => $b->id, 'label' => $b->name])->toArray();
     }
 
     #[Computed]
     public function categories(): array
     {
         return ProductCategory::orderBy('name')->get()
-            ->map(fn($c) => [
+            ->map(fn ($c) => [
                 'value' => $c->id,
                 'label' => CategoryType::tryFrom($c->name)?->label() ?? $c->name,
             ])
@@ -80,49 +84,15 @@ class Reports extends Component
     public function financials(): array
     {
         [$start, $end] = $this->getParsedDates();
-
-        // 1. Revenue & COGS (Calculated at the item level to support Module filtering)
-        $salesQuery = SaleItem::join('sales', 'sale_items.sale_id', '=', 'sales.id')
-            ->join('products', 'sale_items.product_id', '=', 'products.id')
-            ->whereBetween('sales.created_at', [$start, $end])
-            ->where('sales.status', Status::Completed->value);
-
-        if ($this->branchId) {
-            $salesQuery->where('sales.branch_id', $this->branchId);
-        }
-        if ($this->categoryId) {
-            $salesQuery->where('products.product_category_id', $this->categoryId);
-        }
-
-        $salesData = $salesQuery->select(
-            DB::raw('SUM(sale_items.subtotal) as total_revenue'),
-            DB::raw('SUM(sale_items.cost_at_moment * sale_items.quantity) as total_cost')
-        )->first();
-
-        $revenue = $salesData->total_revenue ?? 0;
-        $cogs = $salesData->total_cost ?? 0;
-
-        // 2. Expenses (Expenses belong to branches, not product categories)
-        $expenseQuery = Expense::whereBetween('expense_date', [$start, $end]);
-        if ($this->branchId) {
-            $expenseQuery->where('branch_id', $this->branchId);
-        }
-        $expenses = $expenseQuery->sum('amount');
-
-        // 3. Profit Calculations
-        $grossProfit = $revenue - $cogs;
-        $netProfit = $grossProfit - $expenses;
-
-        $grossMargin = $revenue > 0 ? ($grossProfit / $revenue) * 100 : 0;
-        $netMargin = $revenue > 0 ? ($netProfit / $revenue) * 100 : 0;
+        $financials = SalesFinancials::calculate($this->branchId, $this->categoryId, [$start, $end]);
 
         return [
-            'revenue' => Money::PHP((string) round((float) $revenue)),
-            'expenses' => Money::PHP((string) round((float) $expenses)),
-            'gross_profit' => Money::PHP((string) round((float) $grossProfit)),
-            'net_profit' => Money::PHP((string) round((float) $netProfit)),
-            'gross_margin' => $grossMargin,
-            'net_margin' => $netMargin,
+            'revenue' => Money::PHP($financials['revenue']),
+            'expenses' => Money::PHP($financials['expenses']),
+            'gross_profit' => Money::PHP($financials['gross_profit']),
+            'net_profit' => Money::PHP($financials['net_profit']),
+            'gross_margin' => $financials['gross_margin'],
+            'net_margin' => $financials['net_margin'],
         ];
     }
 
@@ -144,28 +114,13 @@ class Reports extends Component
             $expenseData[$formattedDate] = 0;
         }
 
-        // Fetch Grouped Revenue
-        $salesQuery = SaleItem::join('sales', 'sale_items.sale_id', '=', 'sales.id')
-            ->join('products', 'sale_items.product_id', '=', 'products.id')
-            ->whereBetween('sales.created_at', [$start, $end])
-            ->where('sales.status', Status::Completed->value);
-
-        if ($this->branchId) $salesQuery->where('sales.branch_id', $this->branchId);
-        if ($this->categoryId) $salesQuery->where('products.product_category_id', $this->categoryId);
-
-        $dailyRevenue = $salesQuery->select(
-            DB::raw('DATE(sales.created_at) as date'),
-            DB::raw('SUM(sale_items.subtotal) as total')
-        )->groupBy('date')->get();
-
-        foreach ($dailyRevenue as $row) {
-            // Convert cents to standard float for the chart
-            $revenueData[$row->date] = round($row->total / 100, 2);
+        foreach (SalesFinancials::revenueByDate($this->branchId, $this->categoryId, [$start, $end]) as $date => $total) {
+            $revenueData[$date] = round($total / 100, 2);
         }
 
         // Fetch Grouped Expenses
         $expenseQuery = Expense::whereBetween('expense_date', [$start, $end]);
-        if ($this->branchId) $expenseQuery->where('branch_id', $this->branchId);
+        $this->applyExpenseScope($expenseQuery);
 
         $dailyExpenses = $expenseQuery->select(
             DB::raw('DATE(expense_date) as date'),
@@ -193,8 +148,7 @@ class Reports extends Component
         [$start, $end] = $this->getParsedDates();
 
         $query = Expense::whereBetween('expense_date', [$start, $end]);
-
-        if ($this->branchId) $query->where('branch_id', $this->branchId);
+        $this->applyExpenseScope($query);
 
         // Group by the related category
         $expenses = $query->select(
@@ -242,48 +196,11 @@ class Reports extends Component
         return $this->getLedgerQuery()->latest('created_at')->paginate($this->perPage);
     }
 
-    private function getLedgerQuery()
-    {
-        [$start, $end] = $this->getParsedDates();
-
-        $query = InventoryTransaction::with(['product.category', 'branch', 'user'])
-            ->whereBetween('created_at', [$start, $end]);
-
-        if ($this->branchId) {
-            $query->where('branch_id', $this->branchId);
-        }
-
-        if ($this->categoryId) {
-            $query->whereHas('product', function ($q) {
-                $q->where('product_category_id', $this->categoryId);
-            });
-        }
-
-        if ($this->transactionType) {
-            $query->where('type', $this->transactionType);
-        }
-
-        if ($this->search) {
-            $searchTerm = '%' . trim($this->search) . '%';
-            $query->where(function ($q) use ($searchTerm) {
-                $q->whereHas('product', function ($subQ) use ($searchTerm) {
-                    $subQ->where('name', 'like', $searchTerm)
-                        ->orWhere('brand_name', 'like', $searchTerm)
-                        ->orWhere('generic_name', 'like', $searchTerm)
-                        ->orWhere('product_code', 'like', $searchTerm);
-                })
-                ->orWhere('type', 'like', $searchTerm);
-            });
-        }
-
-        return $query;
-    }
-
     public function exportLedger()
     {
         [$start, $end] = $this->getParsedDates();
 
-        $fileName = 'Inventory_Ledger_' . now()->format('Y_m_d_Hi') . '.xlsx';
+        $fileName = 'Inventory_Ledger_'.now()->format('Y_m_d_Hi').'.xlsx';
 
         return Excel::download(
             new InventoryLedgerExport(
@@ -306,7 +223,7 @@ class Reports extends Component
             : null;
         $includeServices = $categoryName === null || $categoryName === CategoryType::MotorShop->value;
 
-        $fileName = 'Sales_Report_' . now()->format('Y_m_d_Hi') . '.xlsx';
+        $fileName = 'Sales_Report_'.now()->format('Y_m_d_Hi').'.xlsx';
 
         return Excel::download(
             new SalesReportExport(
@@ -341,5 +258,55 @@ class Reports extends Component
     protected function getAdditionalPageResetProperties(): array
     {
         return ['branchId', 'categoryId', 'dateRange', 'transactionType'];
+    }
+
+    private function getLedgerQuery()
+    {
+        [$start, $end] = $this->getParsedDates();
+
+        $query = InventoryTransaction::with(['product.category', 'branch', 'user'])
+            ->whereBetween('created_at', [$start, $end]);
+
+        if ($this->branchId) {
+            $query->where('branch_id', $this->branchId);
+        }
+
+        if ($this->categoryId) {
+            $query->whereHas('product', function ($q) {
+                $q->where('product_category_id', $this->categoryId);
+            });
+        }
+
+        if ($this->transactionType) {
+            $query->where('type', $this->transactionType);
+        }
+
+        if ($this->search) {
+            $searchTerm = '%'.mb_trim($this->search).'%';
+            $query->where(function ($q) use ($searchTerm) {
+                $q->whereHas('product', function ($subQ) use ($searchTerm) {
+                    $subQ->where('name', 'like', $searchTerm)
+                        ->orWhere('brand_name', 'like', $searchTerm)
+                        ->orWhere('generic_name', 'like', $searchTerm)
+                        ->orWhere('product_code', 'like', $searchTerm);
+                })
+                    ->orWhere('type', 'like', $searchTerm);
+            });
+        }
+
+        return $query;
+    }
+
+    private function applyExpenseScope($query): void
+    {
+        if ($this->branchId) {
+            $query->where('branch_id', $this->branchId);
+        } elseif ($this->categoryId) {
+            $query->whereIn('branch_id', function ($subQuery) {
+                $subQuery->select('id')
+                    ->from('branches')
+                    ->where('product_category_id', $this->categoryId);
+            });
+        }
     }
 }

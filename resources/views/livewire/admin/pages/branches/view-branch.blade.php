@@ -107,11 +107,11 @@
             <p class="text-xs text-neutral-400 mt-1">Bills, payroll, etc.</p>
         </x-ui.card>
 
-        {{-- Cash Flow / Profit --}}
+        {{-- Net Profit --}}
         <x-ui.card hoverless size="full" class="border-l-4 border-l-emerald-500!">
-            <p class="text-xs font-bold text-neutral-500 uppercase tracking-wider">Cash Flow (Net)</p>
+            <p class="text-xs font-bold text-neutral-500 uppercase tracking-wider">Net Profit</p>
             <h3 class="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">@money($this->stats['net_profit'])</h3>
-            <p class="text-xs text-neutral-400 mt-1">Revenue minus expenses</p>
+            <p class="text-xs text-neutral-400 mt-1">Gross profit minus expenses</p>
         </x-ui.card>
 
         {{-- Inventory Value --}}
@@ -148,7 +148,7 @@
     </div>
 
     {{-- Activity Grids --}}
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="grid grid-cols-1 gap-6">
         {{-- Recent Sales --}}
         <div class="space-y-4 flex flex-col">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -290,7 +290,7 @@
         {{-- ========================================== --}}
         {{-- BRANCH INVENTORY & PRODUCTS MODULE         --}}
         {{-- ========================================== --}}
-        <div class="lg:col-span-2 space-y-4">
+        <div class="space-y-4">
 
             <div>
                 <h2 class="text-xl font-bold text-neutral-900 dark:text-white">Branch Inventory & Catalog</h2>

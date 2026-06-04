@@ -1,22 +1,24 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Livewire\Admin\Pages\Branches;
 
 use App\Actions\Common\SwitchBranch;
+use App\Enums\Inventory\TransactionType;
 use App\Enums\Product\CategoryType;
 use App\Exports\BranchProductsExport;
+use App\Exports\BranchPurchasesExport;
+use App\Exports\BranchSalesExport;
+use App\Exports\SalesReportExport;
 use App\Models\Branch;
-use App\Models\Expense;
-use App\Models\Purchase;
-use App\Models\Sale;
-use App\Models\Product;
+use App\Models\Category;
 use App\Models\InventoryBatch;
 use App\Models\InventoryTransaction;
-use App\Exports\BranchSalesExport;
-use App\Exports\BranchPurchasesExport;
-use App\Models\Category;
-use App\Enums\Inventory\TransactionType;
-use App\Exports\SalesReportExport;
+use App\Models\Product;
+use App\Models\Purchase;
+use App\Models\Sale;
+use App\Support\SalesFinancials;
 use App\Traits\HasDataTable;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -28,21 +30,34 @@ use Maatwebsite\Excel\Facades\Excel;
 use Money\Money;
 
 #[Layout('components.layouts.admin', ['title' => 'Branch Overview'])]
-class ViewBranch extends Component
+final class ViewBranch extends Component
 {
-    use WithPagination, HasDataTable;
+    use HasDataTable, WithPagination;
+
     public Branch $branch;
+
     public string $dateRange = 'all';
+
     public ?array $view_purchase = null;
+
     public bool $lowStockOnly = false;
+
     public bool $outOfStockOnly = false;
+
     public bool $requirePrescription = false;
+
     public bool $active = false;
+
     public bool $disabled = false;
+
     public array $productCategories = [];
+
     public bool $nearExpiryOnly = false;
+
     public bool $expiredOnly = false;
+
     public string $inventoryMovementTypeFilter = '';
+
     public array $salesReportDateRange = [];
 
     #[Computed]
@@ -70,7 +85,7 @@ class ViewBranch extends Component
     {
         return Category::orderBy('name')
             ->get()
-            ->map(fn($cat) => ['value' => $cat->id, 'label' => $cat->name])
+            ->map(fn ($cat) => ['value' => $cat->id, 'label' => $cat->name])
             ->toArray();
     }
 
@@ -78,18 +93,7 @@ class ViewBranch extends Component
     public function stats(): array
     {
         [$start, $end] = $this->getDateRange();
-
-        $salesData = Sale::where('branch_id', $this->branch->id)
-            ->whereBetween('created_at', [$start, $end])
-            ->where('status', \App\Enums\Sale\Status::Completed)
-            ->select(
-                DB::raw('SUM(grand_total) as total_revenue'),
-                DB::raw('COUNT(id) as total_orders')
-            )->first();
-
-        $expensesTotal = Expense::where('branch_id', $this->branch->id)
-            ->whereBetween('expense_date', [$start, $end])
-            ->sum('amount');
+        $financials = SalesFinancials::calculate($this->branch->id, $this->branch->product_category_id, [$start, $end]);
 
         $purchasesData = Purchase::where('branch_id', $this->branch->id)
             ->whereBetween('created_at', [$start, $end])
@@ -98,15 +102,13 @@ class ViewBranch extends Component
                 DB::raw('COUNT(id) as total_pos')
             )->first();
 
-        $revenue = (int) ($salesData->total_revenue ?? 0);
-        $expenses = (int) $expensesTotal;
-        $netProfit = $revenue - $expenses;
-
         return [
-            'revenue' => Money::PHP($revenue),
-            'expenses' => Money::PHP($expenses),
-            'net_profit' => Money::PHP($netProfit),
-            'orders_count' => $salesData->total_orders ?? 0,
+            'revenue' => Money::PHP($financials['revenue']),
+            'expenses' => Money::PHP($financials['expenses']),
+            'gross_profit' => Money::PHP($financials['gross_profit']),
+            'gross_margin' => $financials['gross_margin'],
+            'net_profit' => Money::PHP($financials['net_profit']),
+            'orders_count' => $financials['orders'],
             'po_cost' => Money::PHP((int) ($purchasesData->total_po_cost ?? 0)),
             'po_count' => $purchasesData->total_pos ?? 0,
         ];
@@ -120,26 +122,26 @@ class ViewBranch extends Component
         $total = (clone $baseQuery)->count();
 
         // Count products that have low stock (<= reorder_level)
-        $lowStock = (clone $baseQuery)->whereHas('inventoryBatches', function($q) {
+        $lowStock = (clone $baseQuery)->whereHas('inventoryBatches', function ($q) {
             $q->where('branch_id', $this->branch->id)
-              ->select('product_id')
-              ->groupBy('product_id')
-              ->havingRaw('SUM(quantity_on_hand) <= 10'); // Or adjust to products.reorder_level
+                ->select('product_id')
+                ->groupBy('product_id')
+                ->havingRaw('SUM(quantity_on_hand) <= 10'); // Or adjust to products.reorder_level
         })->count();
 
         // Count products with batches expired
-        $expired = (clone $baseQuery)->whereHas('inventoryBatches', function($q) {
+        $expired = (clone $baseQuery)->whereHas('inventoryBatches', function ($q) {
             $q->where('branch_id', $this->branch->id)
-              ->where('quantity_on_hand', '>', 0)
-              ->whereDate('expiration_date', '<', now());
+                ->where('quantity_on_hand', '>', 0)
+                ->whereDate('expiration_date', '<', now());
         })->count();
 
         // Count products with batches expiring in 3 months
-        $nearExpiry = (clone $baseQuery)->whereHas('inventoryBatches', function($q) {
+        $nearExpiry = (clone $baseQuery)->whereHas('inventoryBatches', function ($q) {
             $q->where('branch_id', $this->branch->id)
-              ->where('quantity_on_hand', '>', 0)
-              ->whereDate('expiration_date', '>=', now())
-              ->whereDate('expiration_date', '<=', now()->addMonths(3));
+                ->where('quantity_on_hand', '>', 0)
+                ->whereDate('expiration_date', '>=', now())
+                ->whereDate('expiration_date', '<=', now()->addMonths(3));
         })->count();
 
         return [
@@ -156,26 +158,32 @@ class ViewBranch extends Component
         $query = Product::with(['category', 'baseUnit', 'productPackagings', 'inventoryBatches' => function ($q) {
             $q->where('branch_id', $this->branch->id)->orderBy('expiration_date', 'asc');
         }])
-        ->withSum(['inventoryBatches as total_stock' => function($q) {
-            $q->where('branch_id', $this->branch->id);
-        }], 'quantity_on_hand')
-        ->where('branch_id', $this->branch->id)
-        ->where('product_category_id', $this->branch->product_category_id);
+            ->withSum(['inventoryBatches as total_stock' => function ($q) {
+                $q->where('branch_id', $this->branch->id);
+            }], 'quantity_on_hand')
+            ->where('branch_id', $this->branch->id)
+            ->where('product_category_id', $this->branch->product_category_id);
 
         // 1. Search
         if ($this->search) {
             $query->where(function ($q) {
-                $q->where('brand_name', 'like', '%' . $this->search . '%')
-                  ->orWhere('generic_name', 'like', '%' . $this->search . '%')
-                  ->orWhere('product_code', 'like', '%' . $this->search . '%');
+                $q->where('brand_name', 'like', '%'.$this->search.'%')
+                    ->orWhere('generic_name', 'like', '%'.$this->search.'%')
+                    ->orWhere('product_code', 'like', '%'.$this->search.'%');
             });
         }
 
         // 2. Basic Filters
-        if ($this->active) $query->where('is_active', true);
-        if ($this->disabled) $query->where('is_active', false);
-        if ($this->isPharmacyBranch && $this->requirePrescription) $query->where('requires_prescription', true);
-        if (!empty($this->productCategories)) {
+        if ($this->active) {
+            $query->where('is_active', true);
+        }
+        if ($this->disabled) {
+            $query->where('is_active', false);
+        }
+        if ($this->isPharmacyBranch && $this->requirePrescription) {
+            $query->where('requires_prescription', true);
+        }
+        if (! empty($this->productCategories)) {
             $query->whereIn('category_id', $this->productCategories);
         }
 
@@ -188,17 +196,17 @@ class ViewBranch extends Component
 
         // 4. Expiry Filters
         if ($this->expiredOnly) {
-            $query->whereHas('inventoryBatches', function($q) {
+            $query->whereHas('inventoryBatches', function ($q) {
                 $q->where('branch_id', $this->branch->id)
-                  ->where('quantity_on_hand', '>', 0)
-                  ->whereDate('expiration_date', '<', now());
+                    ->where('quantity_on_hand', '>', 0)
+                    ->whereDate('expiration_date', '<', now());
             });
         } elseif ($this->nearExpiryOnly) {
-            $query->whereHas('inventoryBatches', function($q) {
+            $query->whereHas('inventoryBatches', function ($q) {
                 $q->where('branch_id', $this->branch->id)
-                  ->where('quantity_on_hand', '>', 0)
-                  ->whereDate('expiration_date', '>=', now())
-                  ->whereDate('expiration_date', '<=', now()->addMonths(3));
+                    ->where('quantity_on_hand', '>', 0)
+                    ->whereDate('expiration_date', '>=', now())
+                    ->whereDate('expiration_date', '<=', now()->addMonths(3));
             });
         }
 
@@ -212,11 +220,11 @@ class ViewBranch extends Component
             ->where('quantity_on_hand', '>', 0)
             ->sum(DB::raw('quantity_on_hand * cost_per_unit'));
 
-        $lowStockCount = Product::where('branch_id', $this->branch->id)->whereHas('inventoryBatches', function($q) {
+        $lowStockCount = Product::where('branch_id', $this->branch->id)->whereHas('inventoryBatches', function ($q) {
             $q->where('branch_id', $this->branch->id)
-              ->select('product_id')
-              ->groupBy('product_id')
-              ->havingRaw('SUM(quantity_on_hand) <= 10');
+                ->select('product_id')
+                ->groupBy('product_id')
+                ->havingRaw('SUM(quantity_on_hand) <= 10');
         })->count();
 
         return [
@@ -301,7 +309,7 @@ class ViewBranch extends Component
 
     public function exportProducts()
     {
-        $fileName = 'Branch_Products_' . now()->format('Y_m_d_His') . '.xlsx';
+        $fileName = 'Branch_Products_'.now()->format('Y_m_d_His').'.xlsx';
 
         // Pass your filters into your custom Excel Export class
         return Excel::download(new BranchProductsExport(
@@ -330,26 +338,13 @@ class ViewBranch extends Component
         return redirect()->route('inventory.redirect', ['branch' => $this->branch->id]);
     }
 
-    protected function getDateRange(): array
-    {
-        return match ($this->dateRange) {
-            'today' => [Carbon::today(), Carbon::now()],
-            'yesterday' => [Carbon::yesterday(), Carbon::yesterday()->endOfDay()],
-            '7days' => [Carbon::now()->subDays(7)->startOfDay(), Carbon::now()],
-            '30days' => [Carbon::now()->subDays(30)->startOfDay(), Carbon::now()],
-            'this_month' => [Carbon::now()->startOfMonth(), Carbon::now()],
-            'this_year' => [Carbon::now()->startOfYear(), Carbon::now()],
-            'all' => [Carbon::create(2000, 1, 1), Carbon::now()],
-            default => [Carbon::create(2000, 1, 1), Carbon::now()],
-        };
-    }
-
     // --- NEW EXPORT METHODS ---
 
     public function exportSales()
     {
         [$start, $end] = $this->getDateRange();
-        $fileName = 'Branch_Sales_' . now()->format('Y_m_d_His') . '.xlsx';
+        $fileName = 'Branch_Sales_'.now()->format('Y_m_d_His').'.xlsx';
+
         return Excel::download(new BranchSalesExport($this->branch->id, $start, $end), $fileName);
     }
 
@@ -379,7 +374,7 @@ class ViewBranch extends Component
 
         $this->dispatch('close-modal', id: 'admin-branch-sales-report-modal');
 
-        $fileName = 'Branch_Sales_Report_' . $this->branch->id . '_' . $startDate . '_to_' . $endDate . '.xlsx';
+        $fileName = 'Branch_Sales_Report_'.$this->branch->id.'_'.$startDate.'_to_'.$endDate.'.xlsx';
 
         return Excel::download(
             new SalesReportExport(
@@ -395,8 +390,23 @@ class ViewBranch extends Component
     public function exportPurchases()
     {
         [$start, $end] = $this->getDateRange();
-        $fileName = 'Branch_Purchases_' . now()->format('Y_m_d_His') . '.xlsx';
+        $fileName = 'Branch_Purchases_'.now()->format('Y_m_d_His').'.xlsx';
+
         return Excel::download(new BranchPurchasesExport($this->branch->id, $start, $end), $fileName);
+    }
+
+    protected function getDateRange(): array
+    {
+        return match ($this->dateRange) {
+            'today' => [Carbon::today(), Carbon::now()],
+            'yesterday' => [Carbon::yesterday(), Carbon::yesterday()->endOfDay()],
+            '7days' => [Carbon::now()->subDays(7)->startOfDay(), Carbon::now()],
+            '30days' => [Carbon::now()->subDays(30)->startOfDay(), Carbon::now()],
+            'this_month' => [Carbon::now()->startOfMonth(), Carbon::now()],
+            'this_year' => [Carbon::now()->startOfYear(), Carbon::now()],
+            'all' => [Carbon::create(2000, 1, 1), Carbon::now()],
+            default => [Carbon::create(2000, 1, 1), Carbon::now()],
+        };
     }
 
     protected function getAdditionalPageResetProperties(): array

@@ -273,7 +273,7 @@
     {{-- ========================================== --}}
     {{-- PAGINATED TABLES: BRANCHES & PURCHASES     --}}
     {{-- ========================================== --}}
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="grid grid-cols-1 gap-6">
 
         {{-- Branches Table --}}
         <div class="space-y-4 flex flex-col">
@@ -411,7 +411,7 @@
     {{-- ========================================== --}}
     {{-- INVENTORY ALERTS TABLES                    --}}
     {{-- ========================================== --}}
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="grid grid-cols-1 gap-6">
 
         {{-- Low Stock Products Table --}}
         <div class="space-y-4 flex flex-col">
