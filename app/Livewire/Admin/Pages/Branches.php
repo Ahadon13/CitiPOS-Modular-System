@@ -21,7 +21,6 @@ use Livewire\Component;
 final class Branches extends Component
 {
     use HasToast;
-
     public ?int $categoryId = null;
 
     #[Computed]
