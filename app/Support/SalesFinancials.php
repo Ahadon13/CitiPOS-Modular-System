@@ -28,7 +28,7 @@ final class SalesFinancials
         $revenue = self::revenue($branchId, $categoryId, $dateRange);
         $cogs = self::cogs($branchId, $categoryId, $dateRange);
         $expenses = self::expenses($branchId, $categoryId, $dateRange);
-
+        // Gross profit is revenue minus COGS, while net profit also subtracts expenses
         $grossProfit = $revenue - $cogs;
         $netProfit = $grossProfit - $expenses;
 
