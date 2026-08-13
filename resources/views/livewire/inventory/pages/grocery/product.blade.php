@@ -91,13 +91,29 @@
 
     <x-ui.card hoverless size="full" class="p-0">
         <div class="px-6 py-5 border-b border-black/10 dark:border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div class="w-full md:w-72">
-                <x-ui.input
-                    wire:model.live.debounce.300ms="search"
-                    leftIcon="magnifying-glass" clearable
-                    placeholder="Search name, SKU, brand..."
-                    class="w-full"
-                />
+            <div class="flex items-center gap-3 w-full md:w-auto">
+                <div class="w-full md:w-72">
+                    <x-ui.input
+                        wire:model.live.debounce.300ms="search"
+                        leftIcon="magnifying-glass" clearable
+                        placeholder="Search name, SKU, brand..."
+                        class="w-full"
+                    />
+                </div>
+                <x-inventory.barcode-search :config="$this->scannerConfig" class="hidden lg:inline-flex" />
+
+                {{-- Scan or search a product and jump straight to editing it. --}}
+                <x-ui.button
+                    variant="outline"
+                    color="primary"
+                    icon="qr-code"
+                    size="sm"
+                    class="shrink-0 whitespace-nowrap"
+                    wire:click="openLookup('inventory-product-lookup-modal')"
+                    title="Scan or search a product to view its details (F2)"
+                >
+                    Scan / Look up
+                </x-ui.button>
             </div>
 
             <div class="flex items-center gap-3">
@@ -184,9 +200,18 @@
                                 </td>
 
                                 <td class="px-6 py-4">
-                                    <div class="font-medium text-neutral-900 dark:text-white">{{ $product->brand_name }}</div>
-                                    <div class="flex gap-2 text-xs text-neutral-500">
-                                        <span>{{ $product->supplier->name ?? 'No supplier' }}</span>
+                                    <div class="flex items-center gap-3">
+                                        <x-product.image
+                                            :url="$product->imageUrl()"
+                                            :alt="$product->brand_name"
+                                            size="sm"
+                                        />
+                                        <div class="min-w-0">
+                                            <div class="font-medium text-neutral-900 dark:text-white">{{ $product->brand_name }}</div>
+                                            <div class="flex gap-2 text-xs text-neutral-500">
+                                                <span>{{ $product->supplier->name ?? 'No supplier' }}</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 font-mono text-neutral-600 dark:text-neutral-400">
@@ -331,4 +356,22 @@
 
     {{-- Adjust Stock Modal --}}
     <livewire:inventory.pages.grocery.product.adjust-stock-modal wire:model="adjust_product" />
+
+    {{-- Scan / search a product, see its details, then edit it. --}}
+    <div
+        x-data
+        x-on:keydown.window.f2.prevent="$wire.openLookup('inventory-product-lookup-modal')"
+        x-on:close-modal.window="if ($event.detail?.id === 'inventory-product-lookup-modal') $wire.closeLookup()"
+    >
+        <x-product.lookup-modal
+            id="inventory-product-lookup-modal"
+            heading="Product Lookup"
+            description="Scan a barcode or search to view a product's stock and prices."
+            :product="$lookupProduct"
+            :error="$lookupError"
+            :scanner-enabled="$this->scannerConfig['enabled']"
+            edit-route="inventory.grocery.products.edit"
+            shortcut="F2"
+        />
+    </div>
 </div>

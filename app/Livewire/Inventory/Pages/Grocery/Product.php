@@ -4,15 +4,19 @@ declare(strict_types=1);
 
 namespace App\Livewire\Inventory\Pages\Grocery;
 
-use App\Exports\ProductsExport;
 use App\Enums\Product\StockType;
+use App\Exports\ProductsExport;
+use App\Livewire\Concerns\HasScannerConfig;
 use App\Livewire\Concerns\HasToast;
-use App\Models\Product as ProductModel;
+use App\Livewire\Concerns\LooksUpProductDetails;
 use App\Models\Category;
-use App\Models\ProductCategory;
 use App\Models\InventoryBatch;
+use App\Models\Product as ProductModel;
+use App\Models\ProductCategory;
 use App\Traits\HasAuth;
 use App\Traits\HasDataTable;
+use Exception;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
@@ -24,29 +28,30 @@ use Maatwebsite\Excel\Facades\Excel;
 #[Layout('components.layouts.grocery', ['title' => 'Grocery Inventory', 'inventory' => true])]
 final class Product extends Component
 {
-    use HasAuth, HasToast, HasDataTable, WithPagination;
+    use HasAuth, HasDataTable, HasScannerConfig, HasToast, LooksUpProductDetails, WithPagination;
 
     #[Url]
     public bool $lowStockOnly = false;
+
     #[Url]
     public bool $outOfStockOnly = false;
+
     #[Url]
     public bool $active = false;
+
     #[Url]
     public bool $disabled = false;
+
     public ?array $adjust_product = null;
+
     public array $productCategories = [];
+
     public array $selectedProductIds = [];
 
     /**
      * Product category scope for this module.
      */
     protected array $targetCategories = ['grocery'];
-
-    protected function getAdditionalPageResetProperties(): array
-    {
-        return ['lowStockOnly', 'outOfStockOnly', 'active', 'disabled', 'productCategories'];
-    }
 
     #[Computed]
     public function categories()
@@ -67,7 +72,7 @@ final class Product extends Component
 
         // 1. OPTIMIZATION: Use JOIN instead of whereHas for Category (Faster)
         $query->join('product_categories', 'products.product_category_id', '=', 'product_categories.id')
-              ->whereIn('product_categories.name', $this->targetCategories);
+            ->whereIn('product_categories.name', $this->targetCategories);
 
         // 3. Calculate Total Stock (Needed for filtering)
         // We keep this ONE subquery because we need it for the havingRaw clause below
@@ -78,13 +83,15 @@ final class Product extends Component
         // 4. Search & Filters
         $query->search($this->search);
 
-        $query->when($this->lowStockOnly, fn ($q) => $q->where('stock_type', StockType::Regular)->havingRaw('COALESCE(total_stock, 0) < products.reorder_level'));
-        $query->when($this->outOfStockOnly, fn ($q) => $q->where('stock_type', StockType::Regular)->havingRaw('COALESCE(total_stock, 0) = 0'));
+        // groupBy alongside havingRaw for portability: MySQL tolerates HAVING
+        // with no GROUP BY, SQLite rejects it outright.
+        $query->when($this->lowStockOnly, fn ($q) => $q->where('stock_type', StockType::Regular)->groupBy('products.id')->havingRaw('COALESCE(total_stock, 0) < products.reorder_level'));
+        $query->when($this->outOfStockOnly, fn ($q) => $q->where('stock_type', StockType::Regular)->groupBy('products.id')->havingRaw('COALESCE(total_stock, 0) = 0'));
         $query->when($this->active, fn ($q) => $q->where('is_active', true));
         $query->when($this->disabled, fn ($q) => $q->where('is_active', false));
 
         // 5. Filter by categories (if any)
-        $query->when(!empty($this->productCategories), function ($q) {
+        $query->when(! empty($this->productCategories), function ($q) {
             $q->whereHas('category', function ($subQ) {
                 $subQ->whereIn('id', $this->productCategories);
             });
@@ -100,8 +107,8 @@ final class Product extends Component
         if ($products->getCollection()->isNotEmpty()) {
             $products->getCollection()->load(['inventoryBatches' => function (HasMany $q) {
                 $q->where('branch_id', $this->currentBranchId)
-                  ->where('quantity_on_hand', '>', 0)
-                  ->orderBy('expiration_date', 'asc'); // Oldest expiry first (FIFO)
+                    ->where('quantity_on_hand', '>', 0)
+                    ->orderBy('expiration_date', 'asc'); // Oldest expiry first (FIFO)
             }]);
         }
 
@@ -131,7 +138,7 @@ final class Product extends Component
             'out_of_stock' => (clone $productQuery)
                 ->whereDoesntHave('inventoryBatches', function ($q) use ($branchId) {
                     $q->where('branch_id', $branchId)
-                      ->where('quantity_on_hand', '>', 0);
+                        ->where('quantity_on_hand', '>', 0);
                 })
                 ->count(),
 
@@ -140,6 +147,7 @@ final class Product extends Component
                 ->withSum(['inventoryBatches as total_stock' => function ($q) use ($branchId) {
                     $q->where('branch_id', $branchId);
                 }], 'quantity_on_hand')
+                ->groupBy('products.id')
                 ->havingRaw('COALESCE(total_stock, 0) > 0') // Must have some stock
                 ->havingRaw('COALESCE(total_stock, 0) < products.reorder_level')
                 ->count(),
@@ -149,7 +157,7 @@ final class Product extends Component
             'near_expiry' => InventoryBatch::query()
                 ->where('branch_id', $branchId)
                 ->where('quantity_on_hand', '>', 0) // Only count items we actually have
-                ->whereHas('product', fn($q) => $q->whereIn('product_category_id', $categoryIds))
+                ->whereHas('product', fn ($q) => $q->whereIn('product_category_id', $categoryIds))
                 ->where('expiration_date', '<=', now()->addMonths(3))
                 ->count(),
         ];
@@ -164,8 +172,8 @@ final class Product extends Component
 
             $this->toastSuccess("Product '{$product->brand_name}' has been {$status}.");
 
-        } catch (\Exception $e) {
-            $this->toastError('Failed to update product status: ' . $e->getMessage());
+        } catch (Exception $e) {
+            $this->toastError('Failed to update product status: '.$e->getMessage());
         }
     }
 
@@ -175,6 +183,7 @@ final class Product extends Component
 
         if ($ids->isEmpty()) {
             $this->toastError('Select at least one product first.');
+
             return;
         }
 
@@ -190,7 +199,7 @@ final class Product extends Component
     public function exportProducts()
     {
         try {
-            $fileName = 'Grocery_Products_' . now()->format('Y_m_d_His') . '.xlsx';
+            $fileName = 'Grocery_Products_'.now()->format('Y_m_d_His').'.xlsx';
 
             return Excel::download(
                 new ProductsExport(
@@ -203,9 +212,21 @@ final class Product extends Component
                 ),
                 $fileName
             );
-        } catch (\Exception $e) {
-            $this->toastError('Failed to generate export: ' . $e->getMessage());
+        } catch (Exception $e) {
+            $this->toastError('Failed to generate export: '.$e->getMessage());
         }
     }
 
+    /**
+     * Restricts scan and lookup results to this module's products.
+     */
+    protected function barcodeModuleScope(Builder $query): Builder
+    {
+        return $query->isGrocery();
+    }
+
+    protected function getAdditionalPageResetProperties(): array
+    {
+        return ['lowStockOnly', 'outOfStockOnly', 'active', 'disabled', 'productCategories'];
+    }
 }

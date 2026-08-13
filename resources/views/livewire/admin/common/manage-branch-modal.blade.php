@@ -51,6 +51,39 @@
                     <x-ui.checkbox wire:model="is_active" label="Branch is currently active and operational" />
                     <x-ui.error name="is_active" />
                 </div>
+
+                {{-- Optional barcode scanning --}}
+                <div class="md:col-span-2 pt-3 mt-1 border-t border-black/10 dark:border-white/10">
+                    <div class="flex items-center gap-2 mb-1">
+                        <x-ui.icon name="qr-code" class="size-4 text-neutral-400" />
+                        <span class="text-sm font-semibold text-neutral-900 dark:text-white">Barcode Scanner</span>
+                        <span class="text-[10px] uppercase tracking-wider font-bold text-neutral-400 border border-black/10 dark:border-white/10 rounded px-1.5 py-0.5">Optional</span>
+                    </div>
+                    <p class="text-xs text-neutral-500 mb-3">
+                        Lets a USB scanner add products to the cart at this branch. Leave off and the POS behaves exactly as it does today.
+                    </p>
+
+                    <x-ui.checkbox wire:model.live="barcode_scanner_enabled" label="Enable barcode scanning for this branch" />
+                    <x-ui.error name="barcode_scanner_enabled" />
+
+                    @if($barcode_scanner_enabled)
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
+                            <x-ui.field>
+                                <x-ui.label>Minimum barcode length</x-ui.label>
+                                <x-ui.input type="number" min="4" max="64" wire:model="barcode_min_length" />
+                                <x-ui.error name="barcode_min_length" />
+                                <p class="text-[11px] text-neutral-500 mt-1">Shorter bursts are treated as ordinary typing.</p>
+                            </x-ui.field>
+
+                            <x-ui.field>
+                                <x-ui.label>Keystroke threshold (ms)</x-ui.label>
+                                <x-ui.input type="number" min="10" max="200" wire:model="barcode_keystroke_threshold_ms" />
+                                <x-ui.error name="barcode_keystroke_threshold_ms" />
+                                <p class="text-[11px] text-neutral-500 mt-1">Max gap between keys still counted as a scan. Raise it if scans are being missed.</p>
+                            </x-ui.field>
+                        </div>
+                    @endif
+                </div>
             </div>
 
             <div class="flex justify-end pt-2">

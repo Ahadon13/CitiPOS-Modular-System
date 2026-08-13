@@ -8,6 +8,11 @@
     'href' => '#',
     'active' => null,
     'size' => 'md', // 1. Added size property (default: md)
+    // SPA-style navigation. Livewire's own wire:navigate is used rather than
+    // Turbo Drive: Turbo and Livewire both hijack navigation and both morph
+    // the DOM, which breaks Alpine re-initialisation and duplicates charts.
+    // Pass :navigate="false" on a link that must do a full page load.
+    'navigate' => true,
 ])
 
 @php
@@ -96,6 +101,10 @@
 @endphp
 <a
     href="{{ $href }}"
+
+    @if($navigate && $href !== '#')
+        wire:navigate.hover
+    @endif
 
     @if($isActive)
        data-active-link

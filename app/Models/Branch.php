@@ -4,22 +4,15 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Models\User;
-use App\Models\InventoryBatch;
-use App\Models\Product;
-use App\Models\ProductCategory;
-use App\Models\InventoryTransaction;
-use App\Models\Sale;
-use App\Models\Expense;
 use App\Traits\ChecksIfInUse;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 final class Branch extends Model
 {
-    use HasFactory, ChecksIfInUse;
+    use ChecksIfInUse, HasFactory;
 
     /**
      * The attributes that are mass assignable.
@@ -31,7 +24,24 @@ final class Branch extends Model
         'name',
         'address',
         'is_active',
+        'barcode_scanner_enabled',
+        'barcode_min_length',
+        'barcode_keystroke_threshold_ms',
     ];
+
+    /**
+     * Scanner configuration handed to the front-end listener.
+     *
+     * @return array{enabled: bool, min_length: int, threshold_ms: int}
+     */
+    public function barcodeScannerConfig(): array
+    {
+        return [
+            'enabled' => (bool) $this->barcode_scanner_enabled,
+            'min_length' => (int) ($this->barcode_min_length ?: 6),
+            'threshold_ms' => (int) ($this->barcode_keystroke_threshold_ms ?: 50),
+        ];
+    }
 
     public function productCategory()
     {
@@ -94,6 +104,9 @@ final class Branch extends Model
             'id' => 'integer',
             'product_category_id' => 'integer',
             'is_active' => 'boolean',
+            'barcode_scanner_enabled' => 'boolean',
+            'barcode_min_length' => 'integer',
+            'barcode_keystroke_threshold_ms' => 'integer',
         ];
     }
 }

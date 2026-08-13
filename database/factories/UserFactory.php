@@ -17,9 +17,9 @@ final class UserFactory extends Factory
         return [
             'branch_id' => Branch::factory(),
             'name' => fake()->name(),
-            'username' => fake()->userName(),
+            'username' => fake()->unique()->userName(),
             'password' => fake()->password(),
-            'role' => fake()->word(),
+            // Roles live in the spatie permission tables, not a users column.
         ];
     }
 }

@@ -6,21 +6,31 @@ namespace App\Livewire\Admin\Pages;
 
 use App\Enums\Inventory\TransactionType;
 use App\Enums\Product\CategoryType;
+use App\Exports\BranchPerformanceExport;
+use App\Exports\CashierPerformanceExport;
 use App\Exports\InventoryLedgerExport;
+use App\Exports\PartnershipSalesExport;
 use App\Exports\SalesReportExport;
 use App\Models\Branch;
+use App\Models\CustomerType;
 use App\Models\Expense;
 use App\Models\InventoryBatch;
 use App\Models\InventoryTransaction;
 use App\Models\ProductCategory;
+use App\Support\ChartPalette;
+use App\Support\DateBucket;
+use App\Support\PartnershipSales;
+use App\Support\PartnershipSalesFilters;
+use App\Support\ReportPdf;
+use App\Support\SalesAudit;
 use App\Support\SalesFinancials;
 use App\Traits\HasAuth;
 use App\Traits\HasDataTable;
 use Carbon\Carbon;
-use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Maatwebsite\Excel\Facades\Excel;
@@ -31,6 +41,10 @@ final class Reports extends Component
 {
     use HasAuth, HasDataTable, WithPagination;
 
+    /** Tabs, so a long report page is not one endless scroll. */
+    #[Url(as: 'tab', keep: false)]
+    public string $activeTab = 'overview';
+
     // Filters
     public ?int $branchId = null;
 
@@ -40,23 +54,65 @@ final class Reports extends Component
 
     public ?array $dateRange = [];
 
-    // Trigger chart updates when filters change
+    /** Partnership tab filter. */
+    public ?int $customerTypeId = null;
+
+    /** Trigger chart updates when filters change */
     public function updated($property)
     {
-        if (in_array($property, ['branchId', 'categoryId', 'dateRange', 'transactionType'])) {
-            // Only update charts for master filters (Type filter is just for the ledger table)
+        if (in_array($property, ['branchId', 'categoryId', 'dateRange', 'transactionType', 'customerTypeId'])) {
             if (in_array($property, ['branchId', 'categoryId', 'dateRange'])) {
-                $this->dispatch('update-trend-chart', categories: $this->trendChartData['categories'], data: $this->trendChartData['data']);
-                $this->dispatch('update-pie-chart', labels: $this->expensePieData['labels'], series: $this->expensePieData['series']);
+                $this->refreshCharts();
             }
+
+            if ($property === 'customerTypeId') {
+                $this->dispatchPartnershipTrend();
+            }
+
             $this->resetPage();
         }
     }
 
+    /**
+     * Tab panels are rendered server-side rather than with the sheaf tabs
+     * component, for two reasons: that component puts `wire:ignore` on its
+     * root (so Livewire could never refresh a table inside a panel), and
+     * rendering only the active panel means only that tab's queries run
+     * instead of every report query on every request.
+     *
+     * A freshly inserted panel mounts its charts with current data, so no
+     * dispatch is needed here.
+     */
+    public function updatedActiveTab(): void
+    {
+        $this->resetPage();
+        $this->resetPage('partnershipPage');
+    }
+
+    /**
+     * @return list<array{value: string, label: string, icon: string}>
+     */
+    public function tabs(): array
+    {
+        return [
+            ['value' => 'overview', 'label' => 'Overview', 'icon' => 'chart-bar'],
+            ['value' => 'partnerships', 'label' => 'Partnerships', 'icon' => 'user-group'],
+            ['value' => 'branches', 'label' => 'Branches & Payments', 'icon' => 'building-storefront'],
+            ['value' => 'cashiers', 'label' => 'Cashiers', 'icon' => 'users'],
+            ['value' => 'products', 'label' => 'Products', 'icon' => 'cube'],
+            ['value' => 'ledger', 'label' => 'Stock Ledger', 'icon' => 'clipboard-document-list'],
+        ];
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Filter option lists
+    |--------------------------------------------------------------------------
+    */
+
     #[Computed]
     public function transactionTypes(): array
     {
-        // Fetch all enum cases for the dropdown
         return array_map(fn ($case) => [
             'value' => $case->value,
             'label' => $case->label(),
@@ -81,6 +137,20 @@ final class Reports extends Component
     }
 
     #[Computed]
+    public function customerTypes(): array
+    {
+        return CustomerType::orderBy('name')->get()
+            ->map(fn ($t) => ['value' => $t->id, 'label' => $t->name])
+            ->toArray();
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Overview tab
+    |--------------------------------------------------------------------------
+    */
+
+    #[Computed]
     public function financials(): array
     {
         [$start, $end] = $this->getParsedDates();
@@ -96,49 +166,46 @@ final class Reports extends Component
         ];
     }
 
+    /**
+     * Revenue vs expenses over time.
+     *
+     * Aggregation stays daily in SQL (portable) and is folded into at most ~70
+     * buckets in PHP, so a 2015-2026 range plots 48 quarterly points instead of
+     * ~4,000 daily ones.
+     */
     #[Computed]
     public function trendChartData(): array
     {
         [$start, $end] = $this->getParsedDates();
 
-        // Create an array of all dates in range to ensure empty days plot as 0
-        $period = CarbonPeriod::create($start, $end);
-        $dateLabels = [];
-        $revenueData = [];
-        $expenseData = [];
+        $bucket = DateBucket::resolve($start, $end);
 
-        foreach ($period as $date) {
-            $formattedDate = $date->format('Y-m-d');
-            $dateLabels[] = $formattedDate;
-            $revenueData[$formattedDate] = 0;
-            $expenseData[$formattedDate] = 0;
-        }
+        $revenue = $bucket->fold(
+            array_map(
+                fn ($cents) => $cents / 100,
+                SalesFinancials::revenueByDate($this->branchId, $this->categoryId, [$start, $end])
+            )
+        );
 
-        foreach (SalesFinancials::revenueByDate($this->branchId, $this->categoryId, [$start, $end]) as $date => $total) {
-            $revenueData[$date] = round($total / 100, 2);
-        }
-
-        // Fetch Grouped Expenses
         $expenseQuery = Expense::whereBetween('expense_date', [$start, $end]);
         $this->applyExpenseScope($expenseQuery);
 
         $dailyExpenses = $expenseQuery->select(
             DB::raw('DATE(expense_date) as date'),
             DB::raw('SUM(amount) as total')
-        )->groupBy('date')->get();
+        )->groupBy('date')->pluck('total', 'date')
+            ->map(fn ($total) => (float) $total / 100)
+            ->all();
 
-        foreach ($dailyExpenses as $row) {
-            // Convert cents to standard float for the chart
-            $expenseData[$row->date] = round($row->total / 100, 2);
-        }
+        $expenses = $bucket->fold($dailyExpenses);
 
-        // Return arrays matching the chart component structure
         return [
-            'categories' => $dateLabels,
+            'categories' => array_values($bucket->buckets()),
             'data' => [
-                array_values($revenueData),
-                array_values($expenseData),
+                array_map(fn ($v) => round((float) $v, 2), array_values($revenue)),
+                array_map(fn ($v) => round((float) $v, 2), array_values($expenses)),
             ],
+            'granularity' => $bucket->describe(),
         ];
     }
 
@@ -150,7 +217,6 @@ final class Reports extends Component
         $query = Expense::whereBetween('expense_date', [$start, $end]);
         $this->applyExpenseScope($query);
 
-        // Group by the related category
         $expenses = $query->select(
             'category',
             DB::raw('SUM(amount) as total')
@@ -164,10 +230,7 @@ final class Reports extends Component
             $series[] = round($expense->total / 100, 2);
         }
 
-        return [
-            'labels' => $labels,
-            'series' => $series,
-        ];
+        return ['labels' => $labels, 'series' => $series];
     }
 
     #[Computed]
@@ -185,10 +248,132 @@ final class Reports extends Component
 
         $totalValue = $query->sum(DB::raw('inventory_batches.quantity_on_hand * inventory_batches.cost_per_unit'));
 
+        return ['total_value' => Money::PHP((string) round((float) $totalValue))];
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Partnership tab
+    |--------------------------------------------------------------------------
+    */
+
+    #[Computed]
+    public function partnershipSummary(): array
+    {
+        $summary = PartnershipSales::summary($this->reportFilters());
+
         return [
-            'total_value' => Money::PHP((string) round((float) $totalValue)),
+            'lines' => $summary['lines'],
+            'partners' => $summary['partners'],
+            'quantity' => $summary['quantity'],
+            'revenue' => Money::PHP((string) $summary['revenue']),
+            'regular_value' => Money::PHP((string) $summary['regular_value']),
+            'savings' => Money::PHP((string) $summary['savings']),
         ];
     }
+
+    #[Computed]
+    public function partnershipItems()
+    {
+        return PartnershipSales::items($this->reportFilters())->paginate($this->perPage, ['*'], 'partnershipPage');
+    }
+
+    #[Computed]
+    public function partnershipTrend(): array
+    {
+        return PartnershipSales::trend($this->reportFilters());
+    }
+
+    #[Computed]
+    public function partnershipByPartner(): array
+    {
+        return PartnershipSales::byPartner($this->reportFilters())->get()->all();
+    }
+
+    #[Computed]
+    public function priceSourceMix(): array
+    {
+        $mix = PartnershipSales::priceSourceMix($this->reportFilters());
+        $total = $mix['partnership'] + $mix['regular'];
+
+        return [
+            'partnership' => Money::PHP((string) $mix['partnership']),
+            'regular' => Money::PHP((string) $mix['regular']),
+            'partnership_share' => $total > 0 ? ($mix['partnership'] / $total) * 100 : 0.0,
+        ];
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Branch & cashier tabs
+    |--------------------------------------------------------------------------
+    */
+
+    #[Computed]
+    public function branchTrend(): array
+    {
+        return SalesAudit::branchTrend($this->reportFilters());
+    }
+
+    #[Computed]
+    public function branchPerformance(): array
+    {
+        return SalesAudit::byBranch($this->reportFilters())->get()->all();
+    }
+
+    #[Computed]
+    public function cashierPerformance(): array
+    {
+        return SalesAudit::byCashier($this->reportFilters())->get()->all();
+    }
+
+    #[Computed]
+    public function paymentMix(): array
+    {
+        return SalesAudit::paymentMix($this->reportFilters());
+    }
+
+    #[Computed]
+    public function statusBreakdown(): array
+    {
+        return SalesAudit::statusBreakdown($this->reportFilters());
+    }
+
+    #[Computed]
+    public function topProducts(): array
+    {
+        return SalesAudit::topProducts($this->reportFilters())->get()->all();
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Chart palettes
+    |--------------------------------------------------------------------------
+    */
+
+    #[Computed]
+    public function partnershipPalette(): array
+    {
+        return ChartPalette::forSeries(
+            count($this->partnershipTrend['series']),
+            $this->partnershipTrend['has_other'] ?? false
+        );
+    }
+
+    #[Computed]
+    public function branchPalette(): array
+    {
+        return ChartPalette::forSeries(
+            count($this->branchTrend['series']),
+            $this->branchTrend['has_other'] ?? false
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Ledger tab
+    |--------------------------------------------------------------------------
+    */
 
     #[Computed]
     public function stockMovements()
@@ -196,11 +381,15 @@ final class Reports extends Component
         return $this->getLedgerQuery()->latest('created_at')->paginate($this->perPage);
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Exports
+    |--------------------------------------------------------------------------
+    */
+
     public function exportLedger()
     {
         [$start, $end] = $this->getParsedDates();
-
-        $fileName = 'Inventory_Ledger_'.now()->format('Y_m_d_Hi').'.xlsx';
 
         return Excel::download(
             new InventoryLedgerExport(
@@ -211,7 +400,7 @@ final class Reports extends Component
                 $start,
                 $end
             ),
-            $fileName
+            'Inventory_Ledger_'.now()->format('Y_m_d_Hi').'.xlsx'
         );
     }
 
@@ -223,8 +412,6 @@ final class Reports extends Component
             : null;
         $includeServices = $categoryName === null || $categoryName === CategoryType::MotorShop->value;
 
-        $fileName = 'Sales_Report_'.now()->format('Y_m_d_Hi').'.xlsx';
-
         return Excel::download(
             new SalesReportExport(
                 branchId: $this->branchId,
@@ -232,22 +419,77 @@ final class Reports extends Component
                 productCategoryId: $this->categoryId,
                 includeServices: $includeServices,
             ),
-            $fileName
+            'Sales_Report_'.now()->format('Y_m_d_Hi').'.xlsx'
+        );
+    }
+
+    public function exportPartnershipSales()
+    {
+        return Excel::download(
+            new PartnershipSalesExport($this->reportFilters()),
+            'Partnership_Sales_'.now()->format('Y_m_d_Hi').'.xlsx'
+        );
+    }
+
+    public function exportBranchPerformance()
+    {
+        return Excel::download(
+            new BranchPerformanceExport($this->reportFilters()),
+            'Branch_Performance_'.now()->format('Y_m_d_Hi').'.xlsx'
+        );
+    }
+
+    public function exportCashierPerformance()
+    {
+        return Excel::download(
+            new CashierPerformanceExport($this->reportFilters()),
+            'Cashier_Performance_'.now()->format('Y_m_d_Hi').'.xlsx'
+        );
+    }
+
+    public function exportPartnershipSalesPdf()
+    {
+        return ReportPdf::partnershipSales($this->reportFilters());
+    }
+
+    public function exportBranchPerformancePdf()
+    {
+        return ReportPdf::branchPerformance($this->reportFilters());
+    }
+
+    public function exportCashierPerformancePdf()
+    {
+        return ReportPdf::cashierPerformance($this->reportFilters());
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Internals
+    |--------------------------------------------------------------------------
+    */
+
+    public function reportFilters(): PartnershipSalesFilters
+    {
+        [$start, $end] = $this->getParsedDates();
+
+        return new PartnershipSalesFilters(
+            start: $start,
+            end: $end,
+            branchId: $this->branchId,
+            categoryId: $this->categoryId,
+            customerTypeId: $this->customerTypeId,
+            search: (string) ($this->search ?? ''),
         );
     }
 
     protected function getParsedDates(): array
     {
-        // Check if the array is empty
         if (empty($this->dateRange) || count($this->dateRange) === 0) {
-            // Default to last 30 days if nothing is selected
             return [Carbon::now()->subDays(30)->startOfDay(), Carbon::now()->endOfDay()];
         }
 
-        // The date picker returns an array: [0 => StartDate, 1 => EndDate]
         $start = Carbon::parse($this->dateRange[0])->startOfDay();
 
-        // If they only clicked one date, use it for both start and end
         $end = isset($this->dateRange[1])
             ? Carbon::parse($this->dateRange[1])->endOfDay()
             : $start->copy()->endOfDay();
@@ -257,7 +499,67 @@ final class Reports extends Component
 
     protected function getAdditionalPageResetProperties(): array
     {
-        return ['branchId', 'categoryId', 'dateRange', 'transactionType'];
+        return ['branchId', 'categoryId', 'dateRange', 'transactionType', 'customerTypeId'];
+    }
+
+    /**
+     * Charts sit behind `wire:ignore` so Livewire never touches ApexCharts'
+     * DOM; they are refreshed by event instead. Only the charts on the active
+     * tab are recomputed, so a filter change costs one tab's queries.
+     */
+    private function refreshCharts(): void
+    {
+        match ($this->activeTab) {
+            'overview' => $this->dispatchOverviewCharts(),
+            'partnerships' => $this->dispatchPartnershipTrend(),
+            'branches' => $this->dispatchBranchCharts(),
+            default => null,
+        };
+    }
+
+    private function dispatchOverviewCharts(): void
+    {
+        unset($this->trendChartData, $this->expensePieData);
+
+        $this->dispatch(
+            'update-trend-chart',
+            categories: $this->trendChartData['categories'],
+            data: $this->trendChartData['data'],
+        );
+
+        $this->dispatch(
+            'update-pie-chart',
+            labels: $this->expensePieData['labels'],
+            series: $this->expensePieData['series'],
+        );
+    }
+
+    private function dispatchBranchCharts(): void
+    {
+        unset($this->branchTrend, $this->paymentMix);
+
+        $this->dispatch(
+            'update-branch-trend-chart',
+            categories: $this->branchTrend['labels'],
+            series: $this->branchTrend['series'],
+        );
+
+        $this->dispatch(
+            'update-payment-mix-chart',
+            labels: $this->paymentMix['labels'],
+            series: $this->paymentMix['series'],
+        );
+    }
+
+    private function dispatchPartnershipTrend(): void
+    {
+        unset($this->partnershipTrend);
+
+        $this->dispatch(
+            'update-partnership-trend-chart',
+            categories: $this->partnershipTrend['labels'],
+            series: $this->partnershipTrend['series'],
+        );
     }
 
     private function getLedgerQuery()

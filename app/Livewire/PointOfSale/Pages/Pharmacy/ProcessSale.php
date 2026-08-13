@@ -7,43 +7,56 @@ namespace App\Livewire\PointOfSale\Pages\Pharmacy;
 use App\Actions\POS\ProcessSale as ProcessSaleAction;
 use App\Data\ProcessSale\SaleData;
 use App\Data\ProcessSale\SaleItemData;
-use App\Enums\Sale\Status;
 use App\Enums\Product\StockType;
+use App\Enums\Sale\Status;
+use App\Livewire\Concerns\HandlesBarcodeScanning;
 use App\Livewire\Concerns\HasToast;
+use App\Livewire\Concerns\LooksUpProductDetails;
+use App\Models\Category;
 use App\Models\Customer;
 use App\Models\CustomerType;
-use App\Models\Category;
 use App\Models\InventoryBatch;
 use App\Models\PaymentMethod;
 use App\Models\Product;
 use App\Models\ProductPackaging;
 use App\Traits\HasAuth;
 use App\Traits\HasDataTable;
+use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Validator;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Throwable;
 
 #[Layout('components.layouts.pos', ['title' => 'Point of Sale'])]
 final class ProcessSale extends Component
 {
-    use HasAuth, HasToast, HasDataTable, WithPagination;
+    use HandlesBarcodeScanning, HasAuth, HasDataTable, HasToast, LooksUpProductDetails, WithPagination;
 
     // Use null for 'All' so it's easier to check
     public ?int $activeCategory = null;
 
     // UI State
     public string $customerMode = 'walk_in';
+
     public string $pricingMode = 'retail';
+
     public string $categorySearch = '';
+
     public ?int $customer_id = null;
+
     public string $name = '';
+
     public ?int $customer_type_id = null;
+
     public ?string $id_card_number = null;
+
     public ?string $booklet_number = null;
+
     public ?string $contact_number = null;
+
     public ?string $address = null;
 
     public function setCategory(?int $categoryId = null): void
@@ -102,50 +115,60 @@ final class ProcessSale extends Component
         }], 'quantity_on_hand');
 
         // Apply Search
-        if (!empty($this->search)) {
+        if (! empty($this->search)) {
             $query->search($this->search);
         }
 
         // Use paginate() and through() instead of get() and map()
         return $query->orderBy('brand_name')
             ->paginate($this->perPage) // Set how many items you want per page here
-            ->through(function ($product) {
-                // Map all packagings for Alpine
-                $packagings = $product->productPackagings->map(fn($pkg) => [
-                    'id' => $pkg->id,
-                    'unit' => $pkg->unit->abbreviation ?? 'Unit',
-                    'price' => (float) ($pkg->getRawOriginal('price') / 100),
-                    'regular_price' => (float) ($pkg->getRawOriginal('price') / 100),
-                    'partnership_prices' => $pkg->partnerships
-                        ->where('branch_id', $this->currentBranchId)
-                        ->mapWithKeys(fn ($partnership) => [
-                            (string) $partnership->customer_type_id => (float) ($partnership->getRawOriginal('special_price') / 100),
-                        ])
-                        ->toArray(),
-                    'conversion_factor' => (float) $pkg->conversion_factor,
-                ])->values()->toArray();
+            ->through(fn ($product) => $this->mapProductForPos($product));
+    }
 
-                return (object) [
-                    'id' => $product->id,
-                    'name' => $product->brand_name,
-                    'generic_name' => $product->generic_name,
-                    'required_prescription' => $product->requires_prescription,
-                    'stock_type' => $product->stock_type->value,
-                    'description' => $product->attributes['description'] ?? null,
-                    'dosage' => $product->dosage,
-                    'form' => $product->form,
-                    'stock' => (float) ($product->total_stock ?? 0),
-                    'barcode' => $product->product_code ?? null,
-                    'packagings' => $packagings, // Pass array of options
-                ];
-            });
+    /**
+     * The product payload the Alpine cart consumes.
+     *
+     * Shared by the paginated grid and by barcode scanning, so a scanned item
+     * enters the cart through exactly the same path as a clicked one.
+     */
+    public function mapProductForPos($product): object
+    {
+        // Map all packagings for Alpine
+        $packagings = $product->productPackagings->map(fn ($pkg) => [
+            'id' => $pkg->id,
+            'unit' => $pkg->unit->abbreviation ?? 'Unit',
+            'price' => (float) ($pkg->getRawOriginal('price') / 100),
+            'regular_price' => (float) ($pkg->getRawOriginal('price') / 100),
+            'partnership_prices' => $pkg->partnerships
+                ->where('branch_id', $this->currentBranchId)
+                ->mapWithKeys(fn ($partnership) => [
+                    (string) $partnership->customer_type_id => (float) ($partnership->getRawOriginal('special_price') / 100),
+                ])
+                ->toArray(),
+            'conversion_factor' => (float) $pkg->conversion_factor,
+        ])->values()->toArray();
+
+        return (object) [
+            'id' => $product->id,
+            'name' => $product->brand_name,
+            'generic_name' => $product->generic_name,
+            'required_prescription' => $product->requires_prescription,
+            'stock_type' => $product->stock_type->value,
+            'description' => $product->attributes['description'] ?? null,
+            'dosage' => $product->dosage,
+            'form' => $product->form,
+            'stock' => (float) ($product->total_stock ?? 0),
+            'barcode' => $product->product_code ?? null,
+            'image_url' => $product->imageUrl(), // null renders the fallback icon
+            'packagings' => $packagings, // Pass array of options
+        ];
     }
 
     #[Computed]
     public function customers()
     {
         return Customer::with('customerType')->orderBy('name')->get()->map(fn ($c) => [
-            'label' => $c->name . ($c->customerType ? " ({$c->customerType->name} - {$c->customerType->discount_percentage}%)" : ''),
+            'label' => $c->name.($c->customerType ? " ({$c->customerType->name} - {$c->customerType->discount_percentage}%)" : ''),
             'value' => $c->id,
             'type_id' => $c->customer_type_id, // Important for linking
         ]);
@@ -191,13 +214,13 @@ final class ProcessSale extends Component
             'id_card_number',
             'booklet_number',
             'contact_number',
-            'address'
+            'address',
         ]);
 
         // 5. Notify the user and close the modal
         $this->toastSuccess("Customer '{$customer->name}' created and selected!");
         $this->dispatch('customer-created', customer: [
-            'label' => $customer->name . ($customer->customerType ? " ({$customer->customerType->name} - {$customer->customerType->discount_percentage}%)" : ''),
+            'label' => $customer->name.($customer->customerType ? " ({$customer->customerType->name} - {$customer->customerType->discount_percentage}%)" : ''),
             'value' => $customer->id,
             'type_id' => $customer->customer_type_id,
         ]);
@@ -225,6 +248,7 @@ final class ProcessSale extends Component
 
         if ($validator->fails()) {
             $this->toastError('Validation failed. Please check the checkout details.');
+
             return;
         }
 
@@ -234,7 +258,7 @@ final class ProcessSale extends Component
             $paymentMethod = PaymentMethod::findOrFail((int) $validated['payment_method_id']);
 
             if ($paymentMethod->requires_reference && empty($validated['reference_number'])) {
-                throw new \Exception("Reference number is required for {$paymentMethod->name} payments.");
+                throw new Exception("Reference number is required for {$paymentMethod->name} payments.");
             }
 
             $customer = $this->customerMode === 'customer' && $this->customer_id
@@ -242,7 +266,7 @@ final class ProcessSale extends Component
                 : null;
 
             if ($this->customerMode === 'customer' && ! $customer) {
-                throw new \Exception('Please select a customer before checking out.');
+                throw new Exception('Please select a customer before checking out.');
             }
 
             $customerTypeId = $customer?->customer_type_id;
@@ -299,7 +323,9 @@ final class ProcessSale extends Component
                     ->get();
 
                 foreach ($batches as $batch) {
-                    if ($remainingToDeduct <= 0) break;
+                    if ($remainingToDeduct <= 0) {
+                        break;
+                    }
 
                     // Calculate how much BASE quantity this specific batch needs to provide
                     $baseNeeded = $remainingToDeduct * $conversionFactor;
@@ -331,7 +357,7 @@ final class ProcessSale extends Component
 
                 // If we ran out of batches before fulfilling the cart item:
                 if (round($remainingToDeduct, 4) > 0) {
-                    throw new \Exception('Insufficient stock in inventory for ' . ($cartItem['name'] ?? 'the selected product') . '. Another transaction may have consumed it.');
+                    throw new Exception('Insufficient stock in inventory for '.($cartItem['name'] ?? 'the selected product').'. Another transaction may have consumed it.');
                 }
             }
 
@@ -346,7 +372,7 @@ final class ProcessSale extends Component
             $amountTenderedCents = (int) round($validated['amount_received'] * 100);
 
             if ($amountTenderedCents < $grandTotalCents) {
-                throw new \Exception('Amount received is lower than the amount due.');
+                throw new Exception('Amount received is lower than the amount due.');
             }
 
             // 2. Prepare SaleData DTO (Convert monetary values to CENTS)
@@ -371,9 +397,17 @@ final class ProcessSale extends Component
             $this->dispatch('sale-completed', receiptUrl: route('pos.pharmacy.sales.receipt', $sale));
             $this->toastSuccess('Payment processed successfully!');
 
-        } catch (\Exception $e) {
-            $this->toastError('Transaction failed: ' . $e->getMessage());
+        } catch (Throwable $e) {
+            $this->toastError('Transaction failed: '.$e->getMessage());
         }
+    }
+
+    /**
+     * Restricts barcode lookups to this module's products.
+     */
+    protected function barcodeModuleScope(Builder $query): Builder
+    {
+        return $query->isPharmacy();
     }
 
     protected function getAdditionalPageResetProperties(): array

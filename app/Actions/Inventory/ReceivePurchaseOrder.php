@@ -1,24 +1,27 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Actions\Inventory;
 
+use App\Data\Inventory\ReceiveItemData;
 use App\Enums\CustomerOrder\Status as CustomerOrderStatus;
 use App\Enums\Inventory\TransactionType;
-use App\Models\InventoryTransaction;
-use App\Data\Inventory\ReceiveItemData;
+use App\Enums\Purchase\Status as PurchaseStatus;
 use App\Models\InventoryBatch;
+use App\Models\InventoryTransaction;
 use App\Models\ProductPackaging;
 use App\Models\Purchase;
 use App\Models\PurchaseItem;
 use App\Traits\HasDbTransaction;
+use Exception;
 
-class ReceivePurchaseOrder
+final class ReceivePurchaseOrder
 {
     use HasDbTransaction;
 
     /**
-     * @param int $purchaseId
-     * @param ReceiveItemData[] $receivedItems
+     * @param  ReceiveItemData[]  $receivedItems
      */
     public function execute(int $purchaseId, array $receivedItems): Purchase|false
     {
@@ -27,8 +30,14 @@ class ReceivePurchaseOrder
             // 1. Lock the Purchase Order so nobody else can receive it at the same time
             $purchase = Purchase::where('id', $purchaseId)->lockForUpdate()->firstOrFail();
 
-            if ($purchase->status === 'completed') {
-                throw new \Exception('This Purchase Order has already been fully received.');
+            // status is cast to the Status enum, so this must compare against the
+            // enum case -- comparing against the raw string is always false.
+            if ($purchase->status === PurchaseStatus::Completed) {
+                throw new Exception('This Purchase Order has already been fully received.');
+            }
+
+            if ($purchase->status === PurchaseStatus::Cancelled) {
+                throw new Exception('This Purchase Order has been cancelled and cannot be received.');
             }
 
             $newGrandTotal = 0;
@@ -56,12 +65,12 @@ class ReceivePurchaseOrder
                 // --- STEP B: INSERT INTO INVENTORY ---
 
                 $batch = InventoryBatch::create([
-                    'branch_id'        => $purchase->branch_id,
-                    'product_id'       => $receivedData->product_id,
-                    'batch_number'     => $receivedData->batch_number,
-                    'expiration_date'  => $receivedData->expiration_date,
+                    'branch_id' => $purchase->branch_id,
+                    'product_id' => $receivedData->product_id,
+                    'batch_number' => $receivedData->batch_number,
+                    'expiration_date' => $receivedData->expiration_date,
                     'quantity_on_hand' => $baseQuantityToAdd, // Store in Base Unit!
-                    'cost_per_unit'    => $baseCostPerUnit,   // Base Cost for accurate COGS!
+                    'cost_per_unit' => $baseCostPerUnit,   // Base Cost for accurate COGS!
                 ]);
 
                 // --- STEP B.5: WRITE TO LEDGER ---
@@ -82,11 +91,11 @@ class ReceivePurchaseOrder
 
                 // We overwrite the item to reflect the actual invoice
                 $item->update([
-                    'unit_id'           => $receivedData->actual_unit_id,
+                    'unit_id' => $receivedData->actual_unit_id,
                     'quantity_received' => $receivedData->actual_quantity,
-                    'cost_per_unit'     => $receivedData->actual_cost,
-                    'batch_number'      => $receivedData->batch_number,
-                    'expiration_date'   => $receivedData->expiration_date,
+                    'cost_per_unit' => $receivedData->actual_cost,
+                    'batch_number' => $receivedData->batch_number,
+                    'expiration_date' => $receivedData->expiration_date,
                 ]);
 
                 if ($item->customerOrderItem) {
@@ -114,7 +123,7 @@ class ReceivePurchaseOrder
 
             // 3. Update the Main Purchase Header with the actual final cost
             $purchase->update([
-                'status'     => 'completed',
+                'status' => PurchaseStatus::Completed,
                 'total_cost' => $newGrandTotal,
             ]);
 

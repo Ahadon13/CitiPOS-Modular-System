@@ -26,6 +26,11 @@
             <x-ui.card hoverless size="full">
                 <x-ui.heading level="h3" size="md" class="mb-4">Product Information</x-ui.heading>
 
+                <x-product.image-field
+                    :preview="$this->productImagePreviewUrl()"
+                    :hint="$this->productImageHint()"
+                />
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {{-- Brand Name --}}
                     <x-ui.field required>

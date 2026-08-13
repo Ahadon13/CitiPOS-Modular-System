@@ -264,6 +264,9 @@ Route::group([
     Route::group([
         'prefix' => 'pos',
         'as' => 'pos.',
+        'middleware' => [
+            'permission:'.Permission::AccessPos->value,
+        ],
     ], function () {
         Route::group([
             'prefix' => 'pharmacy',

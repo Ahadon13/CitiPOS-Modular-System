@@ -166,6 +166,11 @@
                     <x-ui.error name="form.description" />
                 </x-ui.field>
 
+                <x-product.image-field
+                    :preview="$this->productImagePreviewUrl($product)"
+                    :hint="$this->productImageHint()"
+                />
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5 pt-5 border-t border-black/5 dark:border-white/5">
 
                     {{-- Base Unit derived from Packagings --}}

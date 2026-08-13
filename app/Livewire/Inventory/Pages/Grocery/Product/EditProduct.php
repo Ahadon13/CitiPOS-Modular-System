@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace App\Livewire\Inventory\Pages\Grocery\Product;
 
+use App\Livewire\Concerns\HandlesProductImage;
 use App\Livewire\Concerns\HasToast;
 use App\Livewire\Forms\Inventory\UpdateProductGroceryForm;
-use App\Models\Product;
 use App\Models\Category;
+use App\Models\Product;
 use App\Models\Supplier;
 use App\Models\Unit;
 use App\Traits\HasAuth;
@@ -18,9 +19,10 @@ use Livewire\Component;
 #[Layout('components.layouts.grocery', ['title' => 'Edit Product', 'inventory' => true])]
 final class EditProduct extends Component
 {
-    use HasAuth, HasToast;
+    use HandlesProductImage, HasAuth, HasToast;
 
     public UpdateProductGroceryForm $form;
+
     public Product $product;
 
     public function mount(Product $product): void
@@ -38,7 +40,7 @@ final class EditProduct extends Component
         ]);
     }
 
-      #[Computed]
+    #[Computed]
     public function categories()
     {
         return Category::orderBy('name')->get()->map(fn ($s) => [
@@ -60,8 +62,13 @@ final class EditProduct extends Component
     {
         if (! $this->form->update()) {
             $this->toastError('There was an error updating the product.');
+
             return;
         }
+
+        // Applied after the product update succeeds, so a rejected image never
+        // discards valid product edits.
+        $this->persistProductImage($this->product);
 
         $this->toastSuccess('Product updated successfully!');
 
@@ -71,7 +78,9 @@ final class EditProduct extends Component
 
     public function createSupplier(string $name)
     {
-        if (blank($name)) return;
+        if (blank($name)) {
+            return;
+        }
 
         $supplier = Supplier::create(['name' => $name]);
         $this->form->supplier_id = $supplier->id;
@@ -80,7 +89,9 @@ final class EditProduct extends Component
 
     public function createCategory(string $name)
     {
-        if (blank($name)) return;
+        if (blank($name)) {
+            return;
+        }
 
         $category = Category::create(['name' => $name]);
         $this->form->category_id = $category->id;

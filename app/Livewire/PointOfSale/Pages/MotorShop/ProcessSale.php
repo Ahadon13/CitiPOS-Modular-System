@@ -8,10 +8,12 @@ use App\Actions\POS\ProcessSale as ProcessSaleAction;
 use App\Data\ProcessSale\MotorShopServiceItemData;
 use App\Data\ProcessSale\SaleData;
 use App\Data\ProcessSale\SaleItemData;
+use App\Enums\Product\StockType;
 use App\Enums\Role;
 use App\Enums\Sale\Status;
-use App\Enums\Product\StockType;
+use App\Livewire\Concerns\HasScannerConfig;
 use App\Livewire\Concerns\HasToast;
+use App\Livewire\Concerns\LooksUpProductDetails;
 use App\Models\Category;
 use App\Models\Customer;
 use App\Models\CustomerType;
@@ -22,27 +24,40 @@ use App\Models\ProductPackaging;
 use App\Models\User;
 use App\Traits\HasAuth;
 use App\Traits\HasDataTable;
+use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Validator;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Throwable;
 
 #[Layout('components.layouts.pos', ['title' => 'Motor Shop Point of Sale'])]
 final class ProcessSale extends Component
 {
-    use HasAuth, HasToast, HasDataTable, WithPagination;
+    // Price Check only -- motor shop has no cart scanning, so
+    // HandlesBarcodeScanning is deliberately not used here.
+    use HasAuth, HasDataTable, HasScannerConfig, HasToast, LooksUpProductDetails, WithPagination;
 
     public ?int $activeCategory = null;
+
     public string $categorySearch = '';
+
     public string $customerMode = 'walk_in';
+
     public ?int $customer_id = null;
+
     public string $name = '';
+
     public ?int $customer_type_id = null;
+
     public ?string $id_card_number = null;
+
     public ?string $booklet_number = null;
+
     public ?string $contact_number = null;
+
     public ?string $address = null;
 
     public function mount(): void
@@ -114,40 +129,47 @@ final class ProcessSale extends Component
             ->when(! empty($this->search), fn (Builder $query) => $query->search($this->search))
             ->orderBy('brand_name')
             ->paginate($this->perPage)
-            ->through(function (Product $product) {
-                $packagings = $product->productPackagings->map(fn (ProductPackaging $pkg) => [
-                    'id' => $pkg->id,
-                    'unit' => $pkg->unit->abbreviation ?? 'Unit',
-                    'allow_decimal' => (bool) ($pkg->unit->allow_decimal ?? false),
-                    'price' => (float) ($pkg->getRawOriginal('price') / 100),
-                    'regular_price' => (float) ($pkg->getRawOriginal('price') / 100),
-                    'conversion_factor' => (float) $pkg->conversion_factor,
-                    'barcode' => $pkg->barcode,
-                ])->values()->toArray();
+            ->through(fn (Product $product) => $this->mapProductForPos($product));
+    }
 
-                return (object) [
-                    'id' => $product->id,
-                    'name' => $product->brand_name,
-                    'stock_type' => $product->stock_type->value,
-                    'description' => $product->attributes['description'] ?? null,
-                    'part_number' => $product->attributes['part_number'] ?? null,
-                    'vehicle_model' => $product->attributes['vehicle_model'] ?? null,
-                    'engine_type' => $product->attributes['engine_type'] ?? null,
-                    'year_range' => $product->attributes['year_range'] ?? null,
-                    'oem_number' => $product->attributes['oem_number'] ?? null,
-                    'stock' => (float) ($product->total_stock ?? 0),
-                    'barcode' => $product->product_code ?? null,
-                    'base_unit' => $product->baseUnit->abbreviation ?? 'pcs',
-                    'packagings' => $packagings,
-                ];
-            });
+    /**
+     * The product payload the Alpine cart consumes.
+     */
+    public function mapProductForPos($product): object
+    {
+        $packagings = $product->productPackagings->map(fn (ProductPackaging $pkg) => [
+            'id' => $pkg->id,
+            'unit' => $pkg->unit->abbreviation ?? 'Unit',
+            'allow_decimal' => (bool) ($pkg->unit->allow_decimal ?? false),
+            'price' => (float) ($pkg->getRawOriginal('price') / 100),
+            'regular_price' => (float) ($pkg->getRawOriginal('price') / 100),
+            'conversion_factor' => (float) $pkg->conversion_factor,
+            'barcode' => $pkg->barcode,
+        ])->values()->toArray();
+
+        return (object) [
+            'id' => $product->id,
+            'name' => $product->brand_name,
+            'stock_type' => $product->stock_type->value,
+            'description' => $product->attributes['description'] ?? null,
+            'part_number' => $product->attributes['part_number'] ?? null,
+            'vehicle_model' => $product->attributes['vehicle_model'] ?? null,
+            'engine_type' => $product->attributes['engine_type'] ?? null,
+            'year_range' => $product->attributes['year_range'] ?? null,
+            'oem_number' => $product->attributes['oem_number'] ?? null,
+            'stock' => (float) ($product->total_stock ?? 0),
+            'barcode' => $product->product_code ?? null,
+            'image_url' => $product->imageUrl(), // null renders the fallback icon
+            'base_unit' => $product->baseUnit->abbreviation ?? 'pcs',
+            'packagings' => $packagings,
+        ];
     }
 
     #[Computed]
     public function customers()
     {
         return Customer::with('customerType')->orderBy('name')->get()->map(fn (Customer $customer) => [
-            'label' => $customer->name . ($customer->customerType ? " ({$customer->customerType->name} - {$customer->customerType->discount_percentage}%)" : ''),
+            'label' => $customer->name.($customer->customerType ? " ({$customer->customerType->name} - {$customer->customerType->discount_percentage}%)" : ''),
             'value' => $customer->id,
             'type_id' => $customer->customer_type_id,
         ]);
@@ -186,7 +208,7 @@ final class ProcessSale extends Component
 
         $this->toastSuccess("Customer '{$customer->name}' created and selected!");
         $this->dispatch('customer-created', customer: [
-            'label' => $customer->name . ($customer->customerType ? " ({$customer->customerType->name} - {$customer->customerType->discount_percentage}%)" : ''),
+            'label' => $customer->name.($customer->customerType ? " ({$customer->customerType->name} - {$customer->customerType->discount_percentage}%)" : ''),
             'value' => $customer->id,
             'type_id' => $customer->customer_type_id,
         ]);
@@ -216,6 +238,7 @@ final class ProcessSale extends Component
 
         if ($validator->fails()) {
             $this->toastError('Validation failed. Please check the checkout details.');
+
             return;
         }
 
@@ -226,13 +249,13 @@ final class ProcessSale extends Component
             $serviceItems = $validated['services'] ?? [];
 
             if (count($cartItems) === 0 && count($serviceItems) === 0) {
-                throw new \Exception('Please add at least one product or service before checkout.');
+                throw new Exception('Please add at least one product or service before checkout.');
             }
 
             $paymentMethod = PaymentMethod::findOrFail((int) $validated['payment_method_id']);
 
             if ($paymentMethod->requires_reference && empty($validated['reference_number'])) {
-                throw new \Exception("Reference number is required for {$paymentMethod->name} payments.");
+                throw new Exception("Reference number is required for {$paymentMethod->name} payments.");
             }
 
             $customer = $this->customerMode === 'customer' && $this->customer_id
@@ -240,7 +263,7 @@ final class ProcessSale extends Component
                 : null;
 
             if ($this->customerMode === 'customer' && ! $customer) {
-                throw new \Exception('Please select a customer before checking out.');
+                throw new Exception('Please select a customer before checking out.');
             }
 
             $itemsData = [];
@@ -311,7 +334,7 @@ final class ProcessSale extends Component
                 }
 
                 if (round($remainingToDeduct, 4) > 0) {
-                    throw new \Exception('Insufficient stock in inventory for ' . ($cartItem['name'] ?? 'the selected product') . '. Another transaction may have consumed it.');
+                    throw new Exception('Insufficient stock in inventory for '.($cartItem['name'] ?? 'the selected product').'. Another transaction may have consumed it.');
                 }
             }
 
@@ -321,7 +344,7 @@ final class ProcessSale extends Component
                     $priceCents = (int) round(((float) $service['price']) * 100);
 
                     return new MotorShopServiceItemData(
-                        service_name: trim((string) $service['service_name']),
+                        service_name: mb_trim((string) $service['service_name']),
                         quantity: $quantity,
                         price_at_moment: $priceCents,
                         subtotal: (int) round($quantity * $priceCents),
@@ -343,7 +366,7 @@ final class ProcessSale extends Component
             $amountTenderedCents = (int) round(((float) $validated['amount_received']) * 100);
 
             if ($amountTenderedCents < $grandTotalCents) {
-                throw new \Exception('Amount received is lower than the amount due.');
+                throw new Exception('Amount received is lower than the amount due.');
             }
 
             $sale = app(ProcessSaleAction::class)->execute(new SaleData(
@@ -361,9 +384,17 @@ final class ProcessSale extends Component
 
             $this->dispatch('sale-completed', receiptUrl: route('pos.motor-shop.sales.receipt', $sale));
             $this->toastSuccess('Payment processed successfully!');
-        } catch (\Exception $e) {
-            $this->toastError('Transaction failed: ' . $e->getMessage());
+        } catch (Throwable $e) {
+            $this->toastError('Transaction failed: '.$e->getMessage());
         }
+    }
+
+    /**
+     * Restricts lookup results to this module's products.
+     */
+    protected function barcodeModuleScope(Builder $query): Builder
+    {
+        return $query->isMotorShop();
     }
 
     protected function getAdditionalPageResetProperties(): array

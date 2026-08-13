@@ -54,12 +54,18 @@ return new class extends Migration
         });
     }
 
+    /**
+     * Use the schema builder rather than querying information_schema directly,
+     * which only exists on MySQL and breaks the SQLite test database.
+     */
     private function hasIndex(string $indexName): bool
     {
-        return DB::table('information_schema.statistics')
-            ->where('table_schema', DB::getDatabaseName())
-            ->where('table_name', 'partnerships')
-            ->where('index_name', $indexName)
-            ->exists();
+        foreach (Schema::getIndexes('partnerships') as $index) {
+            if (strtolower((string) $index['name']) === strtolower($indexName)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 };

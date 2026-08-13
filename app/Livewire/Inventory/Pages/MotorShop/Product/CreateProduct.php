@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Inventory\Pages\MotorShop\Product;
 
+use App\Livewire\Concerns\HandlesProductImage;
 use App\Livewire\Concerns\HasToast;
 use App\Livewire\Forms\Inventory\ProductMotorShopForm;
 use App\Models\Category;
@@ -17,10 +18,9 @@ use Livewire\Component;
 #[Layout('components.layouts.motor-shop', ['title' => 'Create Product', 'inventory' => true])]
 final class CreateProduct extends Component
 {
-    use HasAuth, HasToast;
+    use HandlesProductImage, HasAuth, HasToast;
 
     public ProductMotorShopForm $form;
-
 
     #[Computed]
     public function suppliers()
@@ -31,7 +31,7 @@ final class CreateProduct extends Component
         ]);
     }
 
-     #[Computed]
+    #[Computed]
     public function categories()
     {
         return Category::orderBy('name')->get()->map(fn ($s) => [
@@ -51,15 +51,24 @@ final class CreateProduct extends Component
 
     public function save(): void
     {
-        if (! $this->form->store()) {
+        $product = $this->form->store();
+
+        if (! $product) {
             $this->toastError(content: 'There was an error creating the product. Please try again later.');
 
             return;
         }
 
+        // Attach the image only after the product exists, so an image problem
+        // can never cost the user the product they just filled in.
+        if ($product instanceof \App\Models\Product) {
+            $this->persistProductImage($product);
+        }
+
         // Show success notification
-        $this->toastSuccess( 'Product created successfully!');
+        $this->toastSuccess('Product created successfully!');
         $this->form->reset();
+        $this->reset(['productImage', 'clearProductImage']);
     }
 
     public function createSupplier(string $name)

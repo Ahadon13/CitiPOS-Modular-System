@@ -195,8 +195,16 @@
                 ───────────────────────────────────────────────────────────────────
             --}}
             init() {
-                // Tablet: Always start collapsed
-                if (this.$root.dataset.inTablet === 'true') {
+                // Tablet: start collapsed, but ONLY when the user has never
+                // chosen for themselves.
+                //
+                // init() runs again on every wire:navigate page swap, so an
+                // unconditional force here would re-collapse the sidebar each
+                // time a nav link was clicked -- undoing the user's expand.
+                // $persist writes the key as soon as it is touched, so a null
+                // key means 'no preference expressed yet'.
+                if (this.$root.dataset.inTablet === 'true'
+                    && localStorage.getItem('_x_collapsedSidebar') === null) {
                     this.collapsedSidebar = true
                 }
 

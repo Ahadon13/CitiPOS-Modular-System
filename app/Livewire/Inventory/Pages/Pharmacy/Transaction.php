@@ -1,35 +1,43 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Livewire\Inventory\Pages\Pharmacy;
 
 use App\Enums\Product\CategoryType;
+use App\Exports\DemandProductsExport;
 use App\Exports\SalesReportExport;
 use App\Exports\TransactionsExport;
-use App\Exports\DemandProductsExport;
+use App\Livewire\Concerns\HasPartnershipSalesPanel;
 use App\Livewire\Concerns\HasToast;
-use App\Models\Sale;
 use App\Models\PaymentMethod;
+use App\Models\Sale;
 use App\Traits\HasAuth;
 use App\Traits\HasDataTable;
 use Carbon\Carbon;
+use Exception;
+use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
-use Illuminate\Database\Eloquent\Builder;
 use Maatwebsite\Excel\Facades\Excel;
 use Money\Money;
 
 #[Layout('components.layouts.app', ['title' => 'Inventory Sales', 'inventory' => true])]
-class Transaction extends Component
+final class Transaction extends Component
 {
-    use HasAuth, HasDataTable, HasToast, WithPagination;
+    use HasAuth, HasDataTable, HasPartnershipSalesPanel, HasToast, WithPagination;
 
     // Default to today
     public string $dateFilter = 'today';
+
     public $paymentMethodFilter = null;
+
     public string $dailyReportDate = '';
+
     public array $exportDateRange = [];
+
     public string $exportTarget = '';
 
     /**
@@ -42,7 +50,7 @@ class Transaction extends Component
         // Adjust this mapping if your component expects a different format (e.g., 'label' and 'value').
         return PaymentMethod::where('is_active', true)
             ->pluck('name', 'id')
-            ->map(fn($name, $id) => ['value' => $id, 'label' => $name])
+            ->map(fn ($name, $id) => ['value' => $id, 'label' => $name])
             ->values()
             ->toArray();
     }
@@ -60,33 +68,33 @@ class Transaction extends Component
         $query->when($this->dateFilter === 'today', function ($q) {
             $q->whereDate('created_at', today());
         })
-        ->when($this->dateFilter === 'yesterday', function ($q) {
-            $q->whereDate('created_at', today()->subDay());
-        })
-        ->when($this->dateFilter === '7days', function ($q) {
-            $q->where('created_at', '>=', today()->subDays(7));
-        })
-        ->when($this->dateFilter === '30days', function ($q) {
-            $q->where('created_at', '>=', today()->subDays(30));
-        });
+            ->when($this->dateFilter === 'yesterday', function ($q) {
+                $q->whereDate('created_at', today()->subDay());
+            })
+            ->when($this->dateFilter === '7days', function ($q) {
+                $q->where('created_at', '>=', today()->subDays(7));
+            })
+            ->when($this->dateFilter === '30days', function ($q) {
+                $q->where('created_at', '>=', today()->subDays(30));
+            });
 
         // Apply Payment Method Filter
-        $query->when(!empty($this->paymentMethodFilter), function ($q) {
+        $query->when(! empty($this->paymentMethodFilter), function ($q) {
             $q->where('payment_method_id', $this->paymentMethodFilter);
         });
 
         // Apply Search (assuming you have scopeSearch in your Sale model,
         // or we manually search here if you don't have it yet)
-        if (!empty($this->search)) {
-            $searchTerm = '%' . trim($this->search) . '%';
+        if (! empty($this->search)) {
+            $searchTerm = '%'.mb_trim($this->search).'%';
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('payment_reference', 'like', $searchTerm)
-                  ->orWhereHas('user', function ($subQ) use ($searchTerm) {
-                      $subQ->where('name', 'like', $searchTerm);
-                  })
-                  ->orWhereHas('customer', function ($subQ) use ($searchTerm) {
-                      $subQ->where('name', 'like', $searchTerm);
-                  });
+                    ->orWhereHas('user', function ($subQ) use ($searchTerm) {
+                        $subQ->where('name', 'like', $searchTerm);
+                    })
+                    ->orWhereHas('customer', function ($subQ) use ($searchTerm) {
+                        $subQ->where('name', 'like', $searchTerm);
+                    });
             });
         }
 
@@ -173,7 +181,7 @@ class Transaction extends Component
         // Pre-fill the date picker with the last 30 days
         $this->exportDateRange = [
             now()->subDays(30)->format('Y-m-d'),
-            now()->format('Y-m-d')
+            now()->format('Y-m-d'),
         ];
 
         $this->dispatch('open-modal', id: 'export-range-modal');
@@ -198,7 +206,8 @@ class Transaction extends Component
 
         try {
             if ($this->exportTarget === 'transactions') {
-                $fileName = 'Sales_Ledger_' . $startDate . '_to_' . $endDate . '.xlsx';
+                $fileName = 'Sales_Ledger_'.$startDate.'_to_'.$endDate.'.xlsx';
+
                 return Excel::download(
                     new TransactionsExport(
                         branchId: $this->currentBranchId,
@@ -211,7 +220,7 @@ class Transaction extends Component
             }
 
             if ($this->exportTarget === 'sales-report') {
-                $fileName = 'Sales_Report_' . $startDate . '_to_' . $endDate . '.xlsx';
+                $fileName = 'Sales_Report_'.$startDate.'_to_'.$endDate.'.xlsx';
 
                 return Excel::download(
                     new SalesReportExport(
@@ -224,7 +233,8 @@ class Transaction extends Component
             }
 
             if ($this->exportTarget === 'demand') {
-                $fileName = 'Top_Demand_Products_' . $startDate . '_to_' . $endDate . '.xlsx';
+                $fileName = 'Top_Demand_Products_'.$startDate.'_to_'.$endDate.'.xlsx';
+
                 return Excel::download(
                     new DemandProductsExport(
                         branchId: $this->currentBranchId,
@@ -233,8 +243,8 @@ class Transaction extends Component
                     $fileName
                 );
             }
-        } catch (\Exception $e) {
-            $this->toastError('Failed to generate export: ' . $e->getMessage());
+        } catch (Exception $e) {
+            $this->toastError('Failed to generate export: '.$e->getMessage());
         }
     }
 
@@ -276,7 +286,7 @@ class Transaction extends Component
         try {
             $parsedDate = Carbon::parse($this->dailyReportDate);
             $dateString = $parsedDate->format('Y-m-d');
-            $fileName = 'Daily_Report_' . $parsedDate->format('Y_m_d') . '.xlsx';
+            $fileName = 'Daily_Report_'.$parsedDate->format('Y_m_d').'.xlsx';
 
             // Close the modal immediately so the user knows it worked
             $this->dispatch('close-modal', id: 'daily-report-modal');
@@ -291,9 +301,20 @@ class Transaction extends Component
                 ),
                 $fileName
             );
-        } catch (\Exception $e) {
-            $this->toastError('Failed to generate daily report: ' . $e->getMessage());
+        } catch (Exception $e) {
+            $this->toastError('Failed to generate daily report: '.$e->getMessage());
         }
+    }
+
+    /**
+     * The date filter drives both tables, so both paginators reset. Note that
+     * the partnership panel's own filters are intentionally absent from
+     * getAdditionalPageResetProperties(): HasDataTable resets the default
+     * "page" paginator, which belongs to the sales table.
+     */
+    public function updatedDateFilter(): void
+    {
+        $this->resetPartnershipPage();
     }
 
     protected function getAdditionalPageResetProperties(): array

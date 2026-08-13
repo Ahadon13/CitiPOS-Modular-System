@@ -10,8 +10,12 @@ import {
 } from "../../vendor/livewire/livewire/dist/livewire.esm";
 // Apex Charts
 import ApexCharts from "apexcharts";
+// Optional barcode scanner support (inert unless a branch enables it)
+import barcodeScanner, { registerBarcodeDriver } from "./barcode/scanner";
 
 window.ApexCharts = ApexCharts;
+window.barcodeScanner = barcodeScanner;
+window.registerBarcodeDriver = registerBarcodeDriver;
 
 window.posApp = (
     paymentMethods = [],

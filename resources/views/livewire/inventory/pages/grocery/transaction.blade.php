@@ -59,6 +59,13 @@
                                 <div class="size-8 rounded-lg flex items-center justify-center font-black text-sm {{ $index === 0 ? 'bg-amber-100 text-amber-600 shadow-sm' : ($index === 1 ? 'bg-slate-200 text-slate-600 shadow-sm' : ($index === 2 ? 'bg-orange-100 text-orange-700 shadow-sm' : 'bg-neutral-100 dark:bg-white/10 text-neutral-500')) }}">
                                     #{{ $index + 1 }}
                                 </div>
+                                {{-- Lazy-loaded: these sit above the fold but are decorative. --}}
+                                <x-product.image
+                                    :url="$item->product->imageUrl()"
+                                    :alt="$item->product->brand_name"
+                                    size="md"
+                                    class="relative z-10"
+                                />
                             </div>
 
                             <h3 class="font-bold text-neutral-900 dark:text-white line-clamp-2 leading-tight mb-1" title="{{ $item->product->brand_name }}">

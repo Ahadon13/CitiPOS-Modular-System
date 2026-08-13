@@ -276,13 +276,20 @@
                     @endif
 
                     @class([
-                        'relative flex w-full max-h-[calc(100dvh-2rem)] flex-col bg-white shadow-xl ring-1 ring-neutral-900/5 bg-white dark:bg-card dark:ring-white/10',
+                        // No max-height: the panel grows to whatever its content
+                        // needs, and the overlay above (fixed inset-0 with
+                        // overflow-y-auto) scrolls the whole dialog -- header,
+                        // body and footer together -- once it is taller than the
+                        // viewport.
+                        'relative flex w-full flex-col bg-white shadow-xl ring-1 ring-neutral-900/5 bg-white dark:bg-card dark:ring-white/10',
 
                         $widthClass,
                         'rounded-box' => !$slideover && $width !== 'screen',
-                        'h-[100vh]' => $slideover || $width === 'screen',
+                        // Slideovers and full-screen modals are pinned to the
+                        // viewport height, so they are the only variants whose
+                        // body has to scroll inside the panel.
+                        'h-[100vh] overflow-hidden' => $slideover || $width === 'screen',
                         'ml-auto ' => $slideover,
-                        'overflow-hidden' => $stickyHeader || $stickyFooter,
                     ])
                     style="display: none;"
                 >
@@ -292,12 +299,14 @@
                     @if($hasHeading  || $closeButton)
                     <div
                         @class([
-                            'modal-header flex  items-start',
+                            // shrink-0: when the body is tall enough to cap the
+                            // panel, flex would otherwise compress the header too.
+                            'modal-header flex shrink-0 items-start',
                             'p-3' => in_array($width, ['xs','sm','md','lg','xl','2xl','3xl','4xl','screen-md','screen-sm','screen-lg','screen-xl','screen-2xl']),
                             'p-4' => in_array($width, ['5xl','6xl','7xl','full']),
                             'p-6' => $width === 'screen',
                             'border-neutral-100 dark:border-neutral-800' => $hasSlot || $hasFooter,
-                            'sticky top-0 z-40 bg-white dark:bg-neutral-900' => $stickyHeader,
+                            'sticky top-0 z-40 bg-white dark:bg-card rounded-t-box' => $stickyHeader,
                             'border-b' => $hasHeading,
                             $alignmentClass,
                         ])
@@ -353,9 +362,13 @@
                     @if($hasSlot)
                         <div
                             @class([
-                                'modal-content flex-1 px-6 py-4 min-h-0 text-neutral-900 dark:text-neutral-50',
-                                'overflow-y-auto' => $slideover || $width === 'screen' || $stickyFooter || $stickyHeader,
-                                'max-h-[calc(100vh-13.8rem)]' => ($stickyHeader || $stickyFooter) && !$slideover && $width !== 'screen',
+                                // Deliberately not scrollable: the body renders at
+                                // its full natural height and the overlay scrolls
+                                // the entire modal instead.
+                                'modal-content px-6 py-4 text-neutral-900 dark:text-neutral-50',
+                                // ...except in the viewport-height variants, where
+                                // the panel cannot grow, so the body must scroll.
+                                'flex-auto min-h-0 overflow-y-auto' => $slideover || $width === 'screen',
                             ])
                         >
                             {{ $slot }}
@@ -366,7 +379,9 @@
                     @if($hasFooter)
                         <div
                             @class([
-                                'modal-footer px-6 py-4',
+                                // shrink-0 for the same reason as the header: the
+                                // action buttons must stay at full height.
+                                'modal-footer shrink-0 px-6 py-4',
                                 'border-t border-neutral-200 dark:border-neutral-700',
                                 'sticky bottom-0 z-10 bg-white dark:bg-neutral-900' => $stickyFooter,
                                 'flex flex-wrap gap-3',

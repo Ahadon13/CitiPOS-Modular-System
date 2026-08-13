@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Livewire\Inventory\Pages\Pharmacy\Product;
 
+use App\Livewire\Concerns\HandlesProductImage;
 use App\Livewire\Concerns\HasToast;
 use App\Livewire\Forms\Inventory\ProductPharmacyForm;
 use App\Models\Category;
+use App\Models\Product as ProductModel;
 use App\Models\Supplier;
 use App\Models\Unit;
 use App\Traits\HasAuth;
@@ -17,10 +19,9 @@ use Livewire\Component;
 #[Layout('components.layouts.app', ['title' => 'Create Product', 'inventory' => true])]
 final class CreateProduct extends Component
 {
-    use HasAuth, HasToast;
+    use HandlesProductImage, HasAuth, HasToast;
 
     public ProductPharmacyForm $form;
-
 
     #[Computed]
     public function suppliers()
@@ -31,7 +32,7 @@ final class CreateProduct extends Component
         ]);
     }
 
-     #[Computed]
+    #[Computed]
     public function categories()
     {
         // Only show Pharmacy categories in the dropdown
@@ -52,15 +53,24 @@ final class CreateProduct extends Component
 
     public function save(): void
     {
-        if (! $this->form->store()) {
+        $product = $this->form->store();
+
+        if (! $product) {
             $this->toastError(content: 'There was an error creating the product. Please try again later.');
 
             return;
         }
 
+        // Attach the image only after the product exists, so an image problem
+        // can never cost the user the product they just filled in.
+        if ($product instanceof ProductModel) {
+            $this->persistProductImage($product);
+        }
+
         // Show success notification
-        $this->toastSuccess( 'Product created successfully!');
+        $this->toastSuccess('Product created successfully!');
         $this->form->reset();
+        $this->reset(['productImage', 'clearProductImage']);
     }
 
     public function createSupplier(string $name)

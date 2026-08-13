@@ -1,9 +1,19 @@
 <div class="flex flex-col lg:flex-row w-full min-h-full lg:h-full" x-data="groceryPosApp(@js($this->activePaymentMethods), @js($this->customerTypesData), @entangle('customerMode').live, @entangle('customer_id').live, @js($this->customers))" @keydown.window="handleKeydown($event)">
     <div class="flex-1 flex flex-col bg-white dark:bg-[#0a1331]/80 border border-black/10 dark:border-white/10 overflow-hidden shadow-sm min-w-0">
         <div class="p-3 h-16 border-b border-black/10 dark:border-white/10 flex flex-row items-center gap-3">
-            <x-ui.button color="primary" variant="outline" icon="qr-code" class="shrink-0 hidden sm:inline-flex">
-                Barcode Scan
-                <span class="ml-2 text-[10px] uppercase font-mono opacity-70 border border-electric-blue/30 rounded px-1.5 py-0.5">F1</span>
+            <x-pos.barcode-listener :config="$this->scannerConfig" />
+
+            {{-- Price check: read-only, never touches the cart. --}}
+            <x-ui.button
+                color="primary"
+                variant="outline"
+                icon="magnifying-glass-circle"
+                class="shrink-0 hidden sm:inline-flex"
+                wire:click="openLookup('pos-product-lookup-modal')"
+                title="Check a product's stock and prices without affecting this sale"
+            >
+                Price Check
+                <span class="ml-2 text-[10px] uppercase font-mono opacity-70 border border-electric-blue/30 rounded px-1.5 py-0.5">F2</span>
             </x-ui.button>
             <div class="flex-1 min-w-[200px]">
                 <x-ui.input clearable leftIcon="magnifying-glass" placeholder="Search grocery products... (Ctrl+K)" wire:model.live.debounce.300ms="search" class="w-full bg-neutral-50 dark:bg-[#060A23]" />
@@ -46,8 +56,18 @@
                         class="cursor-pointer flex items-center justify-between p-3 rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#0a1331] hover:border-electric-blue dark:hover:border-electric-blue transition-all hover:shadow-sm active:scale-[0.99] {{ ($product->stock_type !== 'special_order' && $product->stock <= 0) || count($product->packagings) === 0 ? 'opacity-60 grayscale pointer-events-none' : '' }}"
                     >
                         <div class="flex items-center gap-3 overflow-hidden">
-                            <div class="size-18 rounded-lg bg-neutral-100 dark:bg-white/5 flex items-center justify-center shrink-0">
+                            {{-- Product image, or the cube icon when there is none. --}}
+                            <div class="relative size-18 rounded-lg overflow-hidden bg-neutral-100 dark:bg-white/5 flex items-center justify-center shrink-0">
                                 <x-ui.icon name="cube" class="size-12 text-neutral-400" />
+                                @if($product->image_url)
+                                    <img
+                                        src="{{ $product->image_url }}"
+                                        alt="{{ $product->name }}"
+                                        loading="lazy"
+                                        decoding="async"
+                                        class="absolute inset-0 size-full object-cover"
+                                    />
+                                @endif
                             </div>
                             <div class="truncate">
                                 <div class="flex items-center gap-2 leading-tight min-w-0">
@@ -369,4 +389,29 @@
             </x-ui.button>
         </div>
     </x-ui.modal>
+
+    {{--
+        Price Check.
+
+        Read-only by construction: the only server calls it makes are lookups,
+        so a cashier can answer a price question with a half-built cart and the
+        cart (Alpine state on the root element) is untouched.
+
+        F2 because F1, F4, Ctrl+K, Escape and C are already bound in the POS.
+    --}}
+    <div
+        x-data
+        x-on:keydown.window.f2.prevent="$wire.openLookup('pos-product-lookup-modal')"
+        x-on:close-modal.window="if ($event.detail?.id === 'pos-product-lookup-modal') $wire.closeLookup()"
+    >
+        <x-product.lookup-modal
+            id="pos-product-lookup-modal"
+            heading="Price Check"
+            description="Look up stock and prices without affecting the current sale."
+            :product="$lookupProduct"
+            :error="$lookupError"
+            :scanner-enabled="$this->scannerConfig['enabled']"
+            shortcut="F2"
+        />
+    </div>
 </div>

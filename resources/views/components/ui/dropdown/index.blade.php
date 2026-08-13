@@ -1,7 +1,19 @@
 @props([
     'position' => 'bottom-center',
     'teleport' => 'body',
-    'portal' => false,
+    // Portalled by default.
+    //
+    // Dropdowns nearly always sit inside a card or a table's horizontal scroll
+    // container, and any ancestor with `overflow: hidden|auto` clips an
+    // absolutely-positioned panel. Cards need that overflow to keep square
+    // table corners inside their rounded ones, so the panel is the thing that
+    // has to move: x-teleport renders it under <body>, where no ancestor can
+    // clip it, while x-anchor keeps it pinned to its button (and follows it on
+    // scroll and resize).
+    //
+    // Pass :portal="false" for a dropdown that must stay in the component's
+    // own DOM position.
+    'portal' => true,
     'trap' => false,
     'offset' => 6,
     'checkbox' => false,
@@ -12,7 +24,13 @@
 @php
     $isDefaultDropdownVariant = $checkbox || $radio;
     $classes = [
-        'isolate z-50',
+        'isolate',
+        // A portalled panel is a direct child of <body>, so it must clear the
+        // modal layer (z-index 9999) to stay visible when opened from inside a
+        // dialog. A non-portalled panel only competes within its own local
+        // stacking context, where z-50 is plenty.
+        'z-[10000]' => $portal,
+        'z-50' => ! $portal,
         'grid grid-cols-[auto_1fr_auto]' => !$isDefaultDropdownVariant ,
         'grid grid-cols-[auto_auto_1fr_auto]' => $isDefaultDropdownVariant,
         '[:where(&)]:max-w-96 [:where(&)]:min-w-40 text-start',

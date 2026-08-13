@@ -65,7 +65,17 @@
 
     {{-- Alpine Logic --}}
     <script>
-        document.addEventListener('alpine:init', () => {
+        // Registered through a helper rather than a bare alpine:init listener:
+        // after a wire:navigate page swap this script re-runs but alpine:init
+        // has already fired for good, so a listener alone would never register
+        // the component and the calculator would silently stop working.
+        (function registerCalculator(register) {
+            if (window.Alpine) {
+                register();
+            } else {
+                document.addEventListener('alpine:init', register, { once: true });
+            }
+        })(() => {
             Alpine.data('calculatorApp', () => ({
                 display: '0',
                 history: '', // NEW: Tracks the operation on top

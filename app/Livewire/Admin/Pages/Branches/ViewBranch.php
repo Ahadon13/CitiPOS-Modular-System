@@ -10,7 +10,9 @@ use App\Enums\Product\CategoryType;
 use App\Exports\BranchProductsExport;
 use App\Exports\BranchPurchasesExport;
 use App\Exports\BranchSalesExport;
+use App\Exports\InventoryLedgerExport;
 use App\Exports\SalesReportExport;
+use App\Livewire\Concerns\HasPartnershipSalesPanel;
 use App\Models\Branch;
 use App\Models\Category;
 use App\Models\InventoryBatch;
@@ -32,7 +34,7 @@ use Money\Money;
 #[Layout('components.layouts.admin', ['title' => 'Branch Overview'])]
 final class ViewBranch extends Component
 {
-    use HasDataTable, WithPagination;
+    use HasDataTable, HasPartnershipSalesPanel, WithPagination;
 
     public Branch $branch;
 
@@ -59,6 +61,9 @@ final class ViewBranch extends Component
     public string $inventoryMovementTypeFilter = '';
 
     public array $salesReportDateRange = [];
+
+    // Partnership filters, page size and paginator all come from
+    // HasPartnershipSalesPanel, kept separate from this page's product search.
 
     #[Computed]
     public function moduleLabel(): string
@@ -300,6 +305,7 @@ final class ViewBranch extends Component
         $this->resetPage('salesPage');
         $this->resetPage('poPage');
         $this->resetPage('inventoryMovementsPage');
+        $this->resetPage('partnershipPage');
     }
 
     public function updatedInventoryMovementTypeFilter(): void
@@ -395,6 +401,45 @@ final class ViewBranch extends Component
         return Excel::download(new BranchPurchasesExport($this->branch->id, $start, $end), $fileName);
     }
 
+    public function exportInventoryMovements()
+    {
+        [$start, $end] = $this->getDateRange();
+
+        return Excel::download(
+            new InventoryLedgerExport(
+                $this->branch->id,
+                $this->branch->product_category_id,
+                $this->inventoryMovementTypeFilter,
+                '',
+                $start,
+                $end
+            ),
+            'Branch_Inventory_Movements_'.$this->branch->id.'_'.now()->format('Y_m_d_His').'.xlsx'
+        );
+    }
+
+    /**
+     * Partnership prices are configured per branch, so the branch page is where
+     * an owner audits them. The panel itself comes from the shared concern; only
+     * the branch and the date window differ from a store's own Sales screen.
+     */
+    protected function partnershipBranchId(): ?int
+    {
+        return $this->branch->id;
+    }
+
+    /**
+     * @return array{0: Carbon, 1: Carbon}
+     */
+    protected function partnershipDateRange(): array
+    {
+        return $this->getDateRange();
+    }
+
+    // exportPartnershipSales() / exportPartnershipSalesPdf() come from
+    // HasPartnershipSalesPanel -- the same exports the store's Sales screen uses,
+    // with this branch's id already pinned by partnershipBranchId().
+
     protected function getDateRange(): array
     {
         return match ($this->dateRange) {
@@ -411,6 +456,11 @@ final class ViewBranch extends Component
 
     protected function getAdditionalPageResetProperties(): array
     {
+        // Deliberately excludes the partnership filters. HasDataTable::updating()
+        // calls resetPage() with no argument, which resets the *default* "page"
+        // paginator -- so listing them here would knock the products table back
+        // to page 1 whenever a partnership filter changed. The panel resets its
+        // own paginator in HasPartnershipSalesPanel instead.
         return ['branchId', 'dateRange', 'view_purchase', 'lowStockOnly', 'outOfStockOnly', 'requirePrescription', 'active', 'disabled', 'productCategories', 'expiryFilter', 'nearExpiryOnly', 'expiredOnly', 'inventoryMovementTypeFilter', 'salesReportDateRange'];
     }
 }

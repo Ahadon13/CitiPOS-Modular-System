@@ -9,6 +9,7 @@ use App\Models\InventoryBatch;
 use App\Models\InventoryTransaction;
 use App\Models\ProductPackaging;
 use App\Traits\HasDbTransaction;
+use Exception;
 use Illuminate\Database\Eloquent\Model;
 
 final class DeductInventoryBatch
@@ -42,10 +43,11 @@ final class DeductInventoryBatch
             $quantityToDeduct = $soldQuantity * $conversionFactor;
 
             if ($batch->quantity_on_hand < $quantityToDeduct) {
-                throw new \Exception("Insufficient stock in batch #{$batch->batch_number}. Available: {$batch->quantity_on_hand}, Required: {$quantityToDeduct}");
+                throw new Exception("Insufficient stock in batch #{$batch->batch_number}. Available: {$batch->quantity_on_hand}, Required: {$quantityToDeduct}");
             }
 
-            // 4. Perform the deduction
+            // 4. Perform the deduction. decrement() also updates the in-memory
+            // attribute, so $batch->quantity_on_hand is already the new balance.
             $batch->decrement('quantity_on_hand', $quantityToDeduct);
 
             InventoryTransaction::create([
@@ -55,7 +57,7 @@ final class DeductInventoryBatch
                 'user_id' => auth()->id() ?? 1,
                 'type' => $transactionType,
                 'quantity' => $quantityToDeduct, // Negative for OUT
-                'running_balance' => $batch->quantity_on_hand - $quantityToDeduct,
+                'running_balance' => $batch->quantity_on_hand,
                 'unit_cost' => $batch->cost_per_unit, // Crucial for COGS
                 'unit_price' => $unitPriceInCents, // Nullable, only used for Sales
                 'reference_type' => $reference ? get_class($reference) : null,

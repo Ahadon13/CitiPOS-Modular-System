@@ -455,6 +455,167 @@
 
     </div>
 
+    {{-- Branch Partnership Pricing Report --}}
+    <x-ui.card hoverless size="full" class="overflow-hidden p-0 border-blue-500/30">
+        <div class="px-3 sm:px-6 py-4 sm:py-5 border-b border-black/10 dark:border-white/10 bg-blue-50/30 dark:bg-blue-900/10">
+            <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                <div>
+                    <x-ui.heading level="h3" size="sm" class="text-blue-700 dark:text-blue-400 flex items-center gap-2">
+                        <x-ui.icon name="user-group" class="size-5" />
+                        Partnership Sales
+                    </x-ui.heading>
+                    <p class="text-sm text-neutral-500 mt-1">
+                        Sales at this branch charged at a partner price, against the regular price they replaced.
+                    </p>
+                </div>
+                <div class="flex gap-2 w-full md:w-auto">
+                    <x-ui.button size="sm" variant="outline" icon="table-cells" class="w-full md:w-auto justify-center" wire:click="exportPartnershipSales" wire:loading.attr="disabled" wire:target="exportPartnershipSales">
+                        <span wire:loading.remove wire:target="exportPartnershipSales">Excel</span>
+                        <span wire:loading wire:target="exportPartnershipSales">...</span>
+                    </x-ui.button>
+                    <x-ui.button size="sm" variant="outline" icon="document-arrow-down" class="w-full md:w-auto justify-center" wire:click="exportPartnershipSalesPdf" wire:loading.attr="disabled" wire:target="exportPartnershipSalesPdf">
+                        <span wire:loading.remove wire:target="exportPartnershipSalesPdf">PDF</span>
+                        <span wire:loading wire:target="exportPartnershipSalesPdf">...</span>
+                    </x-ui.button>
+                </div>
+            </div>
+
+            {{-- Partnership KPIs --}}
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
+                <div class="rounded-lg bg-white dark:bg-[#0a1331] border border-black/5 dark:border-white/10 px-3 py-2">
+                    <p class="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">Partner Revenue</p>
+                    <p class="text-lg font-black text-blue-600 dark:text-blue-400 mt-0.5">{{ \App\Support\MoneyHelper::formatCents($this->partnershipSummary['revenue']) }}</p>
+                </div>
+                <div class="rounded-lg bg-white dark:bg-[#0a1331] border border-black/5 dark:border-white/10 px-3 py-2">
+                    <p class="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">At Regular Price</p>
+                    <p class="text-lg font-black text-neutral-700 dark:text-neutral-200 mt-0.5">{{ \App\Support\MoneyHelper::formatCents($this->partnershipSummary['regular_value']) }}</p>
+                </div>
+                <div class="rounded-lg bg-white dark:bg-[#0a1331] border border-black/5 dark:border-white/10 px-3 py-2">
+                    <p class="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">Savings Given</p>
+                    <p class="text-lg font-black text-amber-600 dark:text-amber-400 mt-0.5">{{ \App\Support\MoneyHelper::formatCents($this->partnershipSummary['savings']) }}</p>
+                </div>
+                <div class="rounded-lg bg-white dark:bg-[#0a1331] border border-black/5 dark:border-white/10 px-3 py-2">
+                    <p class="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">Partners / Lines</p>
+                    <p class="text-lg font-black text-neutral-900 dark:text-white mt-0.5">
+                        {{ $this->partnershipSummary['partners'] }} / {{ number_format($this->partnershipSummary['lines']) }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        {{-- Per-partner breakdown --}}
+        @if(count($this->partnershipByPartner) > 0)
+            <div class="w-full overflow-x-auto custom-scrollbar border-b border-black/10 dark:border-white/10">
+                <table class="w-full text-left text-sm whitespace-nowrap">
+                    <thead class="bg-neutral-50 dark:bg-[#0a1331] text-xs uppercase text-neutral-500 border-b border-black/10 dark:border-white/10">
+                        <tr>
+                            <th class="px-6 py-3">Partner</th>
+                            <th class="px-6 py-3 text-center">Orders</th>
+                            <th class="px-6 py-3 text-center">Qty</th>
+                            <th class="px-6 py-3 text-right">Revenue</th>
+                            <th class="px-6 py-3 text-right">Savings Given</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-black/10 dark:divide-white/10 bg-white dark:bg-[#060A23]">
+                        @foreach($this->partnershipByPartner as $partner)
+                            <tr class="hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors">
+                                <td class="px-6 py-3 font-bold text-neutral-900 dark:text-white">{{ $partner->partner_name ?? 'Unknown partner' }}</td>
+                                <td class="px-6 py-3 text-center">{{ number_format((int) $partner->orders) }}</td>
+                                <td class="px-6 py-3 text-center">{{ rtrim(rtrim(number_format((float) $partner->quantity, 2), '0'), '.') }}</td>
+                                <td class="px-6 py-3 text-right font-semibold">{{ \App\Support\MoneyHelper::formatCents($partner->revenue) }}</td>
+                                <td class="px-6 py-3 text-right text-amber-600 dark:text-amber-400 font-semibold">{{ \App\Support\MoneyHelper::formatCents($partner->savings) }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @endif
+
+        {{-- Transaction filters --}}
+        <div class="px-3 sm:px-6 py-4 border-b border-black/10 dark:border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="w-full md:w-80">
+                <x-ui.input wire:model.live.debounce.300ms="partnershipSearch" leftIcon="magnifying-glass" clearable placeholder="Search product or customer..." class="w-full" />
+            </div>
+            <x-ui.field class="w-full md:w-72 mb-0">
+                <select wire:model.live="partnershipCustomerTypeId" class="w-full text-sm rounded-lg border-neutral-300 dark:border-neutral-700 dark:bg-[#0a1331] text-neutral-700 dark:text-neutral-200 focus:ring-blue-500">
+                    <option value="">All Partners</option>
+                    @foreach($this->partnershipCustomerTypes as $type)
+                        <option value="{{ $type['value'] }}">{{ $type['label'] }}</option>
+                    @endforeach
+                </select>
+            </x-ui.field>
+        </div>
+
+        <div class="w-full overflow-x-auto custom-scrollbar">
+            <table class="w-full text-left text-sm whitespace-nowrap">
+                <thead class="bg-neutral-50 dark:bg-[#0a1331] text-xs uppercase text-neutral-500 border-b border-black/10 dark:border-white/10">
+                    <tr>
+                        <th class="px-6 py-4">Date</th>
+                        <th class="px-6 py-4">Sale</th>
+                        <th class="px-6 py-4">Partner / Customer</th>
+                        <th class="px-6 py-4">Product</th>
+                        <th class="px-6 py-4 text-center">Qty</th>
+                        <th class="px-6 py-4 text-right">Regular</th>
+                        <th class="px-6 py-4 text-right">Partner Price</th>
+                        <th class="px-6 py-4 text-right">Line Total</th>
+                        <th class="px-6 py-4 text-right">Saved</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-black/10 dark:divide-white/10 bg-white dark:bg-[#060A23]">
+                    @forelse($this->partnershipItems as $item)
+                        <tr class="hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors">
+                            <td class="px-6 py-4">
+                                <div class="font-bold text-neutral-900 dark:text-white">{{ \Illuminate\Support\Carbon::parse($item->sold_at)->format('M d, Y') }}</div>
+                                <div class="text-xs text-neutral-500">{{ \Illuminate\Support\Carbon::parse($item->sold_at)->format('h:i A') }}</div>
+                            </td>
+                            <td class="px-6 py-4 font-semibold text-neutral-700 dark:text-neutral-200">#{{ $item->sale_id }}</td>
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-center px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                                    {{ $item->partner_name ?? 'Unknown' }}
+                                </span>
+                                <div class="text-xs text-neutral-500 mt-1">{{ $item->customer_name ?? 'Walk-in' }}</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="font-bold text-neutral-900 dark:text-white">{{ $item->brand_name ?: ($item->product_name ?: '-') }}</div>
+                                <div class="text-xs text-neutral-500">{{ $item->generic_name ?: $item->product_code }}</div>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                {{ rtrim(rtrim(number_format((float) $item->quantity, 2), '0'), '.') }}
+                                <span class="text-xs text-neutral-500">{{ $item->unit_abbreviation ?? '' }}</span>
+                            </td>
+                            <td class="px-6 py-4 text-right text-neutral-500 line-through">{{ \App\Support\MoneyHelper::formatCents($item->regular_price_at_moment ?? $item->price_at_moment) }}</td>
+                            <td class="px-6 py-4 text-right font-bold text-blue-600 dark:text-blue-400">{{ \App\Support\MoneyHelper::formatCents($item->price_at_moment) }}</td>
+                            <td class="px-6 py-4 text-right font-semibold">{{ \App\Support\MoneyHelper::formatCents($item->subtotal) }}</td>
+                            <td class="px-6 py-4 text-right text-amber-600 dark:text-amber-400 font-semibold">{{ \App\Support\MoneyHelper::formatCents($item->partner_savings) }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="9" class="px-6 py-12 text-center text-neutral-500">
+                                <x-ui.empty>
+                                    <x-ui.empty.media class="bg-neutral-100 dark:bg-white/5 rounded-full size-12 flex items-center justify-center">
+                                        <x-ui.icon name="user-group" class="size-6 text-neutral-400" />
+                                    </x-ui.empty.media>
+                                    <x-ui.empty.contents>
+                                        <x-ui.text>No partnership-priced sales at this branch for the selected period.</x-ui.text>
+                                    </x-ui.empty.contents>
+                                </x-ui.empty>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        <div class="border-t border-black/10 dark:border-white/10 px-4 pb-3 flex justify-center w-full">
+            {{-- Own page size + paginator so the other tables on this page are unaffected. --}}
+            <x-ui.pagination
+                wire:model.live="partnershipPerPage"
+                :per-page-options="$partnershipPerPageOptions"
+                :data="$this->partnershipItems"
+            />
+        </div>
+    </x-ui.card>
+
     {{-- Branch Inventory Movement Ledger --}}
     <x-ui.card hoverless size="full" class="overflow-hidden p-0 border-emerald-500/30">
         <div class="px-3 sm:px-6 py-4 sm:py-5 border-b border-black/10 dark:border-white/10 bg-emerald-50/30 dark:bg-emerald-900/10">
@@ -466,14 +627,20 @@
                     </x-ui.heading>
                     <p class="text-sm text-neutral-500 mt-1">Branch-specific movement ledger for {{ $this->moduleLabel }} stock.</p>
                 </div>
-                <x-ui.field class="w-full md:w-72">
-                    <x-ui-select.styled
-                        wire:model.live="inventoryMovementTypeFilter"
-                        placeholder="All movement types"
-                        :options="$this->inventoryMovementTypeOptions"
-                        select="label:label|value:value"
-                    />
-                </x-ui.field>
+                <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                    <x-ui.field class="w-full sm:w-64 mb-0">
+                        <x-ui-select.styled
+                            wire:model.live="inventoryMovementTypeFilter"
+                            placeholder="All movement types"
+                            :options="$this->inventoryMovementTypeOptions"
+                            select="label:label|value:value"
+                        />
+                    </x-ui.field>
+                    <x-ui.button size="sm" variant="outline" icon="arrow-down-tray" class="w-full sm:w-auto justify-center shrink-0" wire:click="exportInventoryMovements" wire:loading.attr="disabled" wire:target="exportInventoryMovements">
+                        <span wire:loading.remove wire:target="exportInventoryMovements">Export</span>
+                        <span wire:loading wire:target="exportInventoryMovements">Generating...</span>
+                    </x-ui.button>
+                </div>
             </div>
         </div>
 

@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 use Money\Currency;
 use Money\Money;
 
@@ -41,7 +42,23 @@ final class Product extends Model
         'is_active',
         'stock_type',
         'attributes',
+        'image_path',
     ];
+
+    /**
+     * Public URL for the product image, or null when it has none.
+     *
+     * Every surface that shows a product image is expected to handle null by
+     * rendering an icon instead, so an image is always optional.
+     */
+    public function imageUrl(): ?string
+    {
+        if (blank($this->image_path)) {
+            return null;
+        }
+
+        return Storage::disk('public')->url($this->image_path);
+    }
 
     public function scopeSearch(Builder $query, string $term): void
     {

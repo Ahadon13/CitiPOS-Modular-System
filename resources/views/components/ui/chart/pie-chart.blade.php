@@ -13,13 +13,27 @@
         width: @js($width),
         chart: null,
 
+        colorSchemeQuery: null,
+        onColorSchemeChange: null,
+
         init() {
             this.renderChart();
 
             // Watch for system or app dark mode toggle
-            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-                this.updateTheme()
-            });
+            this.colorSchemeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+            this.onColorSchemeChange = () => this.updateTheme();
+            this.colorSchemeQuery.addEventListener('change', this.onColorSchemeChange);
+        },
+
+        /**
+         * Alpine calls this when the element is removed -- including on a
+         * wire:navigate page swap. Without it, every visit would leak an
+         * ApexCharts instance and a matchMedia listener.
+         */
+        destroy() {
+            this.colorSchemeQuery?.removeEventListener('change', this.onColorSchemeChange);
+            this.chart?.destroy();
+            this.chart = null;
         },
 
         renderChart() {

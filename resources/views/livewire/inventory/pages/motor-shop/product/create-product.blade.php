@@ -171,6 +171,11 @@
                     <x-ui.error name="form.description" />
                 </x-ui.field>
 
+                <x-product.image-field
+                    :preview="$this->productImagePreviewUrl()"
+                    :hint="$this->productImageHint()"
+                />
+
             </x-ui.card>
 
             <x-ui.card hoverless size="full">
