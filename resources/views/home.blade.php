@@ -13,6 +13,12 @@
             </div>
 
             <div class="flex items-center gap-3">
+                {{-- User manual. Public, so staff can reach it before signing in. --}}
+                <x-ui.button href="{{ route('documentation') }}" wire:navigate variant="outline" class="border-neutral-600 text-neutral-300 hover:text-white hover:bg-white/5" icon="book-open">
+                    <span class="hidden sm:inline">Documentation</span>
+                    <span class="sm:hidden">Docs</span>
+                </x-ui.button>
+
                 {{-- Desktop App Download Button --}}
                 <x-ui.button href="https://github.com/Ahadon13/POSAndInventory/releases/download/v1.0.0/citipos-app.exe" download variant="outline" class="hidden sm:flex border-neutral-600 text-neutral-300 hover:text-white hover:bg-white/5" icon-after="arrow-down-tray">
                     Get Desktop App

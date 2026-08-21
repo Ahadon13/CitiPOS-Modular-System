@@ -38,6 +38,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', Livewire\Home::class)->name('welcome');
 
+// Public user manual, reachable from the landing page before signing in.
+Route::get('/documentation', Livewire\Documentation::class)->name('documentation');
+
 Route::get('/home', HomeRouteController::class)->name('home');
 
 /** AUTH ROUTES */
