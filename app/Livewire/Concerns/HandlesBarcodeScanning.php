@@ -11,10 +11,10 @@ use Illuminate\Database\Eloquent\Builder;
 /**
  * Optional barcode-scanner support for a POS screen.
  *
- * The feature is inert unless the active branch has it switched on, and it
- * never intercepts anything the existing flow depends on -- a scan is just
- * another way to reach the same "add this packaging" path a click already
- * takes.
+ * The feature is inert unless the active branch has it switched on. A scan
+ * resolves to the same product payload the grid uses; the browser then shows
+ * a confirmation and only Enter puts it in the cart, through the same
+ * addProductToCart() path a click takes.
  *
  * Using components must provide:
  *   - barcodeModuleScope(): applies the module filter to a query
@@ -66,10 +66,13 @@ trait HandlesBarcodeScanning
         $product->loadMissing(['productPackagings.unit', 'productPackagings.partnerships', 'baseUnit']);
         $product->setAttribute('total_stock', $this->barcodeProductStock((int) $product->id));
 
+        // The code goes back too: while the confirmation is open, scanning the
+        // same code again means "one more", anything else is refused.
         $this->dispatch(
             'barcode-resolved',
             product: $this->mapProductForPos($product),
             packagingId: $packaging->id,
+            code: mb_trim($code),
         );
     }
 

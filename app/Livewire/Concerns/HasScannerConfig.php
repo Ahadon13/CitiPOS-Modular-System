@@ -21,7 +21,7 @@ trait HasScannerConfig
     /**
      * `enabled: false` means the front-end listener never attaches at all.
      *
-     * @return array{enabled: bool, min_length: int, threshold_ms: int}
+     * @return array{enabled: bool, connection: string, usb_vendor_id: string, usb_product_id: string, baud_rate: int, min_length: int, threshold_ms: int, suffix: string, prefix: string, allowed_types: list<string>|null, sound: bool, profile: string|null}
      */
     #[Computed]
     public function scannerConfig(): array
@@ -32,6 +32,6 @@ trait HasScannerConfig
 
         return $branch
             ? $branch->barcodeScannerConfig()
-            : ['enabled' => false, 'min_length' => 6, 'threshold_ms' => 50];
+            : ['enabled' => false, 'connection' => 'keyboard', 'usb_vendor_id' => '', 'usb_product_id' => '', 'baud_rate' => 9600, 'min_length' => 6, 'threshold_ms' => 50, 'suffix' => 'enter', 'prefix' => '', 'allowed_types' => null, 'sound' => true, 'profile' => null];
     }
 }

@@ -110,7 +110,7 @@ final class MotorShop
                             ['en' => 'A product image is genuinely useful here for telling similar-looking parts apart.', 'tl' => 'Talagang kapaki-pakinabang dito ang larawan ng produkto para makilala ang magkakamukhang parts.'],
                             ['en' => 'Mark parts you never keep on the shelf as <b>Special Order</b>. They can then be sold with zero stock and the purchase order is raised for you.', 'tl' => 'Markahan bilang <b>Special Order</b> ang mga part na hindi mo iniistock. Mabebenta ang mga ito kahit walang stock at kusang gagawa ng purchase order.'],
                             ['en' => 'Expiry is not emphasised in this module, since parts do not expire.', 'tl' => 'Hindi binibigyang-diin ang expiry sa module na ito, dahil hindi nag-e-expire ang parts.'],
-                            ['en' => 'Barcode scanning <b>to the cart</b> is not enabled for motor shop. <b>Price Check</b> still works for looking parts up.', 'tl' => 'Hindi naka-enable ang barcode scanning <b>papunta sa cart</b> para sa motor shop. Gumagana pa rin ang <b>Price Check</b> para maghanap ng parts.'],
+                            ['en' => 'When the branch has the scanner switched on, scanning a part shows the <b>Confirm scanned item</b> window; press <kbd>Enter</kbd> to add it to the cart. <b>Price Check</b> looks parts up without touching the cart.', 'tl' => 'Kapag naka-on ang scanner sa branch, ang pag-scan ng part ay maglalabas ng <b>Confirm scanned item</b> na window; pindutin ang <kbd>Enter</kbd> para idagdag sa cart. Ang <b>Price Check</b> ay naghahanap ng parts nang hindi ginagalaw ang cart.'],
                         ],
                     ],
                 ],

@@ -12,6 +12,7 @@ use App\Http\Controllers\POS\ReceiptController;
 use App\Livewire;
 use App\Livewire\Admin\Pages\Branches;
 use App\Livewire\Admin\Pages\Dashboard as PagesDashboard;
+use App\Livewire\Admin\Pages\Devices as AdminDevices;
 use App\Livewire\Admin\Pages\ModuleAccess as AdminModuleAccess;
 use App\Livewire\Admin\Pages\OwnerHub;
 use App\Livewire\Admin\Pages\Reports as AdminReports;
@@ -124,6 +125,11 @@ Route::group([
 
         // SETTINGS ROUTE
         Route::get('/settings', AdminSettings::class)->name('settings');
+
+        // SCANNER & PRINTER MODELS, AND WHICH BRANCH USES WHICH
+        Route::get('/settings/devices', AdminDevices::class)
+            ->middleware('permission:'.Permission::ManageBranches->value)
+            ->name('devices');
 
     });
 

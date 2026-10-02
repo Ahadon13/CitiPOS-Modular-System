@@ -68,7 +68,7 @@ final class Grocery
                         'type' => 'steps',
                         'items' => [
                             ['en' => 'Choose the customer first &mdash; <b>Walk-in</b>, or switch to <b>Customer</b> and pick one.', 'tl' => 'Piliin muna ang customer &mdash; <b>Walk-in</b>, o lumipat sa <b>Customer</b> at pumili.'],
-                            ['en' => 'Find the item by search, by category, or by scanning its barcode.', 'tl' => 'Hanapin ang item sa search, sa category, o sa pag-scan ng barcode.'],
+                            ['en' => 'Find the item by search, by category, or by scanning its barcode. After a scan, check the <b>Confirm scanned item</b> window and press <kbd>Enter</kbd> to add it.', 'tl' => 'Hanapin ang item sa search, sa category, o sa pag-scan ng barcode. Pagkatapos mag-scan, tingnan ang <b>Confirm scanned item</b> na window at pindutin ang <kbd>Enter</kbd> para idagdag.'],
                             ['en' => 'Pick the packaging &mdash; sack, case or piece &mdash; if there is more than one.', 'tl' => 'Piliin ang packaging &mdash; sako, kaha o piraso &mdash; kung mahigit isa ito.'],
                             ['en' => 'Click the row to add it, then adjust the quantity in the cart.', 'tl' => 'I-click ang row para maidagdag, tapos ayusin ang dami sa cart.'],
                             ['en' => 'Press <b>Checkout</b> or <kbd>F4</kbd>, choose the payment method, enter the amount received and confirm.', 'tl' => 'Pindutin ang <b>Checkout</b> o <kbd>F4</kbd>, piliin ang payment method, ilagay ang natanggap na halaga at kumpirmahin.'],

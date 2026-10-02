@@ -86,10 +86,11 @@
         </x-ui.card>
     </div>
 
-    <x-ui.card hoverless size="full" class="p-0">
-        <div class="px-6 py-5 border-b border-black/10 dark:border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div class="flex items-center gap-3 w-full md:w-auto">
-                <div class="w-full md:w-72">
+    <x-ui.card hoverless size="full" class="p-0 @container">
+        {{-- Toolbar: laid out by the card's own width, wrapping instead of overflowing. --}}
+        <div class="px-4 sm:px-6 py-4 sm:py-5 border-b border-black/10 dark:border-white/10 flex flex-col gap-3 @7xl:flex-row @7xl:items-center @7xl:justify-between">
+            <div class="flex flex-wrap items-center gap-3 min-w-0">
+                <div class="w-full @3xl:w-auto @3xl:flex-1 @3xl:min-w-56 @7xl:w-72 @7xl:flex-none">
                     <x-ui.input
                         wire:model.live.debounce.300ms="search"
                         leftIcon="magnifying-glass" clearable
@@ -98,7 +99,7 @@
                     />
                 </div>
 
-                <x-inventory.barcode-search :config="$this->scannerConfig" class="hidden lg:inline-flex" />
+                <x-inventory.barcode-search :config="$this->scannerConfig" class="hidden sm:inline-flex shrink-0" />
 
                 {{-- Scan or search a product and jump straight to editing it. --}}
                 <x-ui.button
@@ -112,9 +113,24 @@
                 >
                     Scan / Look up
                 </x-ui.button>
+
+                {{-- Add or remove stock by scanning: the modal waits for a scan. --}}
+                @if($this->scannerConfig['enabled'])
+                    <x-ui.button
+                        variant="outline"
+                        color="emerald"
+                        icon="arrows-up-down"
+                        size="sm"
+                        class="shrink-0 whitespace-nowrap"
+                        x-on:click="$dispatch('open-adjust-stock-scan')"
+                        title="Scan products to add or remove stock (F3)"
+                    >
+                        Scan to Adjust
+                    </x-ui.button>
+                @endif
             </div>
 
-            <div class="flex items-center gap-3">
+            <div class="flex flex-wrap items-center gap-3">
                 <x-ui.dropdown checkbox checkboxVariant>
                     <x-slot:button>
                         <x-ui.button icon="funnel" variant="soft" size="sm">
@@ -139,19 +155,22 @@
                 </x-ui.dropdown>
 
 
-                <x-ui-select.styled
-                    invalidate
-                    wire:model.live="productCategories"
-                    :options="$this->categories"
-                    class="w-full"
-                    searchable
-                    multiple
-                    placeholder="Select categories..."
-                />
+                <div class="flex-1 min-w-48 @7xl:w-56 @7xl:flex-none">
+                    <x-ui-select.styled
+                        invalidate
+                        wire:model.live="productCategories"
+                        :options="$this->categories"
+                        class="w-full"
+                        searchable
+                        multiple
+                        placeholder="Select categories..."
+                    />
+                </div>
                 <x-ui.button
                     size="sm"
                     variant="outline"
                     icon="arrow-down-tray"
+                    class="shrink-0"
                     wire:click="exportProducts"
                     wire:loading.attr="disabled"
                     wire:target="exportProducts"
@@ -363,6 +382,9 @@
     <div
         x-data
         x-on:keydown.window.f2.prevent="$wire.openLookup('inventory-product-lookup-modal')"
+        @if($this->scannerConfig['enabled'])
+            x-on:keydown.window.f3.prevent="$dispatch('open-adjust-stock-scan')"
+        @endif
         x-on:close-modal.window="if ($event.detail?.id === 'inventory-product-lookup-modal') $wire.closeLookup()"
     >
         <x-product.lookup-modal

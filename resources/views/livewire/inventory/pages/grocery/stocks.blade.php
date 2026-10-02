@@ -95,13 +95,15 @@
     </div>
 
     {{-- Data Table Section --}}
-    <x-ui.card hoverless size="full" class="p-0 overflow-hidden">
+    <x-ui.card hoverless size="full" class="p-0 overflow-hidden @container">
 
-        <div class="px-6 py-5 border-b border-black/10 dark:border-white/10 flex flex-col lg:flex-row md:items-center justify-between gap-4">
+        {{-- Toolbar: laid out by the card's own width (sidebar open or not), so
+             nothing is pushed off the edge -- it wraps instead. --}}
+        <div class="px-4 sm:px-6 py-4 sm:py-5 border-b border-black/10 dark:border-white/10 flex flex-col gap-3 @6xl:flex-row @6xl:items-center">
 
-            <div class="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto flex-1">
-                {{-- Search --}}
-                <div class="w-full sm:w-72">
+            {{-- Search + scanner status --}}
+            <div class="flex items-center gap-3 min-w-0 @6xl:flex-1">
+                <div class="flex-1 min-w-0 @6xl:max-w-sm">
                     <x-ui.input
                         wire:model.live.debounce.300ms="search"
                         leftIcon="magnifying-glass"
@@ -110,11 +112,13 @@
                         clearable
                     />
                 </div>
+                {{-- Scan a product to show only its batches. --}}
+                <x-inventory.barcode-search :config="$this->scannerConfig" action="scanToFilter" class="hidden sm:inline-flex shrink-0" />
             </div>
 
-            <div class="flex items-center justify-end gap-3 w-full md:w-auto">
-                {{-- Product Dropdown Filter --}}
-                <div class="w-full sm:w-70">
+            {{-- Filters + export --}}
+            <div class="flex flex-col gap-3 @lg:flex-row @lg:flex-wrap @lg:items-center">
+                <div class="min-w-0 @lg:flex-1 @lg:min-w-48 @6xl:w-60 @6xl:flex-none">
                     <x-ui-select.styled
                         invalidate
                         wire:model.live="selectedProduct"
@@ -125,7 +129,7 @@
                     />
                 </div>
 
-                <div class="w-full sm:w-56">
+                <div class="min-w-0 @lg:flex-1 @lg:min-w-48 @6xl:w-52 @6xl:flex-none">
                     <x-ui-date
                         invalidate
                         month-year-only
@@ -135,7 +139,7 @@
                     />
                 </div>
 
-                <x-ui.button size="sm" variant="outline" icon="arrow-down-tray" wire:click="exportLedger" wire:loading.attr="disabled" wire:target="exportLedger">
+                <x-ui.button size="sm" variant="outline" icon="arrow-down-tray" class="justify-center shrink-0" wire:click="exportLedger" wire:loading.attr="disabled" wire:target="exportLedger">
                     Export in Excel
                 </x-ui.button>
             </div>

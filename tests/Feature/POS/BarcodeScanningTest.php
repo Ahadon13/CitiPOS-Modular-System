@@ -12,7 +12,13 @@ use App\Models\Unit;
 use App\Models\User;
 use App\Support\BarcodeResolver;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
+
+beforeEach(function () {
+    // Scanner settings come from device profiles on the local disk.
+    Storage::fake('local');
+});
 
 /**
  * @return array{user: User, branch: Branch, product: Product, packaging: ProductPackaging}
@@ -123,6 +129,9 @@ it('dispatches a resolved product the cart can consume', function () {
             $packagings = (array) ($product['packagings'] ?? []);
 
             return $params['packagingId'] === $world['packaging']->id
+                // The code comes back so the confirmation can tell a repeat
+                // scan of the same item from a different one.
+                && $params['code'] === '4806017854321'
                 && $product['id'] === $world['product']->id
                 // Same payload shape the product grid emits.
                 && isset(((array) $packagings[0])['id'])
@@ -157,9 +166,10 @@ it('keeps the scanner off by default for existing branches', function () {
         'is_active' => true,
     ]);
 
-    expect($branch->refresh()->barcodeScannerConfig())->toBe([
+    expect($branch->refresh()->barcodeScannerConfig())->toMatchArray([
         'enabled' => false,
         'min_length' => 6,
         'threshold_ms' => 50,
+        'suffix' => 'enter',
     ]);
 });

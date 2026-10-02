@@ -47,13 +47,13 @@ final class Administration
                             ['en' => 'Enter the name and address.', 'tl' => 'Ilagay ang pangalan at address.'],
                             ['en' => 'Choose the <b>module</b>: Pharmacy, Grocery or Motor Shop. A branch belongs to exactly one, and this should not be changed casually afterwards.', 'tl' => 'Piliin ang <b>module</b>: Pharmacy, Grocery o Motor Shop. Iisa lang ang module ng bawat branch, at hindi ito dapat basta-basta baguhin pagkatapos.'],
                             ['en' => 'Tick <b>Branch is currently active</b> so staff can select it.', 'tl' => 'I-tsek ang <b>Branch is currently active</b> para mapili ito ng staff.'],
-                            ['en' => 'Optionally switch on <b>Barcode Scanner</b> for this branch.', 'tl' => 'Opsyonal na i-on ang <b>Barcode Scanner</b> para sa branch na ito.'],
+                            ['en' => 'To use a barcode scanner or receipt printer at the branch, set it up in <b>Settings &rsaquo; Scanners &amp; Printers</b>.', 'tl' => 'Para gumamit ng barcode scanner o receipt printer sa branch, i-set up ito sa <b>Settings &rsaquo; Scanners &amp; Printers</b>.'],
                         ],
                     ],
                     [
                         'type' => 'note',
-                        'en' => 'Barcode scanning is off everywhere by default, and the counter behaves exactly as it always has until you switch it on. When enabled you can also tune the minimum barcode length and the keystroke threshold &mdash; raise the threshold if scans are being missed or split in half.',
-                        'tl' => 'Naka-off ang barcode scanning sa lahat ng branch bilang default, at gagana ang counter gaya ng dati hanggang i-on mo ito. Kapag naka-on, pwede mo ring ayusin ang minimum barcode length at ang keystroke threshold &mdash; taasan ang threshold kung may hindi nababasang scan o nahahati ito.',
+                        'en' => 'Barcode scanning is off everywhere by default, and the counter behaves exactly as it always has until you switch it on for the branch in <b>Scanners &amp; Printers</b>.',
+                        'tl' => 'Naka-off ang barcode scanning sa lahat ng branch bilang default, at gagana ang counter gaya ng dati hanggang i-on mo ito para sa branch sa <b>Scanners &amp; Printers</b>.',
                     ],
                     [
                         'type' => 'text',
@@ -200,7 +200,54 @@ final class Administration
                             ['en' => '<b>Customer Types</b> &mdash; the discount groups. See the Partnership Pricing section.', 'tl' => '<b>Customer Types</b> &mdash; ang mga grupo ng discount. Tingnan ang Partnership Pricing na bahagi.'],
                             ['en' => '<b>Measurement Units</b> &mdash; piece, box, kilo and so on. A unit can be set to allow decimal quantities for goods sold by weight.', 'tl' => '<b>Measurement Units</b> &mdash; piece, box, kilo at iba pa. Pwedeng i-set ang unit na tumanggap ng desimal para sa mga tinitimbang na paninda.'],
                             ['en' => '<b>Payment Methods</b> &mdash; cash, GCash and others. Mark a method as requiring a reference number and the counter will insist on one.', 'tl' => '<b>Payment Methods</b> &mdash; cash, GCash at iba pa. Kapag minarkahan mong kailangan ng reference number, hindi papayag ang counter kung wala nito.'],
+                            ['en' => '<b>Scanners &amp; Printers</b> &mdash; the barcode scanner and receipt printer each branch uses. See the next section.', 'tl' => '<b>Scanners &amp; Printers</b> &mdash; ang barcode scanner at receipt printer na gamit ng bawat branch. Tingnan ang susunod na bahagi.'],
                         ],
+                    ],
+                ],
+            ],
+            [
+                'id' => 'devices',
+                'en' => 'Scanners and printers',
+                'tl' => 'Mga scanner at printer',
+                'blocks' => [
+                    [
+                        'type' => 'text',
+                        'en' => 'Each scanner and receipt printer <b>model</b> is described once, then every branch picks the one at its counter. The shop&rsquo;s current hardware &mdash; the <b>YHDAA YHD-1100L</b> scanner and the <b>JK-5802H</b> 58mm printer &mdash; is already set up.',
+                        'tl' => 'Isang beses lang ilalarawan ang bawat <b>model</b> ng scanner at receipt printer, tapos pipiliin ng bawat branch ang nasa counter nito. Naka-set up na ang kasalukuyang hardware ng tindahan &mdash; ang <b>YHDAA YHD-1100L</b> na scanner at ang <b>JK-5802H</b> na 58mm printer.',
+                    ],
+                    [
+                        'type' => 'steps',
+                        'items' => [
+                            ['en' => 'Go to <b>Settings</b> and click <b>Scanners &amp; Printers</b>.', 'tl' => 'Pumunta sa <b>Settings</b> at i-click ang <b>Scanners &amp; Printers</b>.'],
+                            ['en' => 'In <b>Branch devices</b>, tick <b>Scanner</b> for the branch to switch scanning on.', 'tl' => 'Sa <b>Branch devices</b>, i-tsek ang <b>Scanner</b> ng branch para i-on ang scanning.'],
+                            ['en' => 'Pick its <b>scanner model</b> and <b>printer model</b>. Changes save immediately.', 'tl' => 'Piliin ang <b>scanner model</b> at <b>printer model</b> nito. Kusang nase-save ang pagbabago.'],
+                            ['en' => 'Ask the cashier to reload the POS page.', 'tl' => 'Ipa-reload sa cashier ang POS page.'],
+                        ],
+                    ],
+                    [
+                        'type' => 'text',
+                        'en' => '<b>A different scanner model?</b> Click <b>Add scanner</b>, click the <b>Scan test</b> box and scan any barcode. The test shows how the scanner ends a code and how fast it types; <b>Use these values</b> fills in the settings. Give it a name, save, and pick it for the branch.',
+                        'tl' => '<b>Ibang model ng scanner?</b> I-click ang <b>Add scanner</b>, i-click ang <b>Scan test</b> na box at mag-scan ng kahit anong barcode. Ipapakita ng test kung paano tinatapos ng scanner ang code at gaano ito kabilis mag-type; pupunuin ng <b>Use these values</b> ang settings. Bigyan ng pangalan, i-save, at piliin para sa branch.',
+                    ],
+                    [
+                        'type' => 'text',
+                        'en' => '<b>Connection.</b> Every scanner model is either <b>USB keyboard</b> (the factory default) or <b>USB COM</b>. A keyboard scanner works in every browser, but browsers cannot see keyboards, so the counter shows <b>Scanner on</b> with <b>Connection unknown</b> under it. A USB COM scanner is switched to that mode with a setup barcode in its manual; it then works in <b>Chrome and Edge</b>, and the counter shows whether it is <b>connected</b> or <b>unplugged</b>. Each PC clicks <b>Pair scanner</b> once. In USB COM mode the scanner no longer types into other programs, and only one CitiPOS tab can use it at a time.',
+                        'tl' => '<b>Connection.</b> Ang bawat scanner model ay <b>USB keyboard</b> (ang factory default) o <b>USB COM</b>. Gumagana ang keyboard scanner sa lahat ng browser, pero hindi nakikita ng browser ang mga keyboard, kaya <b>Scanner on</b> na may <b>Connection unknown</b> sa ilalim ang lalabas sa counter. Ang USB COM scanner ay inililipat sa mode na iyon gamit ang setup barcode sa manual nito; gagana ito sa <b>Chrome at Edge</b>, at ipapakita ng counter kung <b>connected</b> o <b>unplugged</b> ito. Isang beses i-click ang <b>Pair scanner</b> sa bawat PC. Sa USB COM mode, hindi na nagta-type ang scanner sa ibang program, at isang CitiPOS tab lang ang pwedeng gumamit nito.',
+                    ],
+                    [
+                        'type' => 'text',
+                        'en' => '<b>Allowed barcode types.</b> Tick the types each scanner model may scan: EAN-13, EAN-8, UPC-A, UPC-E, Code 128, Code 39, QR. A scan of any other type is refused with a warning. EAN and UPC are recognised by their check digit. To tell Code 128, Code 39 and QR apart, turn on <b>AIM ID</b> with the setup barcode in the scanner&rsquo;s manual; without it those three count as one group. The <b>Scan test</b> shows the type of what you scanned and whether it is allowed.',
+                        'tl' => '<b>Allowed barcode types.</b> I-tsek ang mga uri na pwedeng i-scan ng bawat scanner model: EAN-13, EAN-8, UPC-A, UPC-E, Code 128, Code 39, QR. Tatanggihan na may babala ang scan ng ibang uri. Nakikilala ang EAN at UPC sa kanilang check digit. Para mapag-iba ang Code 128, Code 39 at QR, i-on ang <b>AIM ID</b> gamit ang setup barcode sa manual ng scanner; kung wala ito, iisang grupo ang tatlong iyon. Ipinapakita ng <b>Scan test</b> ang uri ng na-scan at kung pinapayagan ito.',
+                    ],
+                    [
+                        'type' => 'text',
+                        'en' => '<b>A different printer model?</b> Click <b>Add printer</b> and enter its paper width (58mm or 80mm), characters per line, and whether it has a cutter.',
+                        'tl' => '<b>Ibang model ng printer?</b> I-click ang <b>Add printer</b> at ilagay ang lapad ng papel (58mm o 80mm), bilang ng character kada linya, at kung may cutter ito.',
+                    ],
+                    [
+                        'type' => 'note',
+                        'en' => 'If scans are being missed or split in half, raise the scanner&rsquo;s <b>keystroke speed</b> a little. If ordinary typing is mistaken for a scan, lower it or raise the <b>minimum length</b>.',
+                        'tl' => 'Kung may hindi nababasang scan o nahahati ito, taasan nang kaunti ang <b>keystroke speed</b> ng scanner. Kung napagkakamalang scan ang karaniwang pag-type, babaan ito o taasan ang <b>minimum length</b>.',
                     ],
                 ],
             ],

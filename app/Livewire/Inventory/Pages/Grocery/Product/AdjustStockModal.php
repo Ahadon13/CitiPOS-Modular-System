@@ -3,10 +3,12 @@
 namespace App\Livewire\Inventory\Pages\Grocery\Product;
 
 use App\Actions\Inventory\AdjustStock;
+use App\Livewire\Concerns\AdjustsStockByScan;
 use App\Livewire\Concerns\HasToast; // Assuming you use this trait based on your snippet
 use App\Models\InventoryBatch;
 use App\Models\Product;
 use App\Traits\HasAuth;
+use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Modelable;
 use Livewire\Attributes\On;
@@ -14,7 +16,7 @@ use Livewire\Component;
 
 final class AdjustStockModal extends Component
 {
-    use HasToast, HasAuth;
+    use AdjustsStockByScan, HasAuth, HasToast;
 
     // Receive the full JSON array from the parent table
     #[Modelable]
@@ -36,13 +38,9 @@ final class AdjustStockModal extends Component
     {
         $product = Product::with('baseUnit')->findOrFail($id);
 
-        $this->adjust_product = [
-            'id' => $product->id,
-            'brand_name' => $product->brand_name,
-            'base_unit' => $product->baseUnit->abbreviation ?? 'pcs',
-        ];
-
+        $this->resetScanState();
         $this->resetFormState();
+        $this->fillAdjustProduct($product);
 
         // Tell the frontend to open the modal
         $this->dispatch('open-modal', id: 'adjust-stock');
@@ -96,7 +94,8 @@ final class AdjustStockModal extends Component
                 branchId: $this->currentBranchId, // Replace with your current branch ID trait
                 productId: $this->adjust_product['id'],
                 type: $this->adjustment_type,
-                quantity: (float) $this->quantity,
+                // Entered in the selected unit; batches are stored in base units.
+                quantity: $this->baseQuantity(),
                 batchId: $this->selected_batch_id,
                 batchNumber: $this->new_batch_number,
                 expiryDate: $this->new_expiry_date,
@@ -107,13 +106,20 @@ final class AdjustStockModal extends Component
 
             $this->toastSuccess("Stock adjusted successfully for {$this->adjust_product['brand_name']}");
 
-            $this->dispatch('close-modal', id: 'adjust-stock');
-            $this->resetFormState();
+            $this->finishAdjustment();
             $this->dispatch('page-reset'); // Refresh the parent table
 
         } catch (\Exception $e) {
             $this->toastError('Adjustment failed: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Restricts scans to this module's products.
+     */
+    protected function barcodeModuleScope(Builder $query): Builder
+    {
+        return $query->isGrocery();
     }
 
     public function resetFormState(): void

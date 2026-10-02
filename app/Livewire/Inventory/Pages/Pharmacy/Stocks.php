@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Inventory\Pages\Pharmacy;
 
 use App\Exports\InventoryStocksExport;
+use App\Livewire\Concerns\FiltersStocksByScan;
 use App\Livewire\Concerns\HasToast;
 use App\Livewire\Forms\Inventory\UpdateBatchForm;
 use App\Models\InventoryBatch;
@@ -25,7 +26,7 @@ use Maatwebsite\Excel\Facades\Excel;
 #[Layout('components.layouts.app', ['title' => 'Inventory Stocks', 'inventory' => true])]
 final class Stocks extends Component
 {
-    use HasAuth, HasToast, HasDataTable, WithPagination;
+    use FiltersStocksByScan, HasAuth, HasToast, HasDataTable, WithPagination;
 
     public UpdateBatchForm $form;
 
@@ -224,6 +225,14 @@ final class Stocks extends Component
         $query->whereHas($relationPathToCategory, function ($q) {
             $q->whereIn('name', $this->targetCategories);
         });
+    }
+
+    /**
+     * Restricts scans to this module's products.
+     */
+    protected function barcodeModuleScope(Builder $query): Builder
+    {
+        return $query->isPharmacy();
     }
 
     protected function getAdditionalPageResetProperties(): array

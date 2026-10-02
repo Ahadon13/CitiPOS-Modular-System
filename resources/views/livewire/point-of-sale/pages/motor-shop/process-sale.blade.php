@@ -498,7 +498,7 @@
     --}}
     <div
         x-data
-        x-on:keydown.window.f2.prevent="$wire.openLookup('pos-product-lookup-modal')"
+        x-on:keydown.window.f2.prevent="if (! scanConfirm.open) $wire.openLookup('pos-product-lookup-modal')"
         x-on:close-modal.window="if ($event.detail?.id === 'pos-product-lookup-modal') $wire.closeLookup()"
     >
         <x-product.lookup-modal
@@ -511,4 +511,7 @@
             shortcut="F2"
         />
     </div>
+
+    {{-- Scan -> confirm -> Enter adds to cart. Shared by every POS module. --}}
+    <x-pos.scan-confirm-modal />
 </div>

@@ -29,13 +29,6 @@ final class ManageBranchModal extends Component
 
     public bool $is_active = true;
 
-    /** Optional barcode scanning, off unless a branch opts in. */
-    public bool $barcode_scanner_enabled = false;
-
-    public int $barcode_min_length = 6;
-
-    public int $barcode_keystroke_threshold_ms = 50;
-
     public function rules(): array
     {
         return [
@@ -43,11 +36,6 @@ final class ManageBranchModal extends Component
             'name' => 'required|string|max:255|unique:branches,name,'.$this->branch_id,
             'address' => 'required|string|max:1000',
             'is_active' => 'boolean',
-            'barcode_scanner_enabled' => 'boolean',
-            // Below 4 characters ordinary typing starts looking like a scan.
-            'barcode_min_length' => 'required|integer|min:4|max:64',
-            // Human typing rarely dips under ~30ms between keys.
-            'barcode_keystroke_threshold_ms' => 'required|integer|min:10|max:200',
         ];
     }
 
@@ -114,9 +102,6 @@ final class ManageBranchModal extends Component
         $this->name = $branch->name;
         $this->address = $branch->address;
         $this->is_active = $branch->is_active;
-        $this->barcode_scanner_enabled = (bool) $branch->barcode_scanner_enabled;
-        $this->barcode_min_length = (int) ($branch->barcode_min_length ?: 6);
-        $this->barcode_keystroke_threshold_ms = (int) ($branch->barcode_keystroke_threshold_ms ?: 50);
     }
 
     public function delete(int $id): void
@@ -170,9 +155,6 @@ final class ManageBranchModal extends Component
             'product_category_id',
             'name',
             'address',
-            'barcode_scanner_enabled',
-            'barcode_min_length',
-            'barcode_keystroke_threshold_ms',
         ]);
         $this->is_active = true; // Reset to default true
         $this->resetValidation();

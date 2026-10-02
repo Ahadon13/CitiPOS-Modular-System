@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Support\DeviceSettings;
 use App\Traits\ChecksIfInUse;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -32,15 +33,24 @@ final class Branch extends Model
     /**
      * Scanner configuration handed to the front-end listener.
      *
-     * @return array{enabled: bool, min_length: int, threshold_ms: int}
+     * The on/off switch lives on the branch; everything model-specific comes
+     * from the scanner profile assigned in Settings > Devices.
+     *
+     * @return array{enabled: bool, connection: string, usb_vendor_id: string, usb_product_id: string, baud_rate: int, min_length: int, threshold_ms: int, suffix: string, prefix: string, allowed_types: list<string>|null, sound: bool, profile: string|null}
      */
     public function barcodeScannerConfig(): array
     {
-        return [
-            'enabled' => (bool) $this->barcode_scanner_enabled,
-            'min_length' => (int) ($this->barcode_min_length ?: 6),
-            'threshold_ms' => (int) ($this->barcode_keystroke_threshold_ms ?: 50),
-        ];
+        return DeviceSettings::scannerConfigForBranch($this);
+    }
+
+    /**
+     * Receipt printer profile assigned to this branch.
+     *
+     * @return array<string, mixed>
+     */
+    public function printerConfig(): array
+    {
+        return DeviceSettings::printerConfigForBranch($this);
     }
 
     public function productCategory()

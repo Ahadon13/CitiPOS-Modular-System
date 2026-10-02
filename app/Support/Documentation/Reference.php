@@ -55,6 +55,16 @@ final class Reference
                                 ['en' => 'POS and Products', 'tl' => 'POS at Products'],
                             ],
                             [
+                                ['en' => '<b>F3</b>', 'tl' => '<b>F3</b>'],
+                                ['en' => 'Open <b>Scan to Adjust</b> to add or remove stock by scanning.', 'tl' => 'Buksan ang <b>Scan to Adjust</b> para magdagdag o magbawas ng stock sa pag-scan.'],
+                                ['en' => 'Products (scanner on)', 'tl' => 'Products (naka-on ang scanner)'],
+                            ],
+                            [
+                                ['en' => '<b>Enter</b> / <b>Esc</b>', 'tl' => '<b>Enter</b> / <b>Esc</b>'],
+                                ['en' => 'Add or cancel the item in the <b>Confirm scanned item</b> window. <b>&uarr;</b> / <b>&darr;</b> change the quantity.', 'tl' => 'Idagdag o i-cancel ang item sa <b>Confirm scanned item</b> na window. Binabago ng <b>&uarr;</b> / <b>&darr;</b> ang dami.'],
+                                ['en' => 'POS (after a scan)', 'tl' => 'POS (pagkatapos mag-scan)'],
+                            ],
+                            [
                                 ['en' => '<b>F4</b>', 'tl' => '<b>F4</b>'],
                                 ['en' => 'Open Checkout for the current order.', 'tl' => 'Buksan ang Checkout para sa kasalukuyang order.'],
                                 ['en' => 'POS', 'tl' => 'POS'],
@@ -214,7 +224,27 @@ final class Reference
                             ],
                             [
                                 ['en' => 'The scanner types into the search box instead of adding the item.', 'tl' => 'Nagta-type sa search box ang scanner imbes na idagdag ang item.'],
-                                ['en' => 'Barcode scanning is switched off for this branch, or the product has no barcode saved.', 'tl' => 'Naka-off ang barcode scanning sa branch na ito, o walang naka-save na barcode ang produkto.'],
+                                ['en' => 'Barcode scanning is switched off for this branch in <b>Settings &rsaquo; Scanners &amp; Printers</b>, or the product has no barcode saved.', 'tl' => 'Naka-off ang barcode scanning sa branch na ito sa <b>Settings &rsaquo; Scanners &amp; Printers</b>, o walang naka-save na barcode ang produkto.'],
+                            ],
+                            [
+                                ['en' => 'Some scans are missed or come out cut short.', 'tl' => 'May mga scan na hindi nababasa o putol ang lumalabas.'],
+                                ['en' => 'The branch scanner model does not match the scanner. Run the <b>Scan test</b> in Scanners &amp; Printers and use its values.', 'tl' => 'Hindi tugma ang scanner model ng branch sa scanner. Patakbuhin ang <b>Scan test</b> sa Scanners &amp; Printers at gamitin ang mga value nito.'],
+                            ],
+                            [
+                                ['en' => 'A scan says the barcode type is not allowed.', 'tl' => 'Sinasabi ng scan na hindi pinapayagan ang uri ng barcode.'],
+                                ['en' => 'That type is not ticked for the branch scanner model. Tick it under <b>Allowed barcode types</b> in Scanners &amp; Printers.', 'tl' => 'Hindi naka-tsek ang uri na iyon sa scanner model ng branch. I-tsek ito sa <b>Allowed barcode types</b> sa Scanners &amp; Printers.'],
+                            ],
+                            [
+                                ['en' => 'The badge says <b>Pair scanner</b> or <b>Scanner unplugged</b>.', 'tl' => 'Nakasulat sa badge ang <b>Pair scanner</b> o <b>Scanner unplugged</b>.'],
+                                ['en' => 'USB COM scanner: plug it in. If it does not connect by itself, click the badge and choose the scanner.', 'tl' => 'USB COM scanner: isaksak ito. Kung hindi kusang kumonekta, i-click ang badge at piliin ang scanner.'],
+                            ],
+                            [
+                                ['en' => 'The badge says <b>Scanner in use elsewhere</b>.', 'tl' => 'Nakasulat sa badge ang <b>Scanner in use elsewhere</b>.'],
+                                ['en' => 'Another CitiPOS tab or program has the USB COM scanner. Close it, then click the badge.', 'tl' => 'May ibang CitiPOS tab o program na gumagamit ng USB COM scanner. Isara ito, tapos i-click ang badge.'],
+                            ],
+                            [
+                                ['en' => 'The badge says <b>Scanner needs Chrome or Edge</b>.', 'tl' => 'Nakasulat sa badge ang <b>Scanner needs Chrome or Edge</b>.'],
+                                ['en' => 'The scanner model is set to USB COM, which this browser (e.g. Firefox) cannot use. Use Chrome or Edge, or switch the scanner back to keyboard mode.', 'tl' => 'Naka-USB COM ang scanner model, na hindi magagamit ng browser na ito (hal. Firefox). Gumamit ng Chrome o Edge, o ibalik ang scanner sa keyboard mode.'],
                             ],
                             [
                                 ['en' => 'Net profit looks too high.', 'tl' => 'Mukhang sobrang taas ng net profit.'],

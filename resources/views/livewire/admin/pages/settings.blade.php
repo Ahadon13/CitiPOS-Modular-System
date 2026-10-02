@@ -11,7 +11,7 @@
         <x-ui.heading level="h3" size="md" class="mb-1">Global Configurations</x-ui.heading>
         <p class="text-sm text-neutral-500 dark:text-neutral-400 mb-5">Manage the master data used across all branches and modules.</p>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
 
             {{-- Suppliers --}}
             <button type="button" x-on:click="$dispatch('open-modal', { id: 'create-supplier' })" class="flex flex-col items-center justify-center gap-2 p-4 sm:p-5 rounded-lg border border-neutral-200 dark:border-white/10 hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group">
@@ -52,6 +52,16 @@
                 </div>
                 <span class="font-bold text-sm text-neutral-900 dark:text-white">Payment Methods</span>
             </button>
+
+            {{-- Scanner & printer models per branch --}}
+            @can('manage-branches')
+            <a href="{{ route('admin.devices') }}" class="flex flex-col items-center justify-center gap-2 p-4 sm:p-5 rounded-lg border border-neutral-200 dark:border-white/10 hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group">
+                <div class="p-3 bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 rounded-full group-hover:scale-110 transition-transform">
+                    <x-ui.icon name="qr-code" class="size-6" />
+                </div>
+                <span class="font-bold text-sm text-neutral-900 dark:text-white text-center">Scanners &amp; Printers</span>
+            </a>
+            @endcan
 
             {{-- Desktop App Uploader --}}
             {{-- <button type="button" x-on:click="$dispatch('open-modal', { id: 'upload-app' })" class="flex flex-col items-center justify-center gap-2 p-5 rounded-lg border border-neutral-200 dark:border-white/10 hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group">

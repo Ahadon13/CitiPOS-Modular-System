@@ -58,7 +58,7 @@ final class Pharmacist
                         'type' => 'steps',
                         'items' => [
                             ['en' => 'Choose the customer first: leave it on <b>Walk-in</b>, or switch to <b>Customer</b> and search for one.', 'tl' => 'Piliin muna ang customer: iwan sa <b>Walk-in</b>, o lumipat sa <b>Customer</b> at maghanap.'],
-                            ['en' => 'Find the item by typing in the search box, filtering by category, or scanning its barcode.', 'tl' => 'Hanapin ang item sa search box, i-filter ayon sa category, o i-scan ang barcode nito.'],
+                            ['en' => 'Find the item by typing in the search box, filtering by category, or scanning its barcode. A scan shows a <b>Confirm scanned item</b> window: check it and press <kbd>Enter</kbd> to add it, or <kbd>Esc</kbd> to cancel.', 'tl' => 'Hanapin ang item sa search box, i-filter ayon sa category, o i-scan ang barcode nito. Kapag nag-scan, lalabas ang <b>Confirm scanned item</b> na window: tingnan ito at pindutin ang <kbd>Enter</kbd> para idagdag, o <kbd>Esc</kbd> para i-cancel.'],
                             ['en' => 'Pick the packaging you are selling, if there is more than one.', 'tl' => 'Piliin ang packaging na ibebenta mo, kung mahigit isa ito.'],
                             ['en' => 'Click the row to add it to the cart. Click again to increase, or type the quantity directly.', 'tl' => 'I-click ang row para maidagdag sa cart. I-click ulit para dagdagan, o i-type mismo ang dami.'],
                             ['en' => 'Press <b>Checkout</b> or <kbd>F4</kbd>.', 'tl' => 'Pindutin ang <b>Checkout</b> o <kbd>F4</kbd>.'],
@@ -198,6 +198,11 @@ final class Pharmacist
                         'type' => 'text',
                         'en' => '<b>Scan / Look up</b> (or <kbd>F2</kbd>) finds a product by barcode or name and shows its stock and prices, with a button to jump straight to editing it.',
                         'tl' => 'Ang <b>Scan / Look up</b> (o <kbd>F2</kbd>) ay naghahanap ng produkto sa barcode o pangalan at ipinapakita ang stock at presyo nito, may button para dumiretso sa pag-edit.',
+                    ],
+                    [
+                        'type' => 'text',
+                        'en' => '<b>Scan to Adjust</b> (or <kbd>F3</kbd>) adds or removes stock by scanning. Scan the product &mdash; a box barcode counts boxes, a piece barcode counts pieces &mdash; and scan it again for each extra one. Choose <b>Add Stock</b> or <b>Remove Stock</b>, fill in the batch, and press <kbd>Enter</kbd>. The window then waits for the next product. On the <b>Stocks</b> page, scanning a product shows only its batches.',
+                        'tl' => 'Ang <b>Scan to Adjust</b> (o <kbd>F3</kbd>) ay nagdadagdag o nagbabawas ng stock sa pag-scan. I-scan ang produkto &mdash; box ang bilang kapag box barcode, piraso kapag piece barcode &mdash; at i-scan ulit para sa bawat dagdag. Piliin ang <b>Add Stock</b> o <b>Remove Stock</b>, punan ang batch, at pindutin ang <kbd>Enter</kbd>. Maghihintay na ang window sa susunod na produkto. Sa <b>Stocks</b> page, kapag nag-scan ng produkto, ang mga batch lang nito ang ipapakita.',
                     ],
                     [
                         'type' => 'image',

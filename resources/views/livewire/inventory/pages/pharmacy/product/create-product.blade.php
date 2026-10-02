@@ -327,6 +327,7 @@
                         <x-ui.label>Barcode (Optional)</x-ui.label>
                         <x-ui.input
                             wire:model="form.base_barcode"
+                            x-on:keydown.enter.prevent
                             icon="qr-code"
                             placeholder="Scan or type barcode"
                         />
@@ -413,6 +414,7 @@
                                     <x-ui.label>Pack Barcode (Optional)</x-ui.label>
                                     <x-ui.input
                                         x-model="pkg.barcode"
+                                        x-on:keydown.enter.prevent
                                         icon="qr-code"
                                         placeholder="Scan pack barcode"
                                     />

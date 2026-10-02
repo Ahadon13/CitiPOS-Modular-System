@@ -11,11 +11,48 @@ import {
 // Apex Charts
 import ApexCharts from "apexcharts";
 // Optional barcode scanner support (inert unless a branch enables it)
-import barcodeScanner, { registerBarcodeDriver } from "./barcode/scanner";
+import barcodeScanner, {
+    barcodeDialogScanner,
+    claimScans,
+    pairScanner,
+    registerBarcodeDriver,
+    scanBeep,
+    scannedSince,
+    scannerTest,
+    serialScannerTest,
+} from "./barcode/scanner";
+import { scanConfirmMixin } from "./barcode/scan-confirm";
 
 window.ApexCharts = ApexCharts;
 window.barcodeScanner = barcodeScanner;
+window.barcodeDialogScanner = barcodeDialogScanner;
+window.scannerTest = scannerTest;
+window.serialScannerTest = serialScannerTest;
 window.registerBarcodeDriver = registerBarcodeDriver;
+window.BarcodeScanner = { claim: claimScans, beep: scanBeep, scannedSince, pair: pairScanner };
+
+/**
+ * POS shortcuts that are plain letters must not fire while the cashier is
+ * typing in a field.
+ */
+const isTypingTarget = (target) => {
+    const tag = (target?.tagName || "").toLowerCase();
+
+    return tag === "input" || tag === "textarea" || tag === "select" || target?.isContentEditable === true;
+};
+
+/**
+ * The calculator shortcut waits a moment before toggling: if the "c" was
+ * really the first character of a scanned barcode, the scanner's next
+ * keystrokes arrive within that window and the toggle is skipped.
+ */
+const deferUnlessScanned = (callback) => {
+    const pressedAt = performance.now();
+
+    setTimeout(() => {
+        if (!scannedSince(pressedAt)) callback();
+    }, 120);
+};
 
 window.posApp = (
     paymentMethods = [],
@@ -25,6 +62,7 @@ window.posApp = (
     customers = [],
 ) => {
     return {
+        ...scanConfirmMixin(),
         cart: [],
         paymentMethods: paymentMethods,
         customerTypes: customerTypes,
@@ -303,7 +341,7 @@ window.posApp = (
             }
         },
 
-        addProductToCart(product, selectedPkgId) {
+        addProductToCart(product, selectedPkgId, quantity = 1) {
             if (!product || !Array.isArray(product.packagings)) return;
 
             let pkg =
@@ -318,6 +356,7 @@ window.posApp = (
             const conversionFactor = parseFloat(pkg.conversion_factor) || 1;
             const productStock = parseFloat(product.stock) || 0;
             const specialOrder = product.stock_type === "special_order";
+            const addQuantity = Math.max(1, Math.floor(quantity) || 1);
             let cartId = product.id + "_" + pkg.id; // Unique ID based on product + packaging
             const remainingBase =
                 productStock - this.getUsedBaseStock(product.id, cartId);
@@ -329,7 +368,9 @@ window.posApp = (
             let item = this.cart.find((i) => i.cartId === cartId);
 
             if (item) {
-                if (specialOrder || item.quantity < maxAvailable) item.quantity++;
+                item.quantity = specialOrder
+                    ? item.quantity + addQuantity
+                    : Math.min(maxAvailable, item.quantity + addQuantity);
             } else if (specialOrder || maxAvailable > 0) {
                 this.cart.push({
                     cartId: cartId,
@@ -341,7 +382,9 @@ window.posApp = (
                     regularPrice: this.getPackageRegularPrice(pkg),
                     partnershipPrice: this.getPackagePartnershipPrice(pkg),
                     priceSource: this.getPackagePriceSource(pkg),
-                    quantity: 1,
+                    quantity: specialOrder
+                        ? addQuantity
+                        : Math.min(maxAvailable, addQuantity),
                     maxStock: maxAvailable,
                     productStock: productStock,
                     specialOrder: specialOrder,
@@ -430,6 +473,12 @@ window.posApp = (
         },
 
         handleKeydown(e) {
+            // The scan confirmation owns the keyboard while it is open.
+            if (this.scanConfirm.open) {
+                this.handleScanConfirmKeydown(e);
+                return;
+            }
+
             if (e.key.toLowerCase() === "k" && (e.ctrlKey || e.metaKey)) {
                 e.preventDefault();
                 this.focusSearch();
@@ -446,21 +495,29 @@ window.posApp = (
                 e.preventDefault();
                 this.clearCart();
             }
-            if (e.key.toLowerCase() === "c" && !e.ctrlKey && !e.metaKey) {
+            if (
+                e.key.toLowerCase() === "c" &&
+                !e.ctrlKey &&
+                !e.metaKey &&
+                !e.altKey &&
+                !isTypingTarget(e.target)
+            ) {
                 e.preventDefault();
 
-                // Flip the state (true becomes false, false becomes true)
-                this.isCalculatorOpen = !this.isCalculatorOpen;
+                deferUnlessScanned(() => {
+                    // Flip the state (true becomes false, false becomes true)
+                    this.isCalculatorOpen = !this.isCalculatorOpen;
 
-                // Dispatch the correct event based on the new state
-                window.dispatchEvent(
-                    new CustomEvent(
-                        this.isCalculatorOpen ? "open-modal" : "close-modal",
-                        {
-                            detail: { id: "calculator-modal" },
-                        },
-                    ),
-                );
+                    // Dispatch the correct event based on the new state
+                    window.dispatchEvent(
+                        new CustomEvent(
+                            this.isCalculatorOpen ? "open-modal" : "close-modal",
+                            {
+                                detail: { id: "calculator-modal" },
+                            },
+                        ),
+                    );
+                });
             }
         },
     };
@@ -477,6 +534,7 @@ window.motorShopPosApp = (
     mechanics = [],
 ) => {
     return {
+        ...scanConfirmMixin(),
         cart: [],
         serviceLines: [],
         serviceDraft: {
@@ -700,7 +758,7 @@ window.motorShopPosApp = (
             }
         },
 
-        addProductToCart(product, selectedPkgId) {
+        addProductToCart(product, selectedPkgId, quantity = null) {
             if (!product || !Array.isArray(product.packagings)) return;
 
             const pkg =
@@ -723,12 +781,13 @@ window.motorShopPosApp = (
                 ? Math.max(0, Math.floor((remainingBase / conversionFactor) * 100) / 100)
                 : Math.max(0, Math.floor(remainingBase / conversionFactor));
             const step = allowDecimal ? 0.01 : 1;
+            const addQuantity =
+                quantity === null ? step : this.normalizeQuantity(quantity, { allowDecimal });
             const item = this.cart.find((i) => i.cartId === cartId);
 
             if (item) {
-                item.quantity = specialOrder
-                    ? Math.round((item.quantity + step) * 100) / 100
-                    : Math.min(maxAvailable, item.quantity + step);
+                const next = Math.round((item.quantity + addQuantity) * 100) / 100;
+                item.quantity = specialOrder ? next : Math.min(maxAvailable, next);
             } else if (specialOrder || maxAvailable > 0) {
                 this.cart.push({
                     cartId: cartId,
@@ -736,7 +795,7 @@ window.motorShopPosApp = (
                     packaging_id: pkg.id,
                     name: product.name,
                     price: this.getPackagePrice(pkg),
-                    quantity: step,
+                    quantity: specialOrder ? addQuantity : Math.min(maxAvailable, addQuantity),
                     productStock: productStock,
                     specialOrder: specialOrder,
                     conversionFactor: conversionFactor,
@@ -894,6 +953,12 @@ window.motorShopPosApp = (
         },
 
         handleKeydown(e) {
+            // The scan confirmation owns the keyboard while it is open.
+            if (this.scanConfirm.open) {
+                this.handleScanConfirmKeydown(e);
+                return;
+            }
+
             if (e.key.toLowerCase() === "k" && (e.ctrlKey || e.metaKey)) {
                 e.preventDefault();
                 this.focusSearch();

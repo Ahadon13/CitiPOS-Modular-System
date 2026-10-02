@@ -297,7 +297,7 @@
 
                                 <x-ui.field>
                                     <x-ui.label>Barcode (Optional)</x-ui.label>
-                                    <x-ui.input x-model="pkg.barcode" icon="qr-code" />
+                                    <x-ui.input x-model="pkg.barcode" icon="qr-code" x-on:keydown.enter.prevent />
                                 </x-ui.field>
                             </div>
                         </div>
